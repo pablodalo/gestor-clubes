@@ -26,7 +26,7 @@ const createTenantSchema = z.object({
   currency: z.string().default("ARS"),
 });
 
-export type CreateTenantInput = z.infer<typeof createTenantSchema>;
+export type CreateTenantInput = z.input<typeof createTenantSchema>;
 
 export async function createTenant(input: CreateTenantInput) {
   const session = await getServerSession(authOptions);
