@@ -33,18 +33,8 @@ export async function GET(request: NextRequest) {
   if (hasDbUrl) {
     try {
       const tenantsCount = await prisma.tenant.count().catch(() => 0);
-      await prisma.auditLog.create({
-        data: {
-          tenantId: null,
-          actorType: "platform_user",
-          actorId: "health-check",
-          action: "health.db.write",
-          entityName: "Health",
-          entityId: null,
-          origin: "api/health",
-        },
-      });
-      database = { ok: true, message: "PostgreSQL OK: lectura y escritura correctas", tenantsCount };
+      // Solo lectura para no llenar auditLog en cada health check
+      database = { ok: true, message: "PostgreSQL OK: lectura correcta", tenantsCount };
     } catch (error) {
       database = {
         ok: false,

@@ -45,7 +45,7 @@ npm install
 
 2. **Variables de entorno**
 
-Crear `.env` en la raíz (copiar desde `env.example`):
+Crear `.env` en la raíz (copiar desde `.env.example`):
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/gestor_clubes?schema=public"
@@ -128,11 +128,11 @@ Abrir http://localhost:3000.
 5. **Build**  
    El proyecto usa `prisma generate` en el build (ver `vercel.json`). Asegurarse de que `DATABASE_URL` esté definida en Vercel para que el build no falle.
 
-6. **Calidad de deploy (recomendado)**  
-   En CI o antes de hacer push, ejecutar:
-   - `npm run typecheck` — comprueba tipos TypeScript sin emitir archivos.
-   - `npm run lint` — ESLint para Next.js.  
-   El build en Vercel no falla por errores de tipo o lint (están ignorados en `next.config.js`); conviene corregir errores y luego activar la comprobación en el build si se desea.
+6. **Calidad de deploy**  
+   El build en Vercel ejecuta typecheck y lint (`next.config.js` tiene `ignoreBuildErrors: false` y `ignoreDuringBuilds: false`). Antes de push ejecutá localmente:
+   - `npm run typecheck`
+   - `npm run lint`
+   Referencia de variables: `.env.example`.
 
 7. **Variables requeridas en producción**  
    Si `NEXTAUTH_URL` o `NEXTAUTH_SECRET` no están definidas en producción, las rutas de auth (`/api/auth/*`) fallarán con un error explícito. Configurarlas siempre en Vercel → Environment Variables.

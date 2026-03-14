@@ -119,7 +119,7 @@ Abrí en el navegador (reemplazá por la URL de tu proyecto):
 Ese endpoint devuelve en un solo request:
 
 1. **env** – Si están definidas `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET` (o las versiones con prefijo `dbgc_`). No muestra los valores, solo "set" o "missing".
-2. **database** – Si la app logra conectar a PostgreSQL y escribir un registro de prueba.
+2. **database** – Si la app logra conectar a PostgreSQL (solo lectura; no escribe en cada request).
 
 - Si **env** tiene algo "missing" → entrá a Vercel → **Settings → Environment Variables** y agregá las variables (ver sección 1). Después hacé **Redeploy** del último deployment.
 - Si **env** está todo "set" pero **database.ok** es `false` → la URL de la base está mal o las tablas no existen. Revisá que `DATABASE_URL` sea la connection string correcta de Neon y que alguien haya ejecutado `npx prisma db push` (y opcional `npx prisma db seed`) contra esa base al menos una vez.
@@ -145,7 +145,7 @@ También podés usar por separado:
 
 - El proyecto fija **Node 20.x** en `package.json` (`engines.node`). Vercel usa esa versión.
 - **Importante:** En Vercel → **Settings → General → Node.js Version** elegí **20.x**. Si tenés 24.x u otra, el build usará igual 20.x por `engines` pero verás un warning y se salteará el build cache. Con 20.x en Settings el warning desaparece y se reutiliza el cache.
-- Antes de push (opcional): `npm run typecheck` y `npm run lint`. El build en Vercel no falla por errores de tipo/lint salvo que los actives en `next.config.js`.
+- Antes de push: `npm run typecheck` y `npm run lint`. El build en Vercel **sí** ejecuta typecheck y lint; si hay errores el build falla. Referencia de variables: `.env.example`.
 - Si en producción faltan `NEXTAUTH_URL` o `NEXTAUTH_SECRET`, las rutas `/api/auth/*` responderán con error explícito pidiendo configurarlas en Vercel.
 - Para reducir vulnerabilidades: `npm audit` y `npm audit fix`. El proyecto incluye `overrides` para `glob` y `rimraf`; tras cambios en dependencias conviene ejecutar de nuevo `npm install` y `npm audit`.
 
