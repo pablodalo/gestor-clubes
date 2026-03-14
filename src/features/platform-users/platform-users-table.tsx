@@ -96,8 +96,7 @@ export function PlatformUsersTable({ users }: { users: PlatformUserRow[] }) {
           data={users}
           keyExtractor={(u) => u.id}
           emptyState={{ icon: Users, title: "Sin usuarios", description: "Creá uno desde «Nuevo usuario»." }}
-          rowActions={(u) =>
-            u.role !== PLATFORM_OWNER_ROLE ? (
+          rowActions={(u) => (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -110,13 +109,15 @@ export function PlatformUsersTable({ users }: { users: PlatformUserRow[] }) {
                     <Pencil className="h-4 w-4 mr-2" />
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(u)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar
-                  </DropdownMenuItem>
+                  {u.role !== PLATFORM_OWNER_ROLE && (
+                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(u)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : null
+            )
           }
         />
       </ListPageLayout>

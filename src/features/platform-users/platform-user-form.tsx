@@ -83,13 +83,15 @@ export function PlatformUserFormDialog({ open, onOpenChange, onSuccess, edit }: 
     if (errorsPerm) permissions.push(PLATFORM_PERMISSION_KEYS.errors_read);
 
     if (edit) {
-      // Email no se envía al editar (campo disabled no va en el submit); el backend mantiene el actual
-      const result = await updatePlatformUser(edit.id, {
+      // Email no se envía al editar (campo disabled no va en el submit); el backend mantiene el actual.
+      // Superadmin: no enviamos role para no forzar validación; el backend mantiene platform_owner.
+      const payload: { name: string; password?: string; role?: "platform_admin" | "support_agent" | "billing_admin"; permissions: string[] } = {
         name,
         password: password || undefined,
-        role: role as "platform_admin" | "support_agent" | "billing_admin",
         permissions,
-      });
+      };
+      if (edit.role !== "platform_owner") payload.role = role as "platform_admin" | "support_agent" | "billing_admin";
+      const result = await updatePlatformUser(edit.id, payload);
       setLoading(false);
       if (result.error) {
         setError(result.error);
@@ -160,16 +162,20 @@ export function PlatformUserFormDialog({ open, onOpenChange, onSuccess, edit }: 
             </div>
             <div className="space-y-2">
               <Label>Rol</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="platform_admin">{roleLabels.platform_admin}</SelectItem>
-                  <SelectItem value="support_agent">{roleLabels.support_agent}</SelectItem>
-                  <SelectItem value="billing_admin">{roleLabels.billing_admin}</SelectItem>
-                </SelectContent>
-              </Select>
+              {edit?.role === "platform_owner" ? (
+                <p className="text-sm text-muted-foreground py-2">{roleLabels.platform_owner} (no editable)</p>
+              ) : (
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="platform_admin">{roleLabels.platform_admin}</SelectItem>
+                    <SelectItem value="support_agent">{roleLabels.support_agent}</SelectItem>
+                    <SelectItem value="billing_admin">{roleLabels.billing_admin}</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Permisos adicionales</Label>

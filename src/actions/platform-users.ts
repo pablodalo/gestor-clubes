@@ -69,7 +69,6 @@ export async function updatePlatformUser(userId: string, input: z.infer<typeof u
 
   const existing = await prisma.platformUser.findUnique({ where: { id: userId } });
   if (!existing) return { error: "Usuario no encontrado" };
-  if (existing.role === PLATFORM_OWNER_ROLE) return { error: "No se puede editar al superadmin" };
 
   const parsed = updateSchema.safeParse(input);
   if (!parsed.success) return { error: "Datos inválidos" };
@@ -77,7 +76,8 @@ export async function updatePlatformUser(userId: string, input: z.infer<typeof u
   const data: { name?: string; email?: string; passwordHash?: string; role?: string; permissions?: object } = {};
   if (parsed.data.name != null) data.name = parsed.data.name;
   if (parsed.data.email != null) data.email = parsed.data.email;
-  if (parsed.data.role != null) data.role = parsed.data.role;
+  // Superadmin no puede cambiar su rol; el resto sí
+  if (parsed.data.role != null && existing.role !== PLATFORM_OWNER_ROLE) data.role = parsed.data.role;
   if (parsed.data.permissions != null) data.permissions = parsed.data.permissions;
   if (parsed.data.password != null && parsed.data.password !== "") {
     data.passwordHash = await hash(parsed.data.password, 10);
