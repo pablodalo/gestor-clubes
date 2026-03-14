@@ -6,6 +6,7 @@ import { PlatformShell } from "@/components/platform-shell";
 import { prisma } from "@/lib/prisma";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { ExportButtons } from "@/components/export-buttons";
 import { AuditTenantFilter } from "@/features/audit/audit-tenant-filter";
 
 type AuditRow = {
@@ -71,11 +72,22 @@ export default async function AuditPage({
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const currentPage = Math.max(1, Math.min(parseInt(page, 10) || 1, totalPages));
 
+  const exportData = rows.map((r) => ({
+    id: r.id,
+    actorType: r.actorType,
+    action: r.action,
+    entityName: r.entityName,
+    entityId: r.entityId,
+    createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+    tenantId: r.tenantId,
+  }));
+
   return (
     <PlatformShell>
       <ListPageLayout
         title="Auditoría"
         description="Registro de acciones en la plataforma."
+        actions={<ExportButtons data={exportData} filename="auditoria" />}
         toolbar={
           <AuditTenantFilter
             tenants={tenants.map((t) => ({ id: t.id, name: t.name }))}

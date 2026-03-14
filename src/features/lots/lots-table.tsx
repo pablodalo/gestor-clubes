@@ -12,6 +12,7 @@ import {
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { LotFormDialog } from "@/features/lots/lot-form";
 import { deleteLot } from "@/actions/lots";
@@ -53,18 +54,29 @@ export function LotsTable({ tenantSlug, lots, locations, canCreate }: Props) {
     else refresh();
   }
 
+  const exportData = lots.map((l) => ({
+    id: l.id,
+    code: l.code,
+    description: l.description ?? "",
+    status: l.status,
+    itemsCount: l._count?.items ?? 0,
+  }));
+
   return (
     <>
       <ListPageLayout
         title="Lotes"
         description="Lotes de inventario."
         actions={
-          canCreate ? (
-            <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-              <Package className="h-4 w-4 mr-2" />
-              Nuevo lote
-            </Button>
-          ) : undefined
+          <>
+            <ExportButtons data={exportData} filename="lotes" />
+            {canCreate && (
+              <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
+                <Package className="h-4 w-4 mr-2" />
+                Nuevo lote
+              </Button>
+            )}
+          </>
         }
       >
         <DataTable

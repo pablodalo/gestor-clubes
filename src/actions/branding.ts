@@ -8,6 +8,7 @@ import { z } from "zod";
 const updateBrandingSchema = z.object({
   appName: z.string().nullable(),
   shortName: z.string().nullable(),
+  logoUrl: z.string().url().nullable().or(z.literal("")),
   primaryColor: z.string().nullable(),
   secondaryColor: z.string().nullable(),
   accentColor: z.string().nullable(),
@@ -33,7 +34,10 @@ export async function updateTenantBranding(
   const ok = await validateTenantIdExists(tenantId);
   if (!ok) return { error: "Tenant no encontrado" };
 
-  const parsed = updateBrandingSchema.safeParse(input);
+  const parsed = updateBrandingSchema.safeParse({
+    ...input,
+    logoUrl: input.logoUrl === "" ? null : input.logoUrl,
+  });
   if (!parsed.success) return { error: "Datos inválidos" };
 
   const data = parsed.data as Record<string, unknown>;

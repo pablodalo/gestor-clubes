@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { TicketIcon } from "lucide-react";
 
@@ -36,8 +37,20 @@ export default async function PortalSociosTicketsPage({ params }: Props) {
     { key: "createdAt", header: "Fecha", render: (t) => <span className="text-muted-foreground">{new Date(t.createdAt).toLocaleDateString("es-AR")}</span> },
   ];
 
+  const exportData = tickets.map((t) => ({
+    id: t.id,
+    subject: t.subject,
+    priority: t.priority,
+    status: t.status,
+    createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
+  }));
+
   return (
-    <ListPageLayout title="Mis tickets" description="Consultas y soporte.">
+    <ListPageLayout
+      title="Mis tickets"
+      description="Consultas y soporte."
+      actions={sessionData ? <ExportButtons data={exportData} filename="mis-tickets" /> : undefined}
+    >
       {sessionData ? (
         <DataTable
           columns={columns}

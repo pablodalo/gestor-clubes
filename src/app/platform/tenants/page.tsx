@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { logError } from "@/lib/server-log";
 
@@ -48,15 +49,26 @@ export default async function TenantsListPage() {
     },
     ];
 
+    const exportData = rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      status: r.status,
+      createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+    }));
+
     return (
       <PlatformShell>
       <ListPageLayout
         title="Tenants"
         description="Clubes (tenants) de la plataforma."
         actions={
-          <Button asChild>
-            <Link href="/platform/tenants/new">Nuevo tenant</Link>
-          </Button>
+          <>
+            <ExportButtons data={exportData} filename="tenants" />
+            <Button asChild>
+              <Link href="/platform/tenants/new">Nuevo tenant</Link>
+            </Button>
+          </>
         }
       >
         <DataTable

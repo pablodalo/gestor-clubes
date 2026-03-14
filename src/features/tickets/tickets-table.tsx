@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { createTicket } from "@/actions/tickets";
 import type { Ticket } from "@prisma/client";
@@ -63,18 +64,29 @@ export function TicketsTable({ tenantSlug, tickets, canCreate, canUpdateStatus }
     { key: "createdAt", header: "Fecha", render: (t) => <span className="text-muted-foreground">{new Date(t.createdAt).toLocaleDateString("es-AR")}</span> },
   ];
 
+  const exportData = tickets.map((t) => ({
+    id: t.id,
+    subject: t.subject,
+    priority: t.priority,
+    status: t.status,
+    createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
+  }));
+
   return (
     <>
       <ListPageLayout
         title="Tickets"
         description="Consultas y soporte."
         actions={
-          canCreate ? (
-            <Button onClick={() => { setError(""); setDialogOpen(true); }}>
-              <MessageSquarePlus className="h-4 w-4 mr-2" />
-              Nuevo ticket
-            </Button>
-          ) : undefined
+          <>
+            <ExportButtons data={exportData} filename="tickets" />
+            {canCreate && (
+              <Button onClick={() => { setError(""); setDialogOpen(true); }}>
+                <MessageSquarePlus className="h-4 w-4 mr-2" />
+                Nuevo ticket
+              </Button>
+            )}
+          </>
         }
       >
         <DataTable

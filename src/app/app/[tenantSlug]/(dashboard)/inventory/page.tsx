@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { Package } from "lucide-react";
@@ -43,8 +44,20 @@ export default async function InventoryPage({ params }: Props) {
     { key: "status", header: "Estado", render: (i) => <Badge variant={getStatusVariant(i.status)}>{getStatusLabel(i.status) ?? i.status}</Badge> },
   ];
 
+  const exportData = items.map((i) => ({
+    id: i.id,
+    code: i.code,
+    lotCode: i.lot.code,
+    quantityCurrent: String(i.quantityCurrent),
+    status: i.status,
+  }));
+
   return (
-    <ListPageLayout title="Inventario" description="Ítems de inventario.">
+    <ListPageLayout
+      title="Inventario"
+      description="Ítems de inventario."
+      actions={<ExportButtons data={exportData} filename="inventario" />}
+    >
       <DataTable
         columns={columns}
         data={items}

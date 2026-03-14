@@ -99,6 +99,16 @@ async function main() {
 
   console.log("Tenants: demo-club, club-ejemplo");
 
+  const OPERADOR_PERMISSION_KEYS = [
+    "members.read", "members.create", "members.update",
+    "inventory.read", "inventory.create", "inventory.move", "inventory.adjust",
+    "lots.read", "lots.create", "qr.generate", "qr.resolve",
+    "weighings.read", "weighings.create", "scales.manage",
+    "devices.read", "devices.manage", "reports.read",
+    "tickets.read", "tickets.manage",
+  ];
+  const operadorPermIds = permissions.filter((p) => OPERADOR_PERMISSION_KEYS.includes(p.key)).map((p) => p.id);
+
   for (const tenant of [tenant1, tenant2]) {
     const roleAdmin = await prisma.role.upsert({
       where: { tenantId_name: { tenantId: tenant.id, name: "tenant_admin" } },
@@ -107,6 +117,17 @@ async function main() {
         tenantId: tenant.id,
         name: "tenant_admin",
         description: "Administrador del club",
+        isSystem: true,
+      },
+    });
+
+    const roleOperador = await prisma.role.upsert({
+      where: { tenantId_name: { tenantId: tenant.id, name: "operador" } },
+      update: {},
+      create: {
+        tenantId: tenant.id,
+        name: "operador",
+        description: "Operador con acceso a socios, inventario, lotes y tickets",
         isSystem: true,
       },
     });
@@ -121,20 +142,43 @@ async function main() {
         create: { roleId: roleAdmin.id, permissionId: permId },
       });
     }
+    for (const permId of operadorPermIds) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: { roleId: roleOperador.id, permissionId: permId },
+        },
+        update: {},
+        create: { roleId: roleOperador.id, permissionId: permId },
+      });
+    }
 
-    const user = await prisma.user.upsert({
-      where: { tenantId_email: { tenantId: tenant.id, email: `operador@${tenant.slug}.com` } },
+    const userAdmin = await prisma.user.upsert({
+      where: { tenantId_email: { tenantId: tenant.id, email: `admin@${tenant.slug}.com` } },
       update: {},
       create: {
         tenantId: tenant.id,
         roleId: roleAdmin.id,
+        name: `Admin ${tenant.name}`,
+        email: `admin@${tenant.slug}.com`,
+        passwordHash: await hash("Admin123!", 10),
+        status: "active",
+      },
+    });
+    console.log(`Tenant admin: ${userAdmin.email}`);
+
+    const userOperador = await prisma.user.upsert({
+      where: { tenantId_email: { tenantId: tenant.id, email: `operador@${tenant.slug}.com` } },
+      update: {},
+      create: {
+        tenantId: tenant.id,
+        roleId: roleOperador.id,
         name: `Operador ${tenant.name}`,
         email: `operador@${tenant.slug}.com`,
         passwordHash: await hash("Operador123!", 10),
         status: "active",
       },
     });
-    console.log(`Tenant user: ${user.email}`);
+    console.log(`Tenant operador: ${userOperador.email}`);
 
     const loc1 = await prisma.location.create({
       data: {
@@ -197,7 +241,7 @@ async function main() {
       data: {
         tenantId: tenant.id,
         createdByType: "user",
-        createdById: user.id,
+        createdById: userAdmin.id,
         subject: "Ticket demo",
         description: "Ejemplo de ticket",
         priority: "medium",

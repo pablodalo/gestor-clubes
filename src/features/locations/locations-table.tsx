@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { ExportButtons } from "@/components/export-buttons";
 import { LocationFormDialog } from "@/features/locations/location-form";
 import { deleteLocation } from "@/actions/locations";
 import type { Location } from "@prisma/client";
@@ -53,18 +54,23 @@ export function LocationsTable({ tenantSlug, locations, canCreate, canEdit, canD
     else refresh();
   }
 
+  const exportData = locations.map((l) => ({ id: l.id, name: l.name, type: l.type, description: l.description ?? "" }));
+
   return (
     <>
       <ListPageLayout
         title="Ubicaciones"
         description="Lugares y zonas del club."
         actions={
-          canCreate ? (
-            <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-              <MapPin className="h-4 w-4 mr-2" />
-              Nueva ubicación
-            </Button>
-          ) : undefined
+          <>
+            <ExportButtons data={exportData} filename="ubicaciones" />
+            {canCreate && (
+              <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
+                <MapPin className="h-4 w-4 mr-2" />
+                Nueva ubicación
+              </Button>
+            )}
+          </>
         }
       >
         <DataTable

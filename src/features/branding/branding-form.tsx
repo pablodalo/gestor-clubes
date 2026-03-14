@@ -37,6 +37,7 @@ export function BrandingForm({ tenantId, initial }: Props) {
     const result = await updateTenantBranding(tenantId, {
       appName: (formData.get("appName") as string) || null,
       shortName: (formData.get("shortName") as string) || null,
+      logoUrl: (formData.get("logoUrl") as string)?.trim() || null,
       primaryColor: (formData.get("primaryColor") as string) || null,
       secondaryColor: (formData.get("secondaryColor") as string) || null,
       accentColor: (formData.get("accentColor") as string) || null,
@@ -65,6 +66,21 @@ export function BrandingForm({ tenantId, initial }: Props) {
           )}
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="logoUrl">Logo del club (URL)</Label>
+            <Input
+              id="logoUrl"
+              name="logoUrl"
+              type="url"
+              defaultValue={initial?.logoUrl ?? undefined}
+              placeholder="https://ejemplo.com/logo.png"
+            />
+            {initial?.logoUrl && (
+              <div className="mt-2 flex items-center gap-2">
+                <img src={initial.logoUrl} alt="Logo" className="h-12 object-contain rounded border border-input" />
+              </div>
+            )}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="appName">Nombre de la app</Label>

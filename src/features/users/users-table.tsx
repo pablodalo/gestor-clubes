@@ -14,62 +14,76 @@ import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
-import { MemberFormDialog } from "@/features/members/member-form";
-import { deleteMember } from "@/actions/members";
-import type { Member } from "@prisma/client";
+import { UserFormDialog } from "@/features/users/user-form";
+import { deleteTenantUser } from "@/actions/users";
+import type { User, Role } from "@prisma/client";
 import { MoreHorizontal, Pencil, Trash2, UserPlus, Users } from "lucide-react";
+
+type UserWithRole = User & { role: Role };
+
+const roleDisplayName: Record<string, string> = {
+  tenant_admin: "Admin",
+  operador: "Operador",
+};
 
 type Props = {
   tenantSlug: string;
-  members: Member[];
+  users: UserWithRole[];
+  roles: Role[];
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
 };
 
-export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDelete }: Props) {
+export function UsersTable({
+  tenantSlug,
+  users,
+  roles,
+  canCreate,
+  canUpdate,
+  canDelete,
+}: Props) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Member | null>(null);
+  const [editing, setEditing] = useState<UserWithRole | null>(null);
 
   const refresh = () => router.refresh();
 
-  const columns: DataTableColumn<Member>[] = [
-    { key: "memberNumber", header: "Nº", render: (m) => <span className="font-mono text-foreground">{m.memberNumber}</span> },
-    { key: "firstName", header: "Nombre", render: (m) => <span className="font-medium">{m.firstName} {m.lastName}</span> },
-    { key: "email", header: "Email", render: (m) => <span className="text-muted-foreground">{m.email ?? "—"}</span> },
-    { key: "status", header: "Estado", render: (m) => <Badge variant={getStatusVariant(m.status)}>{getStatusLabel(m.status) ?? m.status}</Badge> },
+  const columns: DataTableColumn<UserWithRole>[] = [
+    { key: "name", header: "Nombre", render: (u) => <span className="font-medium text-foreground">{u.name}</span> },
+    { key: "email", header: "Email", render: (u) => <span className="text-muted-foreground">{u.email}</span> },
+    { key: "role", header: "Rol", render: (u) => <Badge variant="secondary">{roleDisplayName[u.role.name] ?? u.role.name}</Badge> },
+    { key: "status", header: "Estado", render: (u) => <Badge variant={getStatusVariant(u.status)}>{getStatusLabel(u.status) ?? u.status}</Badge> },
   ];
 
-  async function handleDelete(m: Member) {
+  async function handleDelete(u: UserWithRole) {
     if (!canDelete) return;
-    if (!confirm(`¿Eliminar al socio ${m.firstName} ${m.lastName} (${m.memberNumber})? Esta acción no se puede deshacer.`)) return;
-    const result = await deleteMember(m.id);
+    if (!confirm(`¿Eliminar al usuario ${u.name} (${u.email})? Esta acción no se puede deshacer.`)) return;
+    const result = await deleteTenantUser(u.id);
     if (result.error) alert(result.error);
     else refresh();
   }
 
-  const exportData = members.map((m) => ({
-    id: m.id,
-    memberNumber: m.memberNumber,
-    firstName: m.firstName,
-    lastName: m.lastName,
-    email: m.email ?? "",
-    status: m.status,
+  const exportData = users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: roleDisplayName[u.role.name] ?? u.role.name,
+    status: u.status,
   }));
 
   return (
     <>
       <ListPageLayout
-        title="Socios"
-        description="Listado de socios del club."
+        title="Usuarios"
+        description="Usuarios del panel del club (Admin y Operador) con acceso configurable por rol."
         actions={
           <>
-            <ExportButtons data={exportData} filename="socios" />
+            <ExportButtons data={exportData} filename="usuarios" />
             {canCreate && (
               <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Nuevo socio
+                Nuevo usuario
               </Button>
             )}
           </>
@@ -77,10 +91,10 @@ export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDel
       >
         <DataTable
           columns={columns}
-          data={members}
-          keyExtractor={(m) => m.id}
-          emptyState={{ icon: Users, title: "Sin socios", description: "Creá uno desde «Nuevo socio»." }}
-          rowActions={(m) =>
+          data={users}
+          keyExtractor={(u) => u.id}
+          emptyState={{ icon: Users, title: "Sin usuarios", description: "Creá uno desde «Nuevo usuario»." }}
+          rowActions={(u) =>
             canUpdate || canDelete ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -91,7 +105,7 @@ export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDel
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {canUpdate && (
-                    <DropdownMenuItem onClick={() => { setEditing(m); setDialogOpen(true); }}>
+                    <DropdownMenuItem onClick={() => { setEditing(u); setDialogOpen(true); }}>
                       <Pencil className="h-4 w-4 mr-2" />
                       Editar
                     </DropdownMenuItem>
@@ -99,7 +113,7 @@ export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDel
                   {canDelete && (
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
-                      onClick={() => handleDelete(m)}
+                      onClick={() => handleDelete(u)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Eliminar
@@ -111,12 +125,12 @@ export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDel
           }
         />
       </ListPageLayout>
-      <MemberFormDialog
-        tenantSlug={tenantSlug}
+      <UserFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSuccess={refresh}
         edit={editing}
+        roles={roles}
       />
     </>
   );
