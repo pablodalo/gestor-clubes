@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createPlatformUser, updatePlatformUser } from "@/actions/platform-users";
-import { PLATFORM_PERMISSION_KEYS } from "@/config/platform-permissions";
+import { PLATFORM_PERMISSION_KEYS, type PlatformPermissionKey } from "@/config/platform-permissions";
 
 type PlatformUserRow = {
   id: string;
@@ -78,14 +78,14 @@ export function PlatformUserFormDialog({ open, onOpenChange, onSuccess, edit }: 
     const name = (formData.get("name") as string).trim();
     const email = (formData.get("email") as string).trim();
     const password = (formData.get("password") as string);
-    const permissions: string[] = [];
+    const permissions: PlatformPermissionKey[] = [];
     if (audit) permissions.push(PLATFORM_PERMISSION_KEYS.audit_read);
     if (errorsPerm) permissions.push(PLATFORM_PERMISSION_KEYS.errors_read);
 
     if (edit) {
       // Email no se envía al editar (campo disabled no va en el submit); el backend mantiene el actual.
       // Superadmin: no enviamos role para no forzar validación; el backend mantiene platform_owner.
-      const payload: { name: string; password?: string; role?: "platform_admin" | "support_agent" | "billing_admin"; permissions: string[] } = {
+      const payload: { name: string; password?: string; role?: "platform_admin" | "support_agent" | "billing_admin"; permissions: PlatformPermissionKey[] } = {
         name,
         password: password || undefined,
         permissions,
