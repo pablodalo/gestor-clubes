@@ -1,17 +1,13 @@
-import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default withAuth({
-  callbacks: {
-    authorized: ({ token, req }) => {
-      const pathname = req.nextUrl.pathname;
-      if (pathname.startsWith("/platform") && !pathname.startsWith("/platform/login")) {
-        return token?.context === "platform";
-      }
-      return true;
-    },
-  },
-  pages: { signIn: "/platform/login" },
-});
+/**
+ * Middleware mínimo para evitar problemas con Edge en Vercel.
+ * La protección de rutas /platform se hace en los layouts y páginas con getServerSession + redirect.
+ */
+export function middleware(_req: NextRequest) {
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ["/platform/:path*"],
