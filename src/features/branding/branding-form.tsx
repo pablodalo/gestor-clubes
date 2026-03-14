@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { updateTenantBranding } from "@/actions/branding";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export function BrandingForm({ tenantId, initial }: Props) {
             />
             {initial?.logoUrl && (
               <div className="mt-2 flex items-center gap-2">
-                <img src={initial.logoUrl} alt="Logo" className="h-12 object-contain rounded border border-input" />
+                <Image src={initial.logoUrl} alt="Logo" width={48} height={48} className="h-12 w-auto object-contain rounded border border-input" unoptimized />
               </div>
             )}
           </div>
