@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
@@ -10,7 +11,7 @@ import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { Package } from "lucide-react";
 
-type ItemWithLot = Awaited<ReturnType<typeof prisma.inventoryItem.findMany>>[number];
+type ItemWithLot = Prisma.InventoryItemGetPayload<{ include: { lot: true } }>;
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
