@@ -56,10 +56,10 @@ export function PlatformUserFormDialog({ open, onOpenChange, onSuccess, edit }: 
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState(edit?.role ?? "support_agent");
   const [audit, setAudit] = useState(
-    edit && Array.isArray(edit.permissions) && (edit.permissions as string[]).includes(PLATFORM_PERMISSION_KEYS.audit_read)
+    !!(edit && Array.isArray(edit.permissions) && (edit.permissions as string[]).includes(PLATFORM_PERMISSION_KEYS.audit_read))
   );
   const [errorsPerm, setErrorsPerm] = useState(
-    edit && Array.isArray(edit.permissions) && (edit.permissions as string[]).includes(PLATFORM_PERMISSION_KEYS.errors_read)
+    !!(edit && Array.isArray(edit.permissions) && (edit.permissions as string[]).includes(PLATFORM_PERMISSION_KEYS.errors_read))
   );
 
   useEffect(() => {
