@@ -5,6 +5,9 @@ import { Providers } from "@/components/providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
+/** Evita pre-render en build: las páginas que usan Prisma se generan en runtime (no requiere DB en build). */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Gestor Clubes",
   description: "SaaS multi-tenant para gestión de clubes",
