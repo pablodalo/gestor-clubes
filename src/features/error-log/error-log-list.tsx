@@ -114,6 +114,9 @@ export function ErrorLogList({ initialLogs }: Props) {
           <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
           <p className="font-medium">Sin registros</p>
           <p className="text-sm mt-1">Los errores aparecerán aquí cuando ocurran.</p>
+          <p className="text-xs mt-3 max-w-md mx-auto">
+            Si en producción ves solo &quot;message is omitted&quot;, el detalle está en Vercel → Logs (buscá [GESTOR] o el digest). También se persisten unhandledRejection y onRequestError (Next 15+).
+          </p>
         </div>
       ) : (
         <div className="space-y-3">

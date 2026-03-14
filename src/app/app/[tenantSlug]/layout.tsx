@@ -2,6 +2,7 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantBranding } from "@/lib/branding";
 import { ThemeProvider } from "@/components/theme-provider";
 import { notFound } from "next/navigation";
+import { logError } from "@/lib/server-log";
 
 type Props = {
   children: React.ReactNode;
@@ -9,11 +10,16 @@ type Props = {
 };
 
 export default async function TenantAppLayout({ children, params }: Props) {
-  const { tenantSlug } = await params;
-  const tenant = await getTenantBySlug(tenantSlug);
-  if (!tenant) notFound();
+  try {
+    const { tenantSlug } = await params;
+    const tenant = await getTenantBySlug(tenantSlug);
+    if (!tenant) notFound();
 
-  const branding = await getTenantBranding(tenantSlug, "slug");
+    const branding = await getTenantBranding(tenantSlug, "slug");
 
-  return <ThemeProvider branding={branding}>{children}</ThemeProvider>;
+    return <ThemeProvider branding={branding}>{children}</ThemeProvider>;
+  } catch (err) {
+    logError("TenantAppLayout", err);
+    throw err;
+  }
 }

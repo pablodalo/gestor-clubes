@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { logError } from "@/lib/server-log";
 
 export type TenantContext = {
   id: string;
@@ -17,7 +18,8 @@ export async function getTenantBySlug(slug: string): Promise<TenantContext | nul
       select: { id: true, slug: true, name: true, status: true },
     });
     return tenant;
-  } catch {
+  } catch (err) {
+    logError(`getTenantBySlug(${slug})`, err);
     return null;
   }
 }
@@ -32,7 +34,8 @@ export async function getTenantById(id: string): Promise<TenantContext | null> {
       select: { id: true, slug: true, name: true, status: true },
     });
     return tenant;
-  } catch {
+  } catch (err) {
+    logError(`getTenantById(${id})`, err);
     return null;
   }
 }

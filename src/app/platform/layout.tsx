@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ThemeProvider } from "@/components/theme-provider";
+import { logError } from "@/lib/server-log";
 
 export default async function PlatformLayout({
   children,
@@ -9,9 +10,10 @@ export default async function PlatformLayout({
 }) {
   try {
     await getServerSession(authOptions);
-  } catch {
-    // Si falla la sesión (ej. NEXTAUTH_SECRET faltante o cookie inválida), el layout igual renderiza;
+  } catch (err) {
+    // Si falla la sesión (ej. NEXTAUTH_SECRET faltante o cookie inválida), loguear y seguir;
     // la página interna hará redirect a login si no hay sesión válida.
+    logError("PlatformLayout getServerSession", err);
   }
   return (
     <ThemeProvider branding={null}>

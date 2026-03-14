@@ -34,6 +34,7 @@ export default function Error({
     }).catch(() => {});
   }, [error]);
 
+  const isGenericMessage = error?.message?.includes("omitted in production");
   return (
     <div className="min-h-[40vh] flex flex-col items-center justify-center p-6 text-center">
       <div className="rounded-full bg-destructive/10 p-4 mb-4">
@@ -41,12 +42,19 @@ export default function Error({
       </div>
       <h1 className="text-xl font-semibold text-foreground mb-2">Error en la aplicación</h1>
       <p className="text-muted-foreground text-sm max-w-md mb-2">
-        Ocurrió un error en el servidor. Revisá los logs del servidor (Vercel → Deployments → tu deploy → Logs) y buscá
-        por <strong>[GESTOR]</strong> o por el digest abajo.
+        {isGenericMessage ? (
+          <>
+            En producción Next.js oculta el mensaje real. Para ver el detalle: (1) entrá a <strong>/platform/errors</strong> (como admin) y buscá el registro con el digest de abajo; (2) en Vercel → Deployments → Logs buscá <strong>[GESTOR]</strong> o el digest en el momento del error.
+          </>
+        ) : (
+          <>
+            Ocurrió un error en el servidor. Revisá los logs (Vercel → Logs) o <strong>/platform/errors</strong>.
+          </>
+        )}
       </p>
       <p className="font-mono text-xs bg-muted px-3 py-2 rounded mb-6 break-all">
         Digest: {error?.digest ?? "—"}
-        {error?.message ? ` · ${error.message}` : ""}
+        {!isGenericMessage && error?.message ? ` · ${error.message}` : ""}
       </p>
       <button
         type="button"
