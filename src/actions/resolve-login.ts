@@ -20,11 +20,11 @@ export async function resolveLogin(
   const normalizedEmail = email.trim().toLowerCase();
   if (!normalizedEmail || !password) return { error: "Email y contraseña requeridos" };
 
-  // 1) Superadmin / platform
+  // 1) Superadmin / platform (findUnique solo acepta el campo único email)
   const platformUser = await prisma.platformUser.findUnique({
-    where: { email: normalizedEmail, status: "active" },
+    where: { email: normalizedEmail },
   });
-  if (platformUser && (await compare(password, platformUser.passwordHash))) {
+  if (platformUser?.status === "active" && (await compare(password, platformUser.passwordHash))) {
     return { context: "platform" };
   }
 

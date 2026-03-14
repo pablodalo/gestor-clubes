@@ -36,6 +36,9 @@ export function LoginFormUnified() {
           router.refresh();
           return;
         }
+        setError(res?.error ?? "Error al iniciar sesión.");
+        setLoading(false);
+        return;
       } else if (resolved.context === "tenant") {
         const res = await signIn("tenant", {
           email,
@@ -62,9 +65,9 @@ export function LoginFormUnified() {
         }
       }
 
-      setError("Error al iniciar sesión.");
-    } catch {
-      setError("Error al iniciar sesión.");
+      setError("Credenciales incorrectas.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al iniciar sesión.");
     }
     setLoading(false);
   }
