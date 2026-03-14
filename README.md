@@ -5,6 +5,8 @@ SaaS multi-tenant white-label para operar múltiples clubes desde una sola base 
 **Repo:** https://github.com/pablodalo/gestor-clubes  
 **Vercel:** https://gestor-clubes.vercel.app
 
+Última actualización: código en rama `main`.
+
 ---
 
 ## Stack
