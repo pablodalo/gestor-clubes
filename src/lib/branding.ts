@@ -43,29 +43,35 @@ export async function getTenantBranding(
   tenantIdentifier: string,
   by: "slug" | "id" = "slug"
 ): Promise<TenantBrandingData> {
-  const tenant = await prisma.tenant.findFirst({
-    where: by === "slug" ? { slug: tenantIdentifier } : { id: tenantIdentifier },
-    include: { branding: true },
-  });
-  if (!tenant?.branding) return { ...DEFAULT_BRANDING, appName: tenant?.name ?? DEFAULT_BRANDING.appName };
-  const b = tenant.branding;
-  return {
-    appName: b.appName ?? DEFAULT_BRANDING.appName,
-    shortName: b.shortName ?? DEFAULT_BRANDING.shortName,
-    logoUrl: b.logoUrl,
-    iconUrl: b.iconUrl,
-    faviconUrl: b.faviconUrl,
-    primaryColor: b.primaryColor ?? DEFAULT_BRANDING.primaryColor,
-    secondaryColor: b.secondaryColor ?? DEFAULT_BRANDING.secondaryColor,
-    accentColor: b.accentColor ?? DEFAULT_BRANDING.accentColor,
-    backgroundColor: b.backgroundColor,
-    fontFamily: b.fontFamily ?? DEFAULT_BRANDING.fontFamily,
-    radiusScale: b.radiusScale ?? DEFAULT_BRANDING.radiusScale,
-    darkModeDefault: b.darkModeDefault,
-    loginTitle: b.loginTitle,
-    loginSubtitle: b.loginSubtitle,
-    portalBannerUrl: b.portalBannerUrl,
-  };
+  try {
+    const tenant = await prisma.tenant.findFirst({
+      where: by === "slug" ? { slug: tenantIdentifier } : { id: tenantIdentifier },
+      include: { branding: true },
+    });
+    if (!tenant?.branding) {
+      return { ...DEFAULT_BRANDING, appName: tenant?.name ?? DEFAULT_BRANDING.appName };
+    }
+    const b = tenant.branding;
+    return {
+      appName: b.appName ?? DEFAULT_BRANDING.appName,
+      shortName: b.shortName ?? DEFAULT_BRANDING.shortName,
+      logoUrl: b.logoUrl,
+      iconUrl: b.iconUrl,
+      faviconUrl: b.faviconUrl,
+      primaryColor: b.primaryColor ?? DEFAULT_BRANDING.primaryColor,
+      secondaryColor: b.secondaryColor ?? DEFAULT_BRANDING.secondaryColor,
+      accentColor: b.accentColor ?? DEFAULT_BRANDING.accentColor,
+      backgroundColor: b.backgroundColor,
+      fontFamily: b.fontFamily ?? DEFAULT_BRANDING.fontFamily,
+      radiusScale: b.radiusScale ?? DEFAULT_BRANDING.radiusScale,
+      darkModeDefault: b.darkModeDefault,
+      loginTitle: b.loginTitle,
+      loginSubtitle: b.loginSubtitle,
+      portalBannerUrl: b.portalBannerUrl,
+    };
+  } catch {
+    return { ...DEFAULT_BRANDING };
+  }
 }
 
 /**
