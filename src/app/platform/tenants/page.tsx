@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 
 export default async function TenantsListPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user) redirect("/platform/login");
+  if (!session?.user) redirect("/");
   const ctx = (session as unknown as { context?: string }).context;
-  if (ctx !== "platform") redirect("/platform/login");
+  if (ctx !== "platform") redirect("/");
 
   const tenants = await getTenantsList();
 

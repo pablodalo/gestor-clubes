@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 import type { TenantContext } from "@/lib/tenant";
 
 const nav = (slug: string) => [
-  { href: `/portal/${slug}`, label: "Inicio" },
-  { href: `/portal/${slug}/profile`, label: "Mi perfil" },
-  { href: `/portal/${slug}/movements`, label: "Mis movimientos" },
-  { href: `/portal/${slug}/tickets`, label: "Tickets" },
+  { href: `/portal/socios/${slug}`, label: "Inicio" },
+  { href: `/portal/socios/${slug}/profile`, label: "Mi perfil" },
+  { href: `/portal/socios/${slug}/movements`, label: "Mis movimientos" },
+  { href: `/portal/socios/${slug}/tickets`, label: "Tickets" },
 ];
 
 export function PortalShell({
@@ -48,7 +48,7 @@ export function PortalShell({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => signOut({ callbackUrl: `/portal/${slug}/login` })}
+            onClick={() => signOut({ callbackUrl: `/portal/socios/${slug}/login` })}
           >
             Salir
           </Button>

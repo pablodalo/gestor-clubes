@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
 
-export default function PortalLoginPage() {
+export default function PortalSociosLoginPage() {
   const params = useParams();
   const tenantSlug = (params?.tenantSlug as string) ?? "";
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function PortalLoginPage() {
         setLoading(false);
         return;
       }
-      router.push(`/portal/${tenantSlug}`);
+      router.push(`/portal/socios/${tenantSlug}`);
       router.refresh();
     } catch {
       setError("Error al iniciar sesión.");
@@ -79,7 +79,7 @@ export default function PortalLoginPage() {
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link href="/portal">Elegir otro club</Link>
+            <Link href="/portal">Elegir otro club</Link> · <Link href="/">Inicio</Link>
           </p>
         </CardContent>
       </Card>

@@ -9,7 +9,7 @@ type Props = {
   params: Promise<{ tenantSlug: string }>;
 };
 
-export default async function PortalDashboardLayout({ children, params }: Props) {
+export default async function PortalSociosDashboardLayout({ children, params }: Props) {
   const { tenantSlug } = await params;
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) notFound();
@@ -23,7 +23,7 @@ export default async function PortalDashboardLayout({ children, params }: Props)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">
-          <a href={`/portal/${tenantSlug}/login`} className="text-primary hover:underline">
+          <a href={`/portal/socios/${tenantSlug}/login`} className="text-primary hover:underline">
             Iniciar sesión como socio
           </a>
         </p>

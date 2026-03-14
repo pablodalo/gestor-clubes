@@ -8,7 +8,7 @@ type Props = {
   params: Promise<{ tenantSlug: string }>;
 };
 
-export default async function PortalLayout({ children, params }: Props) {
+export default async function PortalSociosLayout({ children, params }: Props) {
   const { tenantSlug } = await params;
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) notFound();

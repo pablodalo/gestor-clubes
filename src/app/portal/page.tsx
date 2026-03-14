@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function PortalEntryPage() {
   const tenants = await prisma.tenant.findMany({
     where: { status: "active" },
@@ -18,7 +20,7 @@ export default async function PortalEntryPage() {
         {tenants.map((t) => (
           <li key={t.slug}>
             <Link
-              href={`/portal/${t.slug}/login`}
+              href={`/portal/socios/${t.slug}/login`}
               className="text-primary hover:underline font-medium"
             >
               {t.name}

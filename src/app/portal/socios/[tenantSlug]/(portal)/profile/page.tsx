@@ -2,7 +2,7 @@ import { getTenantBySlug } from "@/lib/tenant";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
-export default async function PortalProfilePage({ params }: Props) {
+export default async function PortalSociosProfilePage({ params }: Props) {
   const { tenantSlug } = await params;
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) return null;

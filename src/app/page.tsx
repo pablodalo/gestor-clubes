@@ -1,32 +1,16 @@
-import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { LoginFormUnified } from "@/components/login-form-unified";
 
-export default function HomePage() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-3xl font-bold">Gestor Clubes</h1>
-      <p className="text-muted-foreground text-center max-w-md">
-        Plataforma SaaS multi-tenant para gestión de clubes. Elige el área de acceso.
-      </p>
-      <div className="flex gap-4">
-        <Link
-          href="/platform/login"
-          className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Superadmin
-        </Link>
-        <Link
-          href="/app"
-          className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
-        >
-          Panel del club
-        </Link>
-        <Link
-          href="/portal"
-          className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
-        >
-          Portal de socios
-        </Link>
-      </div>
-    </div>
-  );
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+  if (session?.user) {
+    const ctx = (session as unknown as { context?: string }).context;
+    const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
+    if (ctx === "platform") redirect("/platform");
+    if (ctx === "tenant" && tenantSlug) redirect(`/app/${tenantSlug}`);
+    if (ctx === "member" && tenantSlug) redirect(`/portal/socios/${tenantSlug}`);
+  }
+  return <LoginFormUnified />;
 }

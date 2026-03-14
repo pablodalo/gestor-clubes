@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function AppEntryPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user) redirect("/platform/login");
+  if (!session?.user) redirect("/");
   const ctx = (session as unknown as { context?: string }).context;
   const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
 
@@ -45,7 +47,7 @@ export default async function AppEntryPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
       <p className="text-muted-foreground">Iniciá sesión en el panel del club.</p>
-      <Link href="/platform/login" className="text-primary hover:underline">
+      <Link href="/" className="text-primary hover:underline">
         Ir a login
       </Link>
     </div>

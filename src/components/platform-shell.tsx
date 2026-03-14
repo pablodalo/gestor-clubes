@@ -35,7 +35,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => signOut({ callbackUrl: "/platform/login" })}
+            onClick={() => signOut({ callbackUrl: "/" })}
           >
             Salir
           </Button>

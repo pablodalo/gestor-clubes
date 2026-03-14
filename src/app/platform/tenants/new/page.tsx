@@ -6,9 +6,9 @@ import { TenantForm } from "@/features/tenants/tenant-form";
 
 export default async function NewTenantPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user) redirect("/platform/login");
+  if (!session?.user) redirect("/");
   const ctx = (session as unknown as { context?: string }).context;
-  if (ctx !== "platform") redirect("/platform/login");
+  if (ctx !== "platform") redirect("/");
 
   return (
     <PlatformShell>

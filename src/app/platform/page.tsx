@@ -9,11 +9,11 @@ export default async function PlatformPage() {
   try {
     session = await getServerSession(authOptions);
   } catch {
-    redirect("/platform/login?error=session");
+    redirect("/?error=session");
   }
-  if (!session?.user) redirect("/platform/login");
+  if (!session?.user) redirect("/");
   const ctx = (session as unknown as { context?: string }).context;
-  if (ctx !== "platform") redirect("/platform/login");
+  if (ctx !== "platform") redirect("/");
 
   return (
     <PlatformShell>
