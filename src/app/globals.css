@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 20% 98%;
+    --foreground: 220 20% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 20% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 174 63% 31%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 174 63% 31%;
-    --radius: 0.5rem;
+    --popover-foreground: 220 20% 12%;
+    --primary: 174 58% 32%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 25% 94%;
+    --secondary-foreground: 220 20% 18%;
+    --muted: 210 25% 94%;
+    --muted-foreground: 220 12% 46%;
+    --accent: 210 25% 94%;
+    --accent-foreground: 220 20% 18%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 28% 90%;
+    --input: 214 28% 90%;
+    --ring: 174 58% 32%;
+    --radius: 0.625rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 174 63% 31%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 174 63% 31%;
+    --background: 222 28% 8%;
+    --foreground: 210 20% 96%;
+    --card: 222 28% 11%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 28% 11%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 174 50% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 218 25% 18%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 218 25% 18%;
+    --muted-foreground: 215 18% 62%;
+    --accent: 218 25% 18%;
+    --accent-foreground: 210 20% 96%;
+    --destructive: 0 55% 45%;
+    --destructive-foreground: 210 20% 96%;
+    --border: 218 25% 22%;
+    --input: 218 25% 22%;
+    --ring: 174 50% 42%;
   }
 }
 
@@ -56,4 +56,12 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Fondo sutil para pantallas de login */
+.login-page-bg {
+  background: linear-gradient(160deg, hsl(210 25% 96%) 0%, hsl(174 30% 94%) 100%);
+}
+.dark .login-page-bg {
+  background: linear-gradient(160deg, hsl(222 28% 10%) 0%, hsl(222 35% 8%) 100%);
 }

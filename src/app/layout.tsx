@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 /** Evita pre-render en build: las páginas que usan Prisma se generan en runtime (no requiere DB en build). */
 export const dynamic = "force-dynamic";
@@ -20,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={plusJakarta.variable + " font-sans antialiased"}>
         <Providers>{children}</Providers>
       </body>
     </html>

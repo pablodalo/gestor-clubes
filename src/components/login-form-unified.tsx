@@ -68,18 +68,25 @@ export function LoginFormUnified() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Gestor Clubes</CardTitle>
-          <CardDescription>
-            Un solo acceso. Superadmin sin club; panel o portal con slug del club.
+    <div className="login-page-bg min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-0 shadow-xl shadow-primary/5">
+        <CardHeader className="space-y-1 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground text-lg font-semibold">
+              GC
+            </span>
+            <CardTitle className="text-2xl tracking-tight">Gestor Clubes</CardTitle>
+          </div>
+          <CardDescription className="text-muted-foreground">
+            Un solo acceso: sin club para Superadmin; con slug para panel del club o portal de socios.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">{error}</p>
+              <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 px-3 py-2 rounded-md">
+                {error}
+              </p>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -90,6 +97,7 @@ export function LoginFormUnified() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
@@ -100,6 +108,7 @@ export function LoginFormUnified() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
@@ -107,15 +116,16 @@ export function LoginFormUnified() {
               <Input
                 id="club"
                 type="text"
-                placeholder="demo-club (dejar vacío para Superadmin)"
+                placeholder="ej. demo-club — vacío = Superadmin"
                 value={clubSlug}
                 onChange={(e) => setClubSlug(e.target.value)}
+                className="h-10"
               />
               <p className="text-xs text-muted-foreground">
-                Vacío = Superadmin. Con slug = panel del club o portal de socios.
+                Dejá vacío para Superadmin. Con slug entrás al panel del club o al portal de socios.
               </p>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full h-10 font-medium" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
