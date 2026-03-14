@@ -106,6 +106,8 @@ npx prisma db seed
 
 Si algo falla, revisá **Deployments** en Vercel → último deploy → **Building** o **Functions** para ver errores.
 
+**Log de errores:** En **/platform/errors** (solo platform) podés ver el listado de excepciones con stack completo. La tabla `ErrorLog` se crea con `npx prisma db push`; si no existe, la app sigue funcionando y solo no se guardan errores para esa vista.
+
 ---
 
 ## 5. Probar si Vercel tiene conexión a PostgreSQL

@@ -10,6 +10,7 @@ const nav = [
   { href: "/platform", label: "Dashboard" },
   { href: "/platform/tenants", label: "Tenants" },
   { href: "/platform/audit", label: "Auditoría" },
+  { href: "/platform/errors", label: "Errores" },
 ];
 
 export function PlatformShell({ children }: { children: React.ReactNode }) {

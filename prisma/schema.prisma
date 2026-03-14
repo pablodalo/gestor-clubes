@@ -430,6 +430,19 @@ model AuditLog {
   @@index([actorType, actorId])
 }
 
+// Log de excepciones para diagnóstico (solo platform, sin tenant)
+model ErrorLog {
+  id        String   @id @default(cuid())
+  message   String
+  digest    String?
+  context   String?
+  path      String?
+  stack     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model QrScanLog {
   id        String   @id @default(cuid())
   tenantId  String
