@@ -83,9 +83,9 @@ export function PlatformUserFormDialog({ open, onOpenChange, onSuccess, edit }: 
     if (errorsPerm) permissions.push(PLATFORM_PERMISSION_KEYS.errors_read);
 
     if (edit) {
+      // Email no se envía al editar (campo disabled no va en el submit); el backend mantiene el actual
       const result = await updatePlatformUser(edit.id, {
         name,
-        email,
         password: password || undefined,
         role: role as "platform_admin" | "support_agent" | "billing_admin",
         permissions,
