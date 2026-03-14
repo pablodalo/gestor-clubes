@@ -1,7 +1,6 @@
 "use server";
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { assertPlatformSession, validateTenantIdExists } from "@/lib/server-context";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/server/audit";
 import { z } from "zod";
@@ -25,10 +24,14 @@ export async function updateTenantBranding(
   tenantId: string,
   input: z.infer<typeof updateBrandingSchema>
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return { error: "No autorizado" };
-  const ctx = (session as unknown as { context?: string }).context;
-  if (ctx !== "platform") return { error: "Solo superadmin puede editar branding" };
+  let session;
+  try {
+    session = await assertPlatformSession();
+  } catch {
+    return { error: "Solo superadmin puede editar branding" };
+  }
+  const ok = await validateTenantIdExists(tenantId);
+  if (!ok) return { error: "Tenant no encontrado" };
 
   const parsed = updateBrandingSchema.safeParse(input);
   if (!parsed.success) return { error: "Datos inválidos" };
@@ -43,7 +46,7 @@ export async function updateTenantBranding(
   await createAuditLog({
     tenantId: null,
     actorType: "platform_user",
-    actorId: (session as unknown as { userId: string }).userId,
+    actorId: session.userId,
     action: "branding.update",
     entityName: "TenantBranding",
     entityId: branding.id,

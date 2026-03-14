@@ -1,5 +1,9 @@
 import { getTenantBySlug } from "@/lib/tenant";
+import { getTenantUserPermissions } from "@/lib/rbac";
+import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
+import { MembersTable } from "@/features/members/members-table";
+import { NoPermissionMessage } from "@/components/no-permission";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -8,46 +12,36 @@ export default async function MembersPage({ params }: Props) {
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) return null;
 
+  const permissions = await getTenantUserPermissions();
+  const canRead = permissions === null || permissions.has(PERMISSION_KEYS.members_read);
+  if (!canRead) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Socios</h1>
+        <NoPermissionMessage message="No tenés permiso para ver el listado de socios." />
+      </div>
+    );
+  }
+
+  const canCreate = permissions === null || permissions.has(PERMISSION_KEYS.members_create);
+  const canUpdate = permissions === null || permissions.has(PERMISSION_KEYS.members_update);
+  const canDelete = permissions === null || permissions.has(PERMISSION_KEYS.members_delete);
+
   const members = await prisma.member.findMany({
     where: { tenantId: tenant.id },
-    orderBy: { lastName: "asc" },
-    take: 50,
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    take: 100,
   });
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Socios — {tenant.name}</h1>
-      <p className="text-muted-foreground mt-1">Listado de socios (base).</p>
-      <div className="mt-6 rounded-md border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="p-4 text-left font-medium">Nº</th>
-              <th className="p-4 text-left font-medium">Nombre</th>
-              <th className="p-4 text-left font-medium">Email</th>
-              <th className="p-4 text-left font-medium">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                  No hay socios cargados.
-                </td>
-              </tr>
-            ) : (
-              members.map((m) => (
-                <tr key={m.id} className="border-b hover:bg-muted/30">
-                  <td className="p-4 font-mono">{m.memberNumber}</td>
-                  <td className="p-4">{m.firstName} {m.lastName}</td>
-                  <td className="p-4 text-muted-foreground">{m.email ?? "—"}</td>
-                  <td className="p-4">{m.status}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-6">
+      <MembersTable
+        tenantSlug={tenantSlug}
+        members={members}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+      />
     </div>
   );
 }

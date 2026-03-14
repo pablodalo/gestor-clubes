@@ -33,10 +33,12 @@ export default async function PlatformPage() {
             <h2 className="font-semibold">Usuarios de plataforma</h2>
             <p className="text-sm text-muted-foreground mt-1">Próximamente</p>
           </div>
-          <div className="rounded-lg border bg-card p-6 shadow-sm opacity-75">
-            <h2 className="font-semibold">Auditoría</h2>
-            <p className="text-sm text-muted-foreground mt-1">Próximamente</p>
-          </div>
+          <Link href="/platform/audit">
+            <div className="rounded-lg border bg-card p-6 shadow-sm hover:shadow-md hover:border-primary/20 transition-all hover:bg-primary/5">
+              <h2 className="font-semibold">Auditoría</h2>
+              <p className="text-sm text-muted-foreground mt-1">Registro de acciones</p>
+            </div>
+          </Link>
         </div>
       </div>
     </PlatformShell>

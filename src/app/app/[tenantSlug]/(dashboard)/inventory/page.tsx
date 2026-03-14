@@ -1,5 +1,15 @@
 import { getTenantBySlug } from "@/lib/tenant";
+import { getTenantUserPermissions } from "@/lib/rbac";
+import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
+import { DataTable, type DataTableColumn } from "@/components/data-table";
+import { Badge } from "@/components/ui/badge";
+import { ListPageLayout } from "@/components/list-page-layout";
+import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
+import { NoPermissionMessage } from "@/components/no-permission";
+import { Package } from "lucide-react";
+
+type ItemWithLot = Awaited<ReturnType<typeof prisma.inventoryItem.findMany>>[number];
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -8,47 +18,39 @@ export default async function InventoryPage({ params }: Props) {
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) return null;
 
+  const permissions = await getTenantUserPermissions();
+  const canRead = permissions === null || permissions.has(PERMISSION_KEYS.inventory_read);
+  if (!canRead) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Inventario</h1>
+        <NoPermissionMessage message="No tenés permiso para ver el inventario." />
+      </div>
+    );
+  }
+
   const items = await prisma.inventoryItem.findMany({
     where: { tenantId: tenant.id },
     include: { lot: true },
     orderBy: { code: "asc" },
-    take: 50,
+    take: 100,
   });
 
+  const columns: DataTableColumn<ItemWithLot>[] = [
+    { key: "code", header: "Código", render: (i) => <span className="font-mono font-medium text-foreground">{i.code}</span> },
+    { key: "lot", header: "Lote", render: (i) => <span className="text-muted-foreground">{i.lot.code}</span> },
+    { key: "quantityCurrent", header: "Cantidad", render: (i) => String(i.quantityCurrent) },
+    { key: "status", header: "Estado", render: (i) => <Badge variant={getStatusVariant(i.status)}>{getStatusLabel(i.status) ?? i.status}</Badge> },
+  ];
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Inventario — {tenant.name}</h1>
-      <p className="text-muted-foreground mt-1">Items de inventario.</p>
-      <div className="mt-6 rounded-md border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="p-4 text-left font-medium">Código</th>
-              <th className="p-4 text-left font-medium">Lote</th>
-              <th className="p-4 text-left font-medium">Cantidad</th>
-              <th className="p-4 text-left font-medium">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                  No hay ítems en inventario.
-                </td>
-              </tr>
-            ) : (
-              items.map((item) => (
-                <tr key={item.id} className="border-b hover:bg-muted/30">
-                  <td className="p-4 font-mono">{item.code}</td>
-                  <td className="p-4">{item.lot.code}</td>
-                  <td className="p-4">{String(item.quantityCurrent)}</td>
-                  <td className="p-4">{item.status}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <ListPageLayout title="Inventario" description="Ítems de inventario.">
+      <DataTable
+        columns={columns}
+        data={items}
+        keyExtractor={(i) => i.id}
+        emptyState={{ icon: Package, title: "Sin ítems", description: "No hay ítems en inventario." }}
+      />
+    </ListPageLayout>
   );
 }

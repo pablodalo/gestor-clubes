@@ -7,25 +7,31 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TenantContext } from "@/lib/tenant";
 
+/** Permiso requerido para cada ítem; sin permiso = siempre visible (ej. Dashboard). */
 const nav = (slug: string) => [
-  { href: `/app/${slug}`, label: "Dashboard" },
-  { href: `/app/${slug}/members`, label: "Socios" },
-  { href: `/app/${slug}/locations`, label: "Ubicaciones" },
-  { href: `/app/${slug}/lots`, label: "Lotes" },
-  { href: `/app/${slug}/inventory`, label: "Inventario" },
+  { href: `/app/${slug}`, label: "Dashboard", permission: undefined as string | undefined },
+  { href: `/app/${slug}/members`, label: "Socios", permission: "members.read" },
+  { href: `/app/${slug}/locations`, label: "Ubicaciones", permission: "inventory.read" },
+  { href: `/app/${slug}/lots`, label: "Lotes", permission: "lots.read" },
+  { href: `/app/${slug}/inventory`, label: "Inventario", permission: "inventory.read" },
+  { href: `/app/${slug}/tickets`, label: "Tickets", permission: "tickets.read" },
 ];
 
 export function AppShell({
   tenant,
   session,
+  permissions,
   children,
 }: {
   tenant: TenantContext;
   session: unknown;
+  /** Permisos del usuario (keys). Si null = platform, mostrar todo. */
+  permissions: Set<string> | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const links = nav(tenant.slug);
+  const allowed = (key: string | undefined) => key == null || permissions === null || permissions.has(key);
+  const links = nav(tenant.slug).filter((item) => allowed(item.permission));
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

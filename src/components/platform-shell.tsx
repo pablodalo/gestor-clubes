@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { href: "/platform", label: "Dashboard" },
   { href: "/platform/tenants", label: "Tenants" },
+  { href: "/platform/audit", label: "Auditoría" },
 ];
 
 export function PlatformShell({ children }: { children: React.ReactNode }) {

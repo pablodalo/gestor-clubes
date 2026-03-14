@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getTenantUserPermissions } from "@/lib/rbac";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 
@@ -33,5 +34,10 @@ export default async function TenantDashboardLayout({ children, params }: Props)
     );
   }
 
-  return <AppShell tenant={tenant} session={session}>{children}</AppShell>;
+  const permissions = await getTenantUserPermissions();
+  return (
+    <AppShell tenant={tenant} session={session} permissions={permissions}>
+      {children}
+    </AppShell>
+  );
 }

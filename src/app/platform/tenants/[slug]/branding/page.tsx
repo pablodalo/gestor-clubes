@@ -4,8 +4,14 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform-shell";
 import { getTenantBySlug } from "@/actions/tenants";
-import { Button } from "@/components/ui/button";
 import { BrandingForm } from "@/features/branding/branding-form";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -22,12 +28,30 @@ export default async function TenantBrandingPage({ params }: Props) {
 
   return (
     <PlatformShell>
-      <div className="p-6">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/platform/tenants/${slug}`}>← {tenant.name}</Link>
-        </Button>
-        <h1 className="text-2xl font-bold mt-4">Branding: {tenant.name}</h1>
-        <p className="text-muted-foreground mt-1">Personalización visual del tenant.</p>
+      <div className="space-y-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <Link href="/platform/tenants" className="transition-colors hover:text-foreground">
+                Tenants
+              </Link>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <Link href={`/platform/tenants/${slug}`} className="transition-colors hover:text-foreground">
+                {tenant.name}
+              </Link>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Branding</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Branding: {tenant.name}</h1>
+          <p className="text-muted-foreground mt-1">Personalización visual del tenant.</p>
+        </div>
         <BrandingForm tenantId={tenant.id} initial={branding} />
       </div>
     </PlatformShell>

@@ -1,17 +1,19 @@
 import "@/lib/env";
+import { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireInternalSecret } from "@/lib/internal-api";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/health
- * Prueba en un solo request:
- * 1. Variables de entorno (DATABASE_URL, NEXTAUTH_*)
- * 2. Conexión real a PostgreSQL (lectura + escritura)
- * Útil para verificar el deploy en Vercel y que la DB está bien configurada.
+ * Prueba en un solo request: env y conexión a PostgreSQL.
+ * En producción, si INTERNAL_API_SECRET está definido, requiere header x-internal-secret.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const unauth = requireInternalSecret(request);
+  if (unauth) return unauth;
   const hasDbUrl = !!(process.env.DATABASE_URL || process.env.dbgc_DATABASE_URL);
   const hasAuthUrl = !!(process.env.NEXTAUTH_URL || process.env.dbgc_NEXTAUTH_URL);
   const hasAuthSecret = !!(process.env.NEXTAUTH_SECRET || process.env.dbgc_NEXTAUTH_SECRET);

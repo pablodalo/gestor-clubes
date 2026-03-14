@@ -1,5 +1,9 @@
 import { getTenantBySlug } from "@/lib/tenant";
+import { getTenantUserPermissions } from "@/lib/rbac";
+import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
+import { NoPermissionMessage } from "@/components/no-permission";
+import { LotsTable } from "@/features/lots/lots-table";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -8,43 +12,40 @@ export default async function LotsPage({ params }: Props) {
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) return null;
 
-  const lots = await prisma.inventoryLot.findMany({
-    where: { tenantId: tenant.id },
-    orderBy: { code: "asc" },
-  });
+  const permissions = await getTenantUserPermissions();
+  const canRead = permissions === null || permissions.has(PERMISSION_KEYS.lots_read);
+  if (!canRead) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Lotes</h1>
+        <NoPermissionMessage message="No tenés permiso para ver lotes." />
+      </div>
+    );
+  }
+
+  const canCreate = permissions === null || permissions.has(PERMISSION_KEYS.lots_create);
+
+  const [lots, locations] = await Promise.all([
+    prisma.inventoryLot.findMany({
+      where: { tenantId: tenant.id },
+      include: { _count: { select: { items: true } } },
+      orderBy: { code: "asc" },
+    }),
+    prisma.location.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Lotes — {tenant.name}</h1>
-      <p className="text-muted-foreground mt-1">Lotes de inventario.</p>
-      <div className="mt-6 rounded-md border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="p-4 text-left font-medium">Código</th>
-              <th className="p-4 text-left font-medium">Descripción</th>
-              <th className="p-4 text-left font-medium">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lots.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="p-8 text-center text-muted-foreground">
-                  No hay lotes.
-                </td>
-              </tr>
-            ) : (
-              lots.map((lot) => (
-                <tr key={lot.id} className="border-b hover:bg-muted/30">
-                  <td className="p-4 font-mono">{lot.code}</td>
-                  <td className="p-4">{lot.description ?? "—"}</td>
-                  <td className="p-4">{lot.status}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-6">
+      <LotsTable
+        tenantSlug={tenantSlug}
+        lots={lots}
+        locations={locations}
+        canCreate={canCreate}
+      />
     </div>
   );
 }

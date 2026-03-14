@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { TenantBranding } from "@prisma/client";
 
 type Props = {
@@ -18,6 +25,8 @@ export function BrandingForm({ tenantId, initial }: Props) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fontFamily, setFontFamily] = useState(initial?.fontFamily ?? "system-ui");
+  const [radiusScale, setRadiusScale] = useState(initial?.radiusScale ?? "0.5");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,8 +41,8 @@ export function BrandingForm({ tenantId, initial }: Props) {
       secondaryColor: (formData.get("secondaryColor") as string) || null,
       accentColor: (formData.get("accentColor") as string) || null,
       backgroundColor: (formData.get("backgroundColor") as string) || null,
-      fontFamily: (formData.get("fontFamily") as string) || null,
-      radiusScale: (formData.get("radiusScale") as string) || null,
+      fontFamily: fontFamily || null,
+      radiusScale: radiusScale || null,
       darkModeDefault: formData.get("darkModeDefault") === "on",
       loginTitle: (formData.get("loginTitle") as string) || null,
       loginSubtitle: (formData.get("loginSubtitle") as string) || null,
@@ -109,32 +118,33 @@ export function BrandingForm({ tenantId, initial }: Props) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="fontFamily">Tipografía</Label>
-            <select
-              id="fontFamily"
-              name="fontFamily"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              defaultValue={initial?.fontFamily ?? "system-ui"}
-            >
-              <option value="system-ui">System UI</option>
-              <option value="Inter">Inter</option>
-              <option value="Roboto">Roboto</option>
-            </select>
+            <Label>Tipo de fuente</Label>
+            <Select value={fontFamily} onValueChange={setFontFamily}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="system-ui">System UI</SelectItem>
+                <SelectItem value="Inter">Inter</SelectItem>
+                <SelectItem value="Roboto">Roboto</SelectItem>
+                <SelectItem value="Plus Jakarta Sans">Plus Jakarta Sans</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="radiusScale">Radio de bordes</Label>
-            <select
-              id="radiusScale"
-              name="radiusScale"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              defaultValue={initial?.radiusScale ?? "0.5"}
-            >
-              <option value="0">0</option>
-              <option value="0.25">0.25</option>
-              <option value="0.5">0.5</option>
-              <option value="0.75">0.75</option>
-              <option value="1">1</option>
-            </select>
+            <Label>Radio de bordes</Label>
+            <Select value={radiusScale} onValueChange={setRadiusScale}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">0</SelectItem>
+                <SelectItem value="0.25">0.25</SelectItem>
+                <SelectItem value="0.5">0.5</SelectItem>
+                <SelectItem value="0.75">0.75</SelectItem>
+                <SelectItem value="1">1</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-2">
             <input
