@@ -19,6 +19,7 @@ model PlatformUser {
   name         String
   role         String   // platform_owner | platform_admin | support_agent | billing_admin
   status       String   @default("active") // active | suspended
+  permissions  Json?    // ["audit.read", "errors.read"] — platform_owner ignora, otros solo ven tenants + lo listado
   lastLoginAt  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

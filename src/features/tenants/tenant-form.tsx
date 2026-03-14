@@ -19,9 +19,8 @@ export function TenantForm() {
     setLoading(true);
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const name = formData.get("name") as string;
-    const slug = formData.get("slug") as string;
-    const result = await createTenant({ name, slug });
+    const name = (formData.get("name") as string).trim();
+    const result = await createTenant({ name });
     setLoading(false);
     if (result.error) {
       setError(result.error);
@@ -41,20 +40,10 @@ export function TenantForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre</Label>
+            <Label htmlFor="name">Nombre del club</Label>
             <Input id="name" name="name" placeholder="Mi Club" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="slug">Slug (URL)</Label>
-            <Input
-              id="slug"
-              name="slug"
-              placeholder="mi-club"
-              pattern="[a-z0-9-]+"
-              required
-            />
             <p className="text-xs text-muted-foreground">
-              Solo minúsculas, números y guiones. Ej: mi-club, club-123.
+              El identificador de la URL (slug) se genera automáticamente a partir del nombre.
             </p>
           </div>
         </CardContent>

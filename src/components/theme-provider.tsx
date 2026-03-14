@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
+import { ThemeProvider as ThemeProviderInner } from "@/components/theme-context";
 import type { TenantBrandingData } from "@/lib/branding";
-import { brandingToCssVariables } from "@/lib/branding";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -10,14 +9,14 @@ type ThemeProviderProps = {
   forceDark?: boolean;
 };
 
+/** Usa ThemeContext; defaultDark = forceDark ?? branding?.darkModeDefault */
 export function ThemeProvider({ children, branding, forceDark }: ThemeProviderProps) {
-  const vars = branding ? brandingToCssVariables(branding) : {};
-  const styleObj = Object.keys(vars).length ? (vars as unknown as React.CSSProperties) : undefined;
-  const rootClass = forceDark ? "dark" : branding?.darkModeDefault ? "dark" : "";
-
+  const defaultDark = forceDark ?? (branding?.darkModeDefault ?? false);
   return (
-    <div className={rootClass} style={styleObj}>
+    <ThemeProviderInner branding={branding} defaultDark={defaultDark}>
       {children}
-    </div>
+    </ThemeProviderInner>
   );
 }
+
+export { useThemeToggle } from "@/components/theme-context";

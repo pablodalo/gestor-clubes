@@ -13,6 +13,10 @@ export default async function PlatformErrorsPage() {
   const ctx = (session as unknown as { context?: string }).context;
   if (ctx !== "platform") redirect("/platform");
 
+  const { getPlatformAuth } = await import("@/lib/platform-auth");
+  const auth = await getPlatformAuth();
+  if (!auth?.canAccessErrors) redirect("/platform");
+
   const logs = await prisma.errorLog.findMany({
     orderBy: { createdAt: "desc" },
     take: 200,

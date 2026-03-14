@@ -4,17 +4,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { usePlatformAuth } from "@/components/platform-auth-provider";
 import { cn } from "@/lib/utils";
 
-const nav = [
-  { href: "/platform", label: "Dashboard" },
-  { href: "/platform/tenants", label: "Tenants" },
-  { href: "/platform/audit", label: "Auditoría" },
-  { href: "/platform/errors", label: "Errores" },
+const navItems = [
+  { href: "/platform", label: "Dashboard", show: true },
+  { href: "/platform/tenants", label: "Tenants", show: true },
+  { href: "/platform/audit", label: "Auditoría", permission: "canAccessAudit" as const },
+  { href: "/platform/errors", label: "Errores", permission: "canAccessErrors" as const },
+  { href: "/platform/users", label: "Usuarios", permission: "canAccessUsers" as const },
 ];
 
 export function PlatformShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const auth = usePlatformAuth();
+  const nav = navItems.filter(
+    (item) => item.show || (item.permission && auth?.[item.permission])
+  );
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-sm">
@@ -43,14 +50,17 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => signOut({ callbackUrl: "/" })}
-          >
-            Salir
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              Salir
+            </Button>
+          </div>
         </div>
       </header>
       <main className="flex-1 container max-w-6xl mx-auto px-4 py-6">{children}</main>

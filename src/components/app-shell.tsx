@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import type { TenantContext } from "@/lib/tenant";
 
@@ -69,6 +70,7 @@ export function AppShell({
               ))}
             </nav>
           </div>
+          <ThemeToggle className="shrink-0" />
           {isPlatformViewer ? (
             <Button variant="ghost" size="sm" asChild>
               <Link href="/platform">Volver a Platform</Link>

@@ -28,8 +28,6 @@ export default async function TenantDetailPage({ params }: Props) {
         <div className="rounded-lg border bg-card p-6 shadow-sm max-w-2xl">
           <h1 className="text-2xl font-bold">{tenant.name}</h1>
           <dl className="mt-4 grid gap-2 sm:grid-cols-2">
-            <dt className="text-muted-foreground">Slug</dt>
-            <dd className="font-mono">{tenant.slug}</dd>
             <dt className="text-muted-foreground">Estado</dt>
             <dd>{tenant.status}</dd>
             <dt className="text-muted-foreground">Zona horaria</dt>

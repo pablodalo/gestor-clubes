@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform-shell";
+import { getPlatformAuth } from "@/lib/platform-auth";
 
 export default async function PlatformPage() {
   let session;
@@ -14,6 +15,8 @@ export default async function PlatformPage() {
   if (!session?.user) redirect("/");
   const ctx = (session as unknown as { context?: string }).context;
   if (ctx !== "platform") redirect("/");
+
+  const auth = await getPlatformAuth();
 
   return (
     <PlatformShell>
@@ -29,16 +32,22 @@ export default async function PlatformPage() {
               <p className="text-sm text-muted-foreground mt-1">Gestionar clubes (tenants)</p>
             </div>
           </Link>
-          <div className="rounded-lg border bg-card p-6 shadow-sm opacity-75">
-            <h2 className="font-semibold">Usuarios de plataforma</h2>
-            <p className="text-sm text-muted-foreground mt-1">Próximamente</p>
-          </div>
-          <Link href="/platform/audit">
-            <div className="rounded-lg border bg-card p-6 shadow-sm hover:shadow-md hover:border-primary/20 transition-all hover:bg-primary/5">
-              <h2 className="font-semibold">Auditoría</h2>
-              <p className="text-sm text-muted-foreground mt-1">Registro de acciones</p>
-            </div>
-          </Link>
+          {auth?.canAccessUsers && (
+            <Link href="/platform/users">
+              <div className="rounded-lg border bg-card p-6 shadow-sm hover:shadow-md hover:border-primary/20 transition-all hover:bg-primary/5">
+                <h2 className="font-semibold">Usuarios de plataforma</h2>
+                <p className="text-sm text-muted-foreground mt-1">Gestionar usuarios y permisos</p>
+              </div>
+            </Link>
+          )}
+          {auth?.canAccessAudit && (
+            <Link href="/platform/audit">
+              <div className="rounded-lg border bg-card p-6 shadow-sm hover:shadow-md hover:border-primary/20 transition-all hover:bg-primary/5">
+                <h2 className="font-semibold">Auditoría</h2>
+                <p className="text-sm text-muted-foreground mt-1">Registro de acciones</p>
+              </div>
+            </Link>
+          )}
         </div>
       </div>
     </PlatformShell>

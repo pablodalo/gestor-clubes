@@ -31,6 +31,10 @@ export default async function AuditPage({
   const ctx = (session as unknown as { context?: string }).context;
   if (ctx !== "platform") redirect("/");
 
+  const { getPlatformAuth } = await import("@/lib/platform-auth");
+  const auth = await getPlatformAuth();
+  if (!auth?.canAccessAudit) redirect("/platform");
+
   const { page = "1", tenantId: filterTenantId } = await searchParams;
   const skip = (Math.max(1, parseInt(page, 10)) - 1) * PAGE_SIZE;
 

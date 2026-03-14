@@ -1,19 +1,10 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Building2 } from "lucide-react";
 import { PlatformShell } from "@/components/platform-shell";
 import { getTenantsList } from "@/actions/tenants";
-import { Button } from "@/components/ui/button";
-import { DataTable, type DataTableColumn } from "@/components/data-table";
-import { Badge } from "@/components/ui/badge";
-import { ListPageLayout } from "@/components/list-page-layout";
-import { ExportButtons } from "@/components/export-buttons";
-import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
+import { TenantsTable } from "@/features/tenants/tenants-table";
 import { logError } from "@/lib/server-log";
-
-type TenantRow = { id: string; name: string; slug: string; status: string; createdAt: Date };
 
 export default async function TenantsListPage() {
   try {
@@ -23,7 +14,7 @@ export default async function TenantsListPage() {
     if (ctx !== "platform") redirect("/");
 
     const tenants = await getTenantsList();
-    const rows: TenantRow[] = tenants.map((t) => ({
+    const rows = tenants.map((t) => ({
       id: t.id,
       name: t.name,
       slug: t.slug,
@@ -31,54 +22,10 @@ export default async function TenantsListPage() {
       createdAt: t.createdAt,
     }));
 
-    const columns: DataTableColumn<TenantRow>[] = [
-    { key: "name", header: "Nombre", render: (t) => <span className="font-medium text-foreground">{t.name}</span> },
-    { key: "slug", header: "Slug", render: (t) => <span className="font-mono text-muted-foreground">{t.slug}</span> },
-    { key: "status", header: "Estado", render: (t) => <Badge variant={getStatusVariant(t.status)}>{getStatusLabel(t.status) ?? t.status}</Badge> },
-    { key: "createdAt", header: "Creado", render: (t) => <span className="text-muted-foreground">{new Date(t.createdAt).toLocaleDateString("es-AR")}</span> },
-    {
-      key: "actions",
-      header: "",
-      align: "right",
-      className: "w-20",
-      render: (t) => (
-        <Button variant="ghost" size="sm" className="text-primary h-8" asChild>
-          <Link href={`/platform/tenants/${t.slug}`}>Ver</Link>
-        </Button>
-      ),
-    },
-    ];
-
-    const exportData = rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      slug: r.slug,
-      status: r.status,
-      createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
-    }));
-
     return (
       <PlatformShell>
-      <ListPageLayout
-        title="Tenants"
-        description="Clubes (tenants) de la plataforma."
-        actions={
-          <>
-            <ExportButtons data={exportData} filename="tenants" />
-            <Button asChild>
-              <Link href="/platform/tenants/new">Nuevo tenant</Link>
-            </Button>
-          </>
-        }
-      >
-        <DataTable
-          columns={columns}
-          data={rows}
-          keyExtractor={(t) => t.id}
-          emptyState={{ icon: Building2, title: "Sin tenants", description: 'Creá uno desde "Nuevo tenant".' }}
-        />
-      </ListPageLayout>
-    </PlatformShell>
+        <TenantsTable tenants={rows} />
+      </PlatformShell>
     );
   } catch (err) {
     logError("PlatformTenantsPage", err, "/platform/tenants");

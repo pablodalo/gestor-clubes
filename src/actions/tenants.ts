@@ -7,9 +7,20 @@ import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/server/audit";
 import { z } from "zod";
 
+function slugify(name: string): string {
+  const base = name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "club";
+  return base;
+}
+
 const createTenantSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
-  slug: z.string().min(1, "Slug requerido").regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones"),
   timezone: z.string().default("America/Argentina/Buenos_Aires"),
   locale: z.string().default("es-AR"),
   currency: z.string().default("ARS"),
@@ -24,15 +35,19 @@ export async function createTenant(input: CreateTenantInput) {
   if (ctx !== "platform") return { error: "Solo superadmin puede crear tenants" };
 
   const parsed = createTenantSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors?.slug?.[0] ?? "Datos inválidos" };
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors?.name?.[0] ?? "Datos inválidos" };
 
-  const existing = await prisma.tenant.findUnique({ where: { slug: parsed.data.slug } });
-  if (existing) return { error: "Ya existe un tenant con ese slug" };
+  let slug = slugify(parsed.data.name);
+  let suffix = 0;
+  while (await prisma.tenant.findUnique({ where: { slug } })) {
+    suffix += 1;
+    slug = `${slugify(parsed.data.name)}-${suffix}`;
+  }
 
   const tenant = await prisma.tenant.create({
     data: {
       name: parsed.data.name,
-      slug: parsed.data.slug,
+      slug,
       timezone: parsed.data.timezone,
       locale: parsed.data.locale,
       currency: parsed.data.currency,
@@ -46,6 +61,41 @@ export async function createTenant(input: CreateTenantInput) {
       shortName: tenant.name.slice(0, 2).toUpperCase(),
     },
   });
+
+  const OPERADOR_PERMISSION_KEYS = [
+    "members.read", "members.create", "members.update",
+    "inventory.read", "inventory.create", "inventory.move", "inventory.adjust",
+    "lots.read", "lots.create", "qr.generate", "qr.resolve",
+    "weighings.read", "weighings.create", "scales.manage",
+    "devices.read", "devices.manage", "reports.read",
+    "tickets.read", "tickets.manage",
+  ];
+  const permissions = await prisma.permission.findMany({ select: { id: true, key: true } });
+  const allPermIds = permissions.map((p) => p.id);
+  const operadorPermIds = permissions.filter((p) => OPERADOR_PERMISSION_KEYS.includes(p.key)).map((p) => p.id);
+
+  const roleAdmin = await prisma.role.create({
+    data: {
+      tenantId: tenant.id,
+      name: "tenant_admin",
+      description: "Administrador del club",
+      isSystem: true,
+    },
+  });
+  const roleOperador = await prisma.role.create({
+    data: {
+      tenantId: tenant.id,
+      name: "operador",
+      description: "Operador con acceso a socios, inventario, lotes y tickets",
+      isSystem: true,
+    },
+  });
+  for (const permId of allPermIds) {
+    await prisma.rolePermission.create({ data: { roleId: roleAdmin.id, permissionId: permId } });
+  }
+  for (const permId of operadorPermIds) {
+    await prisma.rolePermission.create({ data: { roleId: roleOperador.id, permissionId: permId } });
+  }
 
   await createAuditLog({
     tenantId: null,
@@ -102,6 +152,34 @@ export async function updateTenant(tenantId: string, input: z.infer<typeof updat
   revalidatePath("/platform/tenants");
   revalidatePath(`/platform/tenants/${tenant.slug}`);
   return { data: tenant };
+}
+
+export async function deleteTenant(tenantId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { error: "No autorizado" };
+  const ctx = (session as unknown as { context?: string }).context;
+  if (ctx !== "platform") return { error: "Solo superadmin puede eliminar tenants" };
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!tenant) return { error: "Tenant no encontrado" };
+
+  await prisma.rolePermission.deleteMany({ where: { role: { tenantId } } });
+  await prisma.role.deleteMany({ where: { tenantId } });
+  await prisma.tenant.delete({ where: { id: tenantId } });
+
+  await createAuditLog({
+    tenantId: null,
+    actorType: "platform_user",
+    actorId: (session as unknown as { userId: string }).userId,
+    action: "tenant.delete",
+    entityName: "Tenant",
+    entityId: tenantId,
+    beforeJson: JSON.stringify({ slug: tenant.slug, name: tenant.name }),
+  });
+
+  revalidatePath("/platform");
+  revalidatePath("/platform/tenants");
+  return { data: null };
 }
 
 export async function getTenantsList() {
