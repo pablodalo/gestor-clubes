@@ -49,6 +49,9 @@
     "zod": "^3.23.8",
     "next-auth": "^4.24.10"
   },
+  "overrides": {
+    "glob": "^10.4.5"
+  },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.9.0",

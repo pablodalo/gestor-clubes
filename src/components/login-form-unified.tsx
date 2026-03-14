@@ -93,6 +93,7 @@ export function LoginFormUnified() {
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="tu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -105,6 +106,7 @@ export function LoginFormUnified() {
               <Input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -116,6 +118,7 @@ export function LoginFormUnified() {
               <Input
                 id="club"
                 type="text"
+                autoComplete="off"
                 placeholder="ej. demo-club — vacío = Superadmin"
                 value={clubSlug}
                 onChange={(e) => setClubSlug(e.target.value)}

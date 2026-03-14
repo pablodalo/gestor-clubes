@@ -142,8 +142,10 @@ También podés usar por separado:
 ## 7. Node y calidad de build
 
 - El proyecto fija **Node 20.x** en `package.json` (`engines.node`). Vercel usa esa versión.
+- **Importante:** En Vercel → **Settings → General → Node.js Version** elegí **20.x**. Si tenés 24.x u otra, el build usará igual 20.x por `engines` pero verás un warning y se salteará el build cache. Con 20.x en Settings el warning desaparece y se reutiliza el cache.
 - Antes de push (opcional): `npm run typecheck` y `npm run lint`. El build en Vercel no falla por errores de tipo/lint salvo que los actives en `next.config.js`.
 - Si en producción faltan `NEXTAUTH_URL` o `NEXTAUTH_SECRET`, las rutas `/api/auth/*` responderán con error explícito pidiendo configurarlas en Vercel.
+- Para reducir vulnerabilidades: `npm audit` y `npm audit fix`. El proyecto incluye `overrides` para `glob` y `rimraf`; tras cambios en dependencias conviene ejecutar de nuevo `npm install` y `npm audit`.
 
 ## Resumen
 
