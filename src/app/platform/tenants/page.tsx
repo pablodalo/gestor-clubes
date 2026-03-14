@@ -10,25 +10,27 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
+import { logError } from "@/lib/server-log";
 
 type TenantRow = { id: string; name: string; slug: string; status: string; createdAt: Date };
 
 export default async function TenantsListPage() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) redirect("/");
-  const ctx = (session as unknown as { context?: string }).context;
-  if (ctx !== "platform") redirect("/");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) redirect("/");
+    const ctx = (session as unknown as { context?: string }).context;
+    if (ctx !== "platform") redirect("/");
 
-  const tenants = await getTenantsList();
-  const rows: TenantRow[] = tenants.map((t) => ({
-    id: t.id,
-    name: t.name,
-    slug: t.slug,
-    status: t.status,
-    createdAt: t.createdAt,
-  }));
+    const tenants = await getTenantsList();
+    const rows: TenantRow[] = tenants.map((t) => ({
+      id: t.id,
+      name: t.name,
+      slug: t.slug,
+      status: t.status,
+      createdAt: t.createdAt,
+    }));
 
-  const columns: DataTableColumn<TenantRow>[] = [
+    const columns: DataTableColumn<TenantRow>[] = [
     { key: "name", header: "Nombre", render: (t) => <span className="font-medium text-foreground">{t.name}</span> },
     { key: "slug", header: "Slug", render: (t) => <span className="font-mono text-muted-foreground">{t.slug}</span> },
     { key: "status", header: "Estado", render: (t) => <Badge variant={getStatusVariant(t.status)}>{getStatusLabel(t.status) ?? t.status}</Badge> },
@@ -44,10 +46,10 @@ export default async function TenantsListPage() {
         </Button>
       ),
     },
-  ];
+    ];
 
-  return (
-    <PlatformShell>
+    return (
+      <PlatformShell>
       <ListPageLayout
         title="Tenants"
         description="Clubes (tenants) de la plataforma."
@@ -65,5 +67,9 @@ export default async function TenantsListPage() {
         />
       </ListPageLayout>
     </PlatformShell>
-  );
+    );
+  } catch (err) {
+    logError("PlatformTenantsPage", err, "/platform/tenants");
+    throw err;
+  }
 }
