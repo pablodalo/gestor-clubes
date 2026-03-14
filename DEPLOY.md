@@ -139,6 +139,12 @@ También podés usar por separado:
 
 ---
 
+## 7. Node y calidad de build
+
+- El proyecto fija **Node 20.x** en `package.json` (`engines.node`). Vercel usa esa versión.
+- Antes de push (opcional): `npm run typecheck` y `npm run lint`. El build en Vercel no falla por errores de tipo/lint salvo que los actives en `next.config.js`.
+- Si en producción faltan `NEXTAUTH_URL` o `NEXTAUTH_SECRET`, las rutas `/api/auth/*` responderán con error explícito pidiendo configurarlas en Vercel.
+
 ## Resumen
 
 1. Variables en Vercel: `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`.

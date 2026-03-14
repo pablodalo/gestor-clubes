@@ -29,7 +29,7 @@ SaaS multi-tenant white-label para operar múltiples clubes desde una sola base 
 
 ## Requisitos
 
-- Node.js 18+
+- **Node.js 20.x** (recomendado; el proyecto fija `engines.node` en `package.json` para Vercel)
 - PostgreSQL
 - npm o pnpm
 
@@ -128,11 +128,22 @@ Abrir http://localhost:3000.
 5. **Build**  
    El proyecto usa `prisma generate` en el build (ver `vercel.json`). Asegurarse de que `DATABASE_URL` esté definida en Vercel para que el build no falle.
 
+6. **Calidad de deploy (recomendado)**  
+   En CI o antes de hacer push, ejecutar:
+   - `npm run typecheck` — comprueba tipos TypeScript sin emitir archivos.
+   - `npm run lint` — ESLint para Next.js.  
+   El build en Vercel no falla por errores de tipo o lint (están ignorados en `next.config.js`); conviene corregir errores y luego activar la comprobación en el build si se desea.
+
+7. **Variables requeridas en producción**  
+   Si `NEXTAUTH_URL` o `NEXTAUTH_SECRET` no están definidas en producción, las rutas de auth (`/api/auth/*`) fallarán con un error explícito. Configurarlas siempre en Vercel → Environment Variables.
+
 ## Scripts
 
 - `npm run dev` — Desarrollo
 - `npm run build` — Build producción
 - `npm run start` — Servir build
+- `npm run typecheck` — Verificar tipos TypeScript (`tsc --noEmit`)
+- `npm run lint` — ESLint (Next.js)
 - `npm run db:generate` — Generar cliente Prisma
 - `npm run db:push` — Sincronizar schema con la DB (sin migraciones)
 - `npm run db:migrate` — Aplicar migraciones (producción)

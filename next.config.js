@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Evita que el build falle por warnings de ESLint/TypeScript en Vercel
+  // En CI/Vercel: ejecutar "npm run typecheck" y "npm run lint" antes o en el build para calidad.
+  // ignoreDuringBuilds evita que un warning de lint/TS rompa el deploy; corregir errores y luego activar.
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
 };
