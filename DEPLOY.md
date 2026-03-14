@@ -108,6 +108,37 @@ Si algo falla, revisá **Deployments** en Vercel → último deploy → **Buildi
 
 ---
 
+## 5. Probar si Vercel tiene conexión a PostgreSQL
+
+Abrí en el navegador (reemplazá por la URL de tu proyecto):
+
+**https://gestor-clubes.vercel.app/api/health**
+
+Ese endpoint devuelve en un solo request:
+
+1. **env** – Si están definidas `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET` (o las versiones con prefijo `dbgc_`). No muestra los valores, solo "set" o "missing".
+2. **database** – Si la app logra conectar a PostgreSQL y escribir un registro de prueba.
+
+- Si **env** tiene algo "missing" → entrá a Vercel → **Settings → Environment Variables** y agregá las variables (ver sección 1). Después hacé **Redeploy** del último deployment.
+- Si **env** está todo "set" pero **database.ok** es `false` → la URL de la base está mal o las tablas no existen. Revisá que `DATABASE_URL` sea la connection string correcta de Neon y que alguien haya ejecutado `npx prisma db push` (y opcional `npx prisma db seed`) contra esa base al menos una vez.
+
+También podés usar por separado:
+
+- **GET /api/env-check** – Solo variables de entorno.
+- **GET /api/test-db** – Solo prueba de conexión y escritura en la DB.
+
+---
+
+## 6. Errores frecuentes en Vercel (qué está pasando)
+
+| Dónde ves el error | Qué suele ser | Qué hacer |
+|--------------------|----------------|-----------|
+| **Build falla** (Deployments → Building) | Falta `DATABASE_URL` en el build, o un error de TypeScript/Prisma. | Revisá el log del build. Si dice "env("DATABASE_URL")" o "schema not found", agregá `DATABASE_URL` en Vercel (Environment Variables) para el entorno que usás (Production/Preview). El build solo necesita que la variable exista; no conecta a la DB en build. |
+| **Deploy OK pero al abrir la app** "Application error" o pantalla de error | En runtime falta una variable o la DB no responde. | Abrí **/api/health**. Si `env` tiene "missing", agregá las variables en Vercel y redeployá. Si `database.ok` es false, corregí `DATABASE_URL` o ejecutá `prisma db push` contra esa base. |
+| **500 en /api/test-db o /api/health** con mensaje de Prisma | Conexión rechazada, SSL, o tablas no creadas. | La URL de Neon debe tener `?sslmode=require`. Las tablas tienen que existir: alguien tiene que haber corrido `npx prisma db push` contra la misma base que usa `DATABASE_URL`. |
+
+---
+
 ## Resumen
 
 1. Variables en Vercel: `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`.
