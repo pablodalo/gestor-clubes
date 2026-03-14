@@ -8,8 +8,11 @@ export type ErrorLogPayload = {
   stack?: string | null;
 };
 
+let p2021Warned = false;
+
 /**
  * Persiste un error en la tabla ErrorLog. No lanza; si falla solo hace console.error.
+ * Si la tabla no existe (P2021), solo avisa una vez para no llenar logs.
  */
 export async function recordErrorInDb(payload: ErrorLogPayload): Promise<void> {
   try {
@@ -23,6 +26,16 @@ export async function recordErrorInDb(payload: ErrorLogPayload): Promise<void> {
       },
     });
   } catch (e) {
-    console.error("[GESTOR] recordErrorInDb failed", e);
+    const code = e && typeof e === "object" && "code" in e ? (e as { code: string }).code : "";
+    if (code === "P2021" && !p2021Warned) {
+      p2021Warned = true;
+      console.warn(
+        "[GESTOR] ErrorLog: la tabla no existe. Ejecutá una vez: npx prisma db push (con DATABASE_URL de producción)."
+      );
+      return;
+    }
+    if (code !== "P2021") {
+      console.error("[GESTOR] recordErrorInDb failed", e);
+    }
   }
 }

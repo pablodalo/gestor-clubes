@@ -65,7 +65,7 @@ npx prisma db push
 npx prisma db seed
 ```
 
-- `db push`: crea/actualiza todas las tablas en Neon.
+- `db push`: crea/actualiza todas las tablas en Neon (incluye `ErrorLog` para /platform/errors). Si ya habías hecho push antes y luego se agregó el modelo ErrorLog, ejecutá de nuevo `npx prisma db push` para crear esa tabla.
 - `db seed`: inserta el usuario admin, tenants demo, socios, etc.
 
 **Opción B – Sin poner la URL en la terminal**
