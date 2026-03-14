@@ -6,6 +6,7 @@ import { PlatformShell } from "@/components/platform-shell";
 import { prisma } from "@/lib/prisma";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { AuditTenantFilter } from "@/features/audit/audit-tenant-filter";
 
 type AuditRow = {
   id: string;
@@ -76,21 +77,10 @@ export default async function AuditPage({
         title="Auditoría"
         description="Registro de acciones en la plataforma."
         toolbar={
-          <form method="get" className="flex items-center gap-2">
-            <label htmlFor="tenantId" className="text-sm text-muted-foreground whitespace-nowrap">Tenant</label>
-            <select
-              id="tenantId"
-              name="tenantId"
-              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-              defaultValue={filterTenantId ?? ""}
-              onChange={(e) => e.currentTarget.form?.submit()}
-            >
-              <option value="">Todos</option>
-              {tenants.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </form>
+          <AuditTenantFilter
+            tenants={tenants.map((t) => ({ id: t.id, name: t.name }))}
+            currentTenantId={filterTenantId ?? null}
+          />
         }
       >
         <DataTable
