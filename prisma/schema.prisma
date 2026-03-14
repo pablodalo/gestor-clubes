@@ -1,0 +1,448 @@
+// Gestor Clubes - Multi-tenant SaaS
+// Todas las tablas de negocio tienen tenantId. Platform users y Tenant son globales.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ GLOBAL (sin tenantId) ============
+
+model PlatformUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   // platform_owner | platform_admin | support_agent | billing_admin
+  status       String   @default("active") // active | suspended
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  status    String   @default("active") // active | suspended | trial
+  timezone  String   @default("America/Argentina/Buenos_Aires")
+  locale    String   @default("es-AR")
+  currency  String   @default("ARS")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branding   TenantBranding?
+  features   TenantFeature[]
+  users      User[]
+  members    Member[]
+  locations  Location[]
+  inventoryLots   InventoryLot[]
+  inventoryItems  InventoryItem[]
+  inventoryMovements InventoryMovement[]
+  scales     Scale[]
+  weighings  Weighing[]
+  devices    Device[]
+  alerts     Alert[]
+  tickets    Ticket[]
+  auditLogs  AuditLog[]
+  notifications Notification[]
+  qrScanLogs QrScanLog[]
+}
+
+model TenantBranding {
+  id              String   @id @default(cuid())
+  tenantId        String   @unique
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appName         String?
+  shortName       String?
+  logoUrl         String?
+  iconUrl         String?
+  faviconUrl      String?
+  primaryColor    String?  @default("#0f766e")
+  secondaryColor  String?
+  accentColor     String?
+  backgroundColor String?
+  fontFamily      String?  @default("system-ui")
+  radiusScale     String?  @default("0.5") // 0 | 0.25 | 0.5 | 0.75 | 1
+  darkModeDefault Boolean  @default(false)
+  loginTitle      String?
+  loginSubtitle   String?
+  portalBannerUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TenantFeature {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  moduleKey String   // e.g. "inventory", "weighings", "tickets"
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, moduleKey])
+  @@index([tenantId])
+}
+
+// ============ POR TENANT ============
+
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String   // tenant_admin | operador | cultivador | auditor | socio
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users         User[]
+  rolePermissions RolePermission[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique // tenants.read, members.create, etc.
+  name        String
+  description String?
+  module      String?
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  roleId       String
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model User {
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleId       String
+  role         Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  name         String
+  email        String
+  passwordHash String
+  status       String    @default("active")
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([roleId])
+}
+
+model Member {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberNumber   String
+  firstName      String
+  lastName       String
+  documentType   String?
+  documentNumber String?
+  birthDate      DateTime?
+  email          String?
+  phone          String?
+  status         String   @default("active")
+  category       String?
+  notes          String?
+  avatarUrl      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  account   MemberAccount?
+
+  @@unique([tenantId, memberNumber])
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model MemberAccount {
+  id           String   @id @default(cuid())
+  memberId     String   @unique
+  member       Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  email        String
+  passwordHash String
+  status       String   @default("active")
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Location {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  type           String   // zone | building | room | shelf
+  description    String?
+  parentLocationId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, parentLocationId])
+}
+
+model InventoryLot {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
+  description String?
+  status      String   @default("active")
+  locationId  String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items InventoryItem[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model InventoryItem {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lotId          String
+  lot            InventoryLot @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  code           String
+  qrUuid         String?  @unique
+  type           String?
+  unit           String?
+  quantityCurrent Decimal  @default(0) @db.Decimal(18, 4)
+  status         String   @default("active")
+  locationId     String?
+  metadataJson   String?  @map("metadata_json")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  movements InventoryMovement[]
+  weighings Weighing[]
+
+  @@index([tenantId])
+  @@index([lotId])
+  @@index([tenantId, status])
+}
+
+model InventoryMovement {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  itemId             String
+  item               InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  movementType       String   // in | out | transfer | adjust
+  quantity           Decimal  @db.Decimal(18, 4)
+  unit               String?
+  sourceLocationId   String?
+  targetLocationId  String?
+  referenceType      String?
+  referenceId       String?
+  performedByUserId String?
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  weighings Weighing[]
+
+  @@index([tenantId])
+  @@index([itemId])
+  @@index([tenantId, createdAt])
+}
+
+model Scale {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  brand        String?
+  model        String?
+  serialNumber String?
+  ip           String?
+  port         Int?
+  protocol     String?
+  locationId   String?
+  status       String   @default("active")
+  metadataJson String?  @map("metadata_json")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  weighings Weighing[]
+
+  @@index([tenantId])
+}
+
+model Weighing {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  itemId          String?
+  item            InventoryItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  movementId      String?
+  movement        InventoryMovement? @relation(fields: [movementId], references: [id], onDelete: SetNull)
+  scaleId         String?
+  scale           Scale?    @relation(fields: [scaleId], references: [id], onDelete: SetNull)
+  grossWeight     Decimal?  @db.Decimal(18, 4)
+  tareWeight      Decimal?  @db.Decimal(18, 4)
+  netWeight       Decimal?  @db.Decimal(18, 4)
+  unit            String?   @default("kg")
+  sourceType      String?   // manual | scale | api
+  status          String    @default("pending")
+  capturedByUserId String?
+  rawPayloadJson  String?   @map("raw_payload_json")
+  createdAt       DateTime  @default(now())
+  confirmedAt    DateTime?
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+}
+
+model Device {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  locationId    String?
+  name          String
+  type          String?
+  brand         String?
+  model         String?
+  serialNumber  String?
+  connectorType String?
+  status        String   @default("active")
+  metadataJson  String?  @map("metadata_json")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  telemetry Telemetry[]
+  alerts    Alert[]
+
+  @@index([tenantId])
+}
+
+model Telemetry {
+  id           String   @id @default(cuid())
+  tenantId     String
+  deviceId     String
+  device       Device  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  metricKey    String
+  metricValue  String?
+  unit         String?
+  observedAt   DateTime @default(now())
+  rawPayloadJson String? @map("raw_payload_json")
+
+  @@index([tenantId])
+  @@index([deviceId])
+  @@index([tenantId, observedAt])
+}
+
+model Alert {
+  id             String    @id @default(cuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deviceId       String?
+  device         Device?   @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  type           String
+  severity       String    // info | warning | error | critical
+  title          String
+  message        String?
+  status         String    @default("open") // open | acknowledged | resolved
+  triggeredAt    DateTime  @default(now())
+  resolvedAt    DateTime?
+  resolvedByUserId String?
+  createdAt      DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model Ticket {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByType  String   // user | member
+  createdById    String
+  assignedToUserId String?
+  subject        String
+  description    String?
+  priority       String   @default("medium")
+  status         String   @default("open")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId    String?  // tenant user
+  memberId  String?
+  title     String
+  body      String?
+  type      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, userId])
+  @@index([tenantId, memberId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String?  // null para acciones de platform
+  tenant     Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  actorType  String   // platform_user | user | member
+  actorId    String
+  action     String
+  entityName String
+  entityId   String?
+  beforeJson String?  @map("before_json")
+  afterJson  String?  @map("after_json")
+  ipAddress  String?
+  userAgent  String?
+  origin     String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([actorType, actorId])
+}
+
+model QrScanLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  qrUuid    String
+  entityType String? // lot | item
+  entityId  String?
+  scannedBy String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, qrUuid])
+  @@index([tenantId, createdAt])
+}
