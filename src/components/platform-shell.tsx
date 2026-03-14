@@ -31,22 +31,14 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <form
-            action={async () => {
-              "use server";
-              const { signOut: so } = await import("next-auth/react");
-              so({ callbackUrl: "/platform/login" });
-            }}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => signOut({ callbackUrl: "/platform/login" })}
           >
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => signOut({ callbackUrl: "/platform/login" })}
-            >
-              Salir
-            </Button>
-          </form>
+            Salir
+          </Button>
         </div>
       </header>
       <main className="flex-1">{children}</main>
