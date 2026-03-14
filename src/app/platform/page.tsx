@@ -5,7 +5,12 @@ import Link from "next/link";
 import { PlatformShell } from "@/components/platform-shell";
 
 export default async function PlatformPage() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    redirect("/platform/login?error=session");
+  }
   if (!session?.user) redirect("/platform/login");
   const ctx = (session as unknown as { context?: string }).context;
   if (ctx !== "platform") redirect("/platform/login");

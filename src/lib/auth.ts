@@ -53,6 +53,7 @@ async function updateLastLogin(
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   pages: {
     signIn: "/platform/login",
@@ -60,8 +61,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.context = (user as { context: AuthContext }).context;
-        token.userId = (user as { userId: string }).userId;
+        token.context = (user as { context?: AuthContext }).context ?? "platform";
+        token.userId = (user as { userId?: string }).userId ?? (user.id as string);
         token.tenantId = (user as { tenantId?: string }).tenantId;
         token.tenantSlug = (user as { tenantSlug?: string }).tenantSlug;
         token.role = (user as { role?: string }).role;
@@ -71,9 +72,9 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        (session as unknown as { context: AuthContext }).context = token.context;
-        (session as unknown as { userId: string }).userId = token.userId;
+      if (session?.user) {
+        (session as unknown as { context: AuthContext }).context = (token.context as AuthContext) ?? "platform";
+        (session as unknown as { userId: string }).userId = token.userId ?? "";
         (session as unknown as { tenantId?: string }).tenantId = token.tenantId;
         (session as unknown as { tenantSlug?: string }).tenantSlug = token.tenantSlug;
         (session as unknown as { role?: string }).role = token.role;
