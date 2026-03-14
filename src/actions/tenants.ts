@@ -70,9 +70,17 @@ export async function createTenant(input: CreateTenantInput) {
     "devices.read", "devices.manage", "reports.read",
     "tickets.read", "tickets.manage",
   ];
+  const CULTIVADOR_PERMISSION_KEYS = [
+    "lots.read", "lots.create",
+    "inventory.read",
+    "qr.generate", "qr.resolve",
+    "weighings.read", "weighings.create", "scales.manage",
+    "devices.read", "reports.read",
+  ];
   const permissions = await prisma.permission.findMany({ select: { id: true, key: true } });
   const allPermIds = permissions.map((p) => p.id);
   const operadorPermIds = permissions.filter((p) => OPERADOR_PERMISSION_KEYS.includes(p.key)).map((p) => p.id);
+  const cultivadorPermIds = permissions.filter((p) => CULTIVADOR_PERMISSION_KEYS.includes(p.key)).map((p) => p.id);
 
   const roleAdmin = await prisma.role.create({
     data: {
@@ -90,11 +98,22 @@ export async function createTenant(input: CreateTenantInput) {
       isSystem: true,
     },
   });
+  const roleCultivador = await prisma.role.create({
+    data: {
+      tenantId: tenant.id,
+      name: "cultivador",
+      description: "Lotes, inventario, QR, pesaje y dispositivos; sin socios ni usuarios",
+      isSystem: true,
+    },
+  });
   for (const permId of allPermIds) {
     await prisma.rolePermission.create({ data: { roleId: roleAdmin.id, permissionId: permId } });
   }
   for (const permId of operadorPermIds) {
     await prisma.rolePermission.create({ data: { roleId: roleOperador.id, permissionId: permId } });
+  }
+  for (const permId of cultivadorPermIds) {
+    await prisma.rolePermission.create({ data: { roleId: roleCultivador.id, permissionId: permId } });
   }
 
   await createAuditLog({

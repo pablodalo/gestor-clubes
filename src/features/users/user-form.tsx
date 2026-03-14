@@ -25,8 +25,11 @@ import type { User, Role } from "@prisma/client";
 type UserWithRole = User & { role: Role };
 
 const roleDisplayName: Record<string, string> = {
-  tenant_admin: "Admin",
+  tenant_admin: "Administrador",
   operador: "Operador",
+  cultivador: "Cultivador",
+  auditor: "Auditor",
+  socio: "Socio",
 };
 
 const statusOptions = [
@@ -178,7 +181,7 @@ export function UserFormDialog({ open, onOpenChange, onSuccess, edit, roles }: P
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Admin: acceso total. Operador: socios, inventario, lotes y tickets.
+                Admin: todo. Operador: socios, inventario, lotes, tickets. Cultivador: lotes, inventario, QR, pesaje, dispositivos.
               </p>
             </div>
             <div className="space-y-2">

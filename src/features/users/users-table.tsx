@@ -22,8 +22,11 @@ import { MoreHorizontal, Pencil, Trash2, UserPlus, Users } from "lucide-react";
 type UserWithRole = User & { role: Role };
 
 const roleDisplayName: Record<string, string> = {
-  tenant_admin: "Admin",
+  tenant_admin: "Administrador",
   operador: "Operador",
+  cultivador: "Cultivador",
+  auditor: "Auditor",
+  socio: "Socio",
 };
 
 type Props = {
