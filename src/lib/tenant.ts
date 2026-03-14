@@ -11,22 +11,30 @@ export type TenantContext = {
  * Resuelve el tenant por slug. Usar en layout/pages de /app/[tenantSlug] y /portal/[tenantSlug].
  */
 export async function getTenantBySlug(slug: string): Promise<TenantContext | null> {
-  const tenant = await prisma.tenant.findFirst({
-    where: { slug, status: "active" },
-    select: { id: true, slug: true, name: true, status: true },
-  });
-  return tenant;
+  try {
+    const tenant = await prisma.tenant.findFirst({
+      where: { slug, status: "active" },
+      select: { id: true, slug: true, name: true, status: true },
+    });
+    return tenant;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Obtiene el tenant por ID (cuando ya tienes el id en sesión).
  */
 export async function getTenantById(id: string): Promise<TenantContext | null> {
-  const tenant = await prisma.tenant.findFirst({
-    where: { id, status: "active" },
-    select: { id: true, slug: true, name: true, status: true },
-  });
-  return tenant;
+  try {
+    const tenant = await prisma.tenant.findFirst({
+      where: { id, status: "active" },
+      select: { id: true, slug: true, name: true, status: true },
+    });
+    return tenant;
+  } catch {
+    return null;
+  }
 }
 
 /**
