@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getTenantBranding } from "@/lib/branding";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
@@ -36,9 +37,17 @@ export default async function TenantDashboardLayout({ children, params }: Props)
       );
     }
 
-    const permissions = await getTenantUserPermissions();
+    const [permissions, branding] = await Promise.all([
+      getTenantUserPermissions(),
+      getTenantBranding(tenantSlug, "slug"),
+    ]);
     return (
-      <AppShell tenant={tenant} session={session} permissions={permissions}>
+      <AppShell
+        tenant={tenant}
+        session={session}
+        permissions={permissions}
+        navigationLayout={branding.navigationLayout}
+      >
         {children}
       </AppShell>
     );

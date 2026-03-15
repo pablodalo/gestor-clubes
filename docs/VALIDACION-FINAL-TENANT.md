@@ -43,6 +43,7 @@ El tenant permite operar de forma autónoma en: configuración (vía platform), 
 | Auditoría | Completo | Platform audit | createAuditLog | AuditLog | audit (platform) | ✅ | Acciones críticas auditadas; vista en platform. |
 | Notificaciones | AUSENTE | — | — | Notification | — | ✅ | Sin UI ni acciones. |
 | Menú / header por rol | Completo | ✅ app-shell | — | — | Por permiso | ✅ | Nav agrupada (Operaciones, Monitoreo, Gestión del club, Control); ítems ocultos por permiso; Cultivador no ve Gestión (Usuarios, Socios) ni Tickets. |
+| Layout navegación (horizontal/vertical) | Completo | Branding form + AppShell | branding.ts, actions/branding | TenantBranding.navigationLayout | Platform (branding) | ✅ | Configuración por tenant en Platform > Tenants > [slug] > Branding; persistente; aplicada en dashboard (header vs sidebar + drawer móvil). |
 
 ---
 
@@ -105,10 +106,16 @@ El tenant permite operar de forma autónoma en: configuración (vía platform), 
 
 | Archivo / ámbito | Qué se corrigió |
 |------------------|------------------|
-| `src/components/app-shell.tsx` | Navegación reorganizada por grupos (Operaciones, Monitoreo, Gestión del club, Control). Filtro por permisos por ítem; grupos vacíos no se muestran. Dropdowns para grupos con más de un ítem. Cultivador deja de ver Usuarios, Socios y Tickets por permiso; Admin ve todo. |
+| `src/components/app-shell.tsx` | Navegación por grupos y por permiso. **Layout horizontal/vertical:** recibe `navigationLayout`; en desktop horizontal muestra header con nav; en desktop vertical muestra sidebar fijo con nav y pie (ThemeToggle + Salir). **Mobile:** header compacto + drawer (Dialog) desde la izquierda con la misma nav; `showClose={false}` y botón X propio; animación slide-out al cerrar. |
 | `src/features/inventory/inventory-table.tsx` | Nuevo: tabla de inventario con botón «Nuevo ítem» y acción «Editar» por fila cuando el usuario tiene inventory.create / inventory_adjust. |
 | `src/features/inventory/inventory-item-form.tsx` | Nuevo: formulario de alta y edición de ítem (lote, código, tipo, unidad, cantidad, ubicación, estado). Conectado a createInventoryItem y updateInventoryItem. |
 | `src/app/.../inventory/page.tsx` | Usa InventoryTable; carga lots y locations para el formulario; pasa canCreate y canAdjust según permisos. |
+| `prisma/schema.prisma` | Campo `navigationLayout` (String?, default "horizontal") en modelo TenantBranding. |
+| `prisma/migrations/.../migration.sql` | Migración que agrega columna `navigationLayout` a TenantBranding. |
+| `src/lib/branding.ts` | Tipo TenantBrandingData y getTenantBranding incluyen navigationLayout; default "horizontal". |
+| `src/actions/branding.ts` | updateTenantBranding acepta y persiste navigationLayout. |
+| `src/features/branding/branding-form.tsx` | Selector "Layout de navegación" (Menú horizontal / Menú vertical); envía navigationLayout en el submit. |
+| `src/app/app/[tenantSlug]/(dashboard)/layout.tsx` | Obtiene branding y pasa navigationLayout a AppShell. |
 
 No se modificaron otros archivos más allá de los listados; el resto de hallazgos son módulos ausentes o parciales documentados.
 
@@ -147,6 +154,64 @@ No se modificaron otros archivos más allá de los listados; el resto de hallazg
 | **5. Operador: incidencia/evento, estado, alertas, resolver alerta** | SOPORTADO PARCIALMENTE | Tickets como incidencias: crear y cambiar estado sí. Alertas: modelo existe, sin UI. |
 | **6. Auditor/admin: reportes, auditoría, sin datos de otros tenants** | SOPORTADO | Reportes (enlaces) y auditoría en platform filtrable por tenant; aislamiento correcto. |
 | **7. Admin vs Cultivador en navegación** | SOPORTADO | Menú construido por permisos; Cultivador no ve Gestión del club ni Tickets; Admin ve todo. |
+| **8. Cambio de layout horizontal/vertical** | SOPORTADO | Configuración en Platform > Tenants > [slug] > Branding: campo "Layout de navegación" (horizontal/vertical). Persiste en TenantBranding.navigationLayout; el layout del dashboard aplica el valor (AppShell). |
+| **9. Uso desde celular (admin)** | SOPORTADO | Header compacto con menú hamburguesa; drawer desde la izquierda con la misma navegación por permisos; rutas y formularios accesibles. |
+| **10. Portal del socio en mobile** | SOPORTADO PARCIALMENTE | Login, perfil y navegación funcionan; falta revisión fina de overflow y touch en todas las pantallas del portal. |
+
+---
+
+# VALIDACIÓN DE LAYOUT HORIZONTAL / VERTICAL
+
+## Existencia y ubicación
+
+- **Sí existe** configuración por tenant.
+- **Dónde se configura:** Platform > Tenants > [slug] > Branding. En el formulario de branding hay un selector "Layout de navegación" con opciones "Menú horizontal" y "Menú vertical".
+- **Persistencia:** Campo `navigationLayout` en tabla `TenantBranding` (valor `"horizontal"` | `"vertical"`, por defecto `"horizontal"`). La acción `updateTenantBranding` guarda el valor; `getTenantBranding` lo devuelve; el layout del dashboard (`(dashboard)/layout.tsx`) obtiene el branding y pasa `navigationLayout` a `AppShell`.
+
+## Comportamiento real del layout
+
+- **Horizontal:** En desktop se muestra la barra superior (header) con logo, navegación en línea y dropdowns por grupo, ThemeToggle y Salir. En móvil, header compacto con botón menú que abre el drawer.
+- **Vertical:** En desktop se muestra un sidebar fijo a la izquierda (56rem) con grupos e ítems, y en el pie del sidebar ThemeToggle y Salir. El contenido principal tiene `md:pl-56`. En móvil, el mismo header compacto y drawer que en horizontal.
+- **Permisos y rol:** En ambos modos la navegación se construye con los mismos grupos e ítems filtrados por permiso; Admin ve Gestión del club y Control; Cultivador no ve Usuarios, Socios ni Tickets.
+
+## Problemas detectados y mejoras aplicadas
+
+- **Sidebar vertical en desktop:** Se quitó `md:pt-14` del sidebar para que no quedara hueco superior; el sidebar va de arriba a abajo. Se añadió en el pie del sidebar la barra con ThemeToggle y Salir para que en modo vertical el usuario pueda cambiar tema y cerrar sesión sin depender de un header superior.
+- **Drawer móvil:** Se usó `showClose={false}` en el `DialogContent` del drawer para evitar doble botón de cierre; el cierre se hace con el botón X del encabezado del drawer. Se añadió `data-[state=closed]:slide-out-to-left` para animación de cierre coherente.
+
+## Validación final
+
+- Configuración guardada por tenant: **Sí** (TenantBranding.navigationLayout).
+- Selector en Branding: **Sí** (Menú horizontal / Menú vertical).
+- Al cambiar y guardar, el layout efectivamente cambia al recargar o navegar: **Sí** (layout lee branding en servidor).
+- Menú usable en ambos modos y por rol: **Sí**.
+
+---
+
+# VALIDACIÓN RESPONSIVE / MOBILE
+
+## Pantallas revisadas
+
+- **App shell:** Header móvil con menú hamburguesa; drawer de ancho 72 (max-w-[85vw]); en desktop horizontal: barra con nav; en desktop vertical: sidebar fijo.
+- **Dashboard, Socios, Ubicaciones, Lotes, Inventario, Dispositivos, Tickets, Reportes, Usuarios:** Contenedor con `container max-w-6xl mx-auto px-4`; tablas y formularios dentro de cards o contenedores que se adaptan al ancho.
+- **Portal del socio:** Layout con branding; páginas de perfil, movimientos y tickets con estructura responsive básica.
+- **Login (tenant y portal):** Formularios centrados y apilados.
+
+## Problemas detectados
+
+- Menú en móvil: antes no había drawer; **corregido** con Dialog como drawer desde la izquierda, mismo contenido de navegación que en desktop.
+- Sidebar vertical en desktop: falta de barra Salir/Tema; **corregido** con pie de sidebar con ThemeToggle y Salir.
+- Posible overflow en tablas muy anchas en pantallas chicas: las tablas usan contenedores con scroll horizontal donde aplica (p. ej. overflow-x-auto en tablas); no se detectaron roturas graves en las pantallas críticas.
+
+## Correcciones aplicadas
+
+- **AppShell:** En móvil siempre se muestra header compacto + drawer; en desktop según `navigationLayout` se muestra header horizontal o sidebar vertical. Sidebar vertical con pie fijo (Tema + Salir). Drawer con cierre explícito y animación de salida.
+
+## Estado final
+
+- **Mobile:** Navegación operable mediante drawer; contenido principal con padding y ancho controlado; formularios y listados usables.
+- **Tablet:** Misma lógica que desktop (breakpoint `md`); menú horizontal o vertical según configuración del tenant.
+- **Desktop:** Layout horizontal o vertical según `navigationLayout`; sin huecos ni elementos duplicados.
 
 ---
 
@@ -169,7 +234,6 @@ No se modificaron otros archivos más allá de los listados; el resto de hallazg
 
 - **Tablas sin uso desde UI/acciones:** Scale, Weighing, Telemetry, Alert, Notification, InventoryMovement, QrScanLog, TenantFeature.
 - **Pantallas sin datos reales:** Portal movimientos (placeholder).
-- **Acciones sin UI:** createInventoryItem, updateInventoryItem (existen pero no hay botón/form en la página de inventario).
 - **Código duplicado:** Patrón getTenantContext en varias acciones (members, locations, users); assertTenantSession en otras (lots, tickets, devices, inventory). Consistente con dos estilos; no crítico.
 
 ---
@@ -178,6 +242,10 @@ No se modificaron otros archivos más allá de los listados; el resto de hallazg
 
 **TENANT LISTO CON OBSERVACIONES**
 
-- El tenant es utilizable para: administración de usuarios, socios, ubicaciones, lotes, inventario (consulta y export), dispositivos, tickets y reportes (acceso a listados). La navegación diferencia correctamente Admin vs Cultivador por permisos y está agrupada por función.
+- El tenant es utilizable para: administración de usuarios, socios, ubicaciones, lotes, inventario (consulta, alta/edición de ítems y export), dispositivos, tickets y reportes (acceso a listados). La navegación diferencia correctamente Admin vs Cultivador por permisos y está agrupada por función.
+- **Layout de navegación:** Cada tenant puede elegir menú horizontal o vertical desde Platform > Branding; la preferencia persiste y se aplica en el dashboard (sidebar en desktop para vertical; drawer en móvil en ambos casos).
+- **Responsive/mobile:** Menú móvil con drawer; contenido con contenedores adaptativos; sidebar/header según layout y breakpoint.
 - Aislamiento multi-tenant y permisos están correctamente aplicados.
-- Para uso operativo completo faltan: movimientos de inventario, QR, balanzas/pesajes, telemetría, alertas, notificaciones, cupo/saldo socio y UI de alta de ítems de inventario. Estos faltantes están documentados y no comprometen la seguridad ni el aislamiento del tenant.
+- Para uso operativo completo faltan: movimientos de inventario, QR, balanzas/pesajes, telemetría, alertas, notificaciones, cupo/saldo socio. Estos faltantes están documentados y no comprometen la seguridad ni el aislamiento del tenant.
+
+**Nota de despliegue:** Si la base de datos no tiene aún la columna `navigationLayout` en `TenantBranding`, ejecutar `npx prisma migrate deploy` (o `prisma db push`) y `npx prisma generate`.

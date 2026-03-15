@@ -70,11 +70,12 @@ model TenantBranding {
   fontFamily      String?  @default("system-ui")
   radiusScale     String?  @default("0.5") // 0 | 0.25 | 0.5 | 0.75 | 1
   darkModeDefault Boolean  @default(false)
-  loginTitle      String?
-  loginSubtitle   String?
-  portalBannerUrl String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  loginTitle        String?
+  loginSubtitle     String?
+  portalBannerUrl   String?
+  navigationLayout  String?  @default("horizontal") // "horizontal" | "vertical"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model TenantFeature {

@@ -19,6 +19,7 @@ const updateBrandingSchema = z.object({
   loginTitle: z.string().nullable(),
   loginSubtitle: z.string().nullable(),
   portalBannerUrl: z.string().nullable(),
+  navigationLayout: z.enum(["horizontal", "vertical"]).nullable(),
 });
 
 export async function updateTenantBranding(

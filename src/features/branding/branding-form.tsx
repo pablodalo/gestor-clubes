@@ -28,6 +28,9 @@ export function BrandingForm({ tenantId, initial }: Props) {
   const [loading, setLoading] = useState(false);
   const [fontFamily, setFontFamily] = useState(initial?.fontFamily ?? "system-ui");
   const [radiusScale, setRadiusScale] = useState(initial?.radiusScale ?? "0.5");
+  const [navigationLayout, setNavigationLayout] = useState<"horizontal" | "vertical">(
+    (initial?.navigationLayout as "horizontal" | "vertical") ?? "horizontal"
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -49,6 +52,7 @@ export function BrandingForm({ tenantId, initial }: Props) {
       loginTitle: (formData.get("loginTitle") as string) || null,
       loginSubtitle: (formData.get("loginSubtitle") as string) || null,
       portalBannerUrl: (formData.get("portalBannerUrl") as string) || null,
+      navigationLayout,
     });
     setLoading(false);
     if (result.error) {
@@ -162,6 +166,24 @@ export function BrandingForm({ tenantId, initial }: Props) {
                 <SelectItem value="1">1</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Layout de navegación</Label>
+            <Select
+              value={navigationLayout}
+              onValueChange={(v) => setNavigationLayout(v as "horizontal" | "vertical")}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="horizontal">Menú horizontal (header)</SelectItem>
+                <SelectItem value="vertical">Menú vertical (sidebar)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Cómo se muestra el menú principal del panel del club. En celular siempre se usa menú tipo drawer.
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <input

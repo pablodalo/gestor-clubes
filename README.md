@@ -29,7 +29,7 @@ SaaS multi-tenant white-label para operar múltiples clubes desde una sola base 
 
 ## Requisitos
 
-- **Node.js 20.x** (recomendado; el proyecto fija `engines.node` en `package.json` para Vercel)
+- **Node.js 20.x** (recomendado; el proyecto fija `engines.node` en `package.json` para Vercel). Si usás nvm: `nvm use` (lee `.nvmrc`). Si `node` o `npm` no se reconocen en la terminal, asegurate de tener Node 20 en el PATH.
 - PostgreSQL
 - npm o pnpm
 

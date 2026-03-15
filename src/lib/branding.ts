@@ -16,6 +16,8 @@ export type TenantBrandingData = {
   loginTitle: string | null;
   loginSubtitle: string | null;
   portalBannerUrl: string | null;
+  /** "horizontal" | "vertical" — menú en header o sidebar. Por defecto horizontal. */
+  navigationLayout: "horizontal" | "vertical";
 };
 
 const DEFAULT_BRANDING: TenantBrandingData = {
@@ -34,6 +36,7 @@ const DEFAULT_BRANDING: TenantBrandingData = {
   loginTitle: null,
   loginSubtitle: null,
   portalBannerUrl: null,
+  navigationLayout: "horizontal",
 };
 
 /**
@@ -52,6 +55,7 @@ export async function getTenantBranding(
       return { ...DEFAULT_BRANDING, appName: tenant?.name ?? DEFAULT_BRANDING.appName };
     }
     const b = tenant.branding;
+    const layout = b.navigationLayout === "vertical" ? "vertical" : "horizontal";
     return {
       appName: b.appName ?? DEFAULT_BRANDING.appName,
       shortName: b.shortName ?? DEFAULT_BRANDING.shortName,
@@ -68,6 +72,7 @@ export async function getTenantBranding(
       loginTitle: b.loginTitle,
       loginSubtitle: b.loginSubtitle,
       portalBannerUrl: b.portalBannerUrl,
+      navigationLayout: layout,
     };
   } catch {
     return { ...DEFAULT_BRANDING };
