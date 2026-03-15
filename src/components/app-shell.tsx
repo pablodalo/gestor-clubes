@@ -16,7 +16,9 @@ const nav = (slug: string) => [
   { href: `/app/${slug}/locations`, label: "Ubicaciones", permission: "inventory.read" },
   { href: `/app/${slug}/lots`, label: "Lotes", permission: "lots.read" },
   { href: `/app/${slug}/inventory`, label: "Inventario", permission: "inventory.read" },
+  { href: `/app/${slug}/devices`, label: "Dispositivos", permission: "devices.read" },
   { href: `/app/${slug}/tickets`, label: "Tickets", permission: "tickets.read" },
+  { href: `/app/${slug}/reports`, label: "Reportes", permission: "reports.read" },
 ];
 
 export function AppShell({
