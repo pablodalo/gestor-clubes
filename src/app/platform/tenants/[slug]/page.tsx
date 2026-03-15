@@ -5,8 +5,7 @@ import Link from "next/link";
 import { PlatformShell } from "@/components/platform-shell";
 import { getTenantBySlug } from "@/actions/tenants";
 import { Button } from "@/components/ui/button";
-import { TenantEditForm } from "@/features/tenants/tenant-edit-form";
-import { BrandingForm } from "@/features/branding/branding-form";
+import { TenantDetailTabs } from "@/features/tenants/tenant-detail-tabs";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,8 +13,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Palette, Settings } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -61,47 +59,7 @@ export default async function TenantDetailPage({ params }: Props) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 min-h-0">
-          {/* Columna principal: datos del tenant */}
-          <div className="xl:col-span-2 space-y-6 min-w-0">
-            <Card>
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle>General</CardTitle>
-                </div>
-                <CardDescription>Nombre, estado, zona horaria y moneda del tenant.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                  <dt className="text-muted-foreground">Estado</dt>
-                  <dd className="font-medium">{tenant.status}</dd>
-                  <dt className="text-muted-foreground">Zona horaria</dt>
-                  <dd>{tenant.timezone}</dd>
-                  <dt className="text-muted-foreground">Moneda</dt>
-                  <dd>{tenant.currency}</dd>
-                </dl>
-                <TenantEditForm tenant={tenant} />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Columna lateral: branding */}
-          <div className="xl:col-span-1 min-w-0">
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-4 shrink-0">
-                <div className="flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle>Apariencia y navegación</CardTitle>
-                </div>
-                <CardDescription>Logo, colores, fuentes y tipo de menú del panel.</CardDescription>
-              </CardHeader>
-              <CardContent className="max-h-[min(70vh,800px)] overflow-y-auto">
-                <BrandingForm tenantId={tenant.id} initial={branding} embed />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        <TenantDetailTabs tenant={tenant} branding={branding} />
       </div>
     </PlatformShell>
   );
