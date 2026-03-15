@@ -6,6 +6,7 @@ import { createAuditLog } from "@/server/audit";
 import { z } from "zod";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { put } from "@vercel/blob";
 
 const updateBrandingSchema = z.object({
   appName: z.string().nullable(),
@@ -43,24 +44,29 @@ export async function updateTenantBranding(
   });
   if (!parsed.success) return { error: "Datos inválidos" };
 
-  const data = parsed.data as Record<string, unknown>;
-  const branding = await prisma.tenantBranding.upsert({
-    where: { tenantId },
-    create: { tenantId, ...data },
-    update: data,
-  });
+  try {
+    const data = parsed.data as Record<string, unknown>;
+    const branding = await prisma.tenantBranding.upsert({
+      where: { tenantId },
+      create: { tenantId, ...data },
+      update: data,
+    });
 
-  await createAuditLog({
-    tenantId: null,
-    actorType: "platform_user",
-    actorId: session.userId,
-    actorName: session.name ?? undefined,
-    action: "branding.update",
-    entityName: "TenantBranding",
-    entityId: branding.id,
-  });
+    await createAuditLog({
+      tenantId: null,
+      actorType: "platform_user",
+      actorId: session.userId,
+      actorName: session.name ?? undefined,
+      action: "branding.update",
+      entityName: "TenantBranding",
+      entityId: branding.id,
+    });
 
-  return { data: branding };
+    return { data: branding };
+  } catch (err) {
+    console.error("updateTenantBranding", err);
+    return { error: "Error al guardar. Revisá los datos e intentá de nuevo." };
+  }
 }
 
 /** Sube una imagen de logo y devuelve la URL pública (ruta /uploads/...). Solo platform. */
@@ -86,6 +92,12 @@ export async function uploadLogo(tenantId: string, formData: FormData): Promise<
   }
 
   try {
+    // En producción (Vercel): usar Blob si está configurado. Ver docs/VERCEL-BLOB.md
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const filename = `logo-${tenantId}-${Date.now()}.${ext}`;
+      const blob = await put(filename, file, { access: "public" });
+      return { data: { url: blob.url } };
+    }
     const dir = path.join(process.cwd(), "public", "uploads");
     await mkdir(dir, { recursive: true });
     const filename = `logo-${tenantId}-${Date.now()}.${ext}`;

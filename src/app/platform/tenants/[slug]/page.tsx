@@ -61,9 +61,9 @@ export default async function TenantDetailPage({ params }: Props) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 min-h-0">
           {/* Columna principal: datos del tenant */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-6 min-w-0">
             <Card>
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-2">
@@ -87,16 +87,16 @@ export default async function TenantDetailPage({ params }: Props) {
           </div>
 
           {/* Columna lateral: branding */}
-          <div className="xl:col-span-1">
-            <Card>
-              <CardHeader className="pb-4">
+          <div className="xl:col-span-1 min-w-0">
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-4 shrink-0">
                 <div className="flex items-center gap-2">
                   <Palette className="h-5 w-5 text-muted-foreground" />
                   <CardTitle>Apariencia y navegación</CardTitle>
                 </div>
                 <CardDescription>Logo, colores, fuentes y tipo de menú del panel.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="max-h-[min(70vh,800px)] overflow-y-auto">
                 <BrandingForm tenantId={tenant.id} initial={branding} embed />
               </CardContent>
             </Card>

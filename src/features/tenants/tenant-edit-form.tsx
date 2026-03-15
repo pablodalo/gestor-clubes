@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateTenant } from "@/actions/tenants";
+import { TIMEZONES } from "@/lib/timezones";
 
 type Tenant = { id: string; name: string; slug: string; status: string; timezone?: string; locale?: string; currency?: string };
 
@@ -39,6 +41,9 @@ export function TenantEditForm({ tenant }: Props) {
     router.refresh();
   }
 
+  const currentTz = tenant.timezone ?? "America/Argentina/Buenos_Aires";
+  const hasTzInList = TIMEZONES.some((z) => z.value === currentTz);
+
   return (
     <form onSubmit={handleSubmit} className="mt-6 pt-6 border-t space-y-4">
       {error && (
@@ -64,11 +69,21 @@ export function TenantEditForm({ tenant }: Props) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="timezone">Zona horaria</Label>
-          <Input
+          <select
             id="timezone"
             name="timezone"
-            defaultValue={tenant.timezone ?? "America/Argentina/Buenos_Aires"}
-          />
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            defaultValue={currentTz}
+          >
+            {!hasTzInList && (
+              <option value={currentTz}>{currentTz}</option>
+            )}
+            {TIMEZONES.map((z) => (
+              <option key={z.value} value={z.value}>
+                {z.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="locale">Idioma del panel</Label>
@@ -88,9 +103,14 @@ export function TenantEditForm({ tenant }: Props) {
           <Input id="currency" name="currency" defaultValue={tenant.currency ?? "ARS"} />
         </div>
       </div>
-      <Button type="submit" disabled={loading}>
-        {loading ? "Guardando..." : "Guardar cambios"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={loading}>
+          {loading ? "Guardando..." : "Guardar cambios"}
+        </Button>
+        <Button type="button" variant="outline" asChild>
+          <Link href="/platform/tenants">Cancelar</Link>
+        </Button>
+      </div>
     </form>
   );
 }

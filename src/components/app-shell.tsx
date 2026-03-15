@@ -437,7 +437,7 @@ export function AppShell({
 
         <main
           className={cn(
-            "flex-1 min-w-0 container max-w-6xl mx-auto px-4 py-6",
+            "flex-1 min-w-0 min-h-0 overflow-y-auto container max-w-6xl mx-auto px-4 py-6",
             navigationLayout === "vertical" && "md:pl-56"
           )}
         >

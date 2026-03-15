@@ -152,27 +152,32 @@ export async function updateTenant(tenantId: string, input: z.infer<typeof updat
   const before = await prisma.tenant.findUnique({ where: { id: tenantId } });
   if (!before) return { error: "Tenant no encontrado" };
 
-  const tenant = await prisma.tenant.update({
-    where: { id: tenantId },
-    data: parsed.data,
-  });
+  try {
+    const tenant = await prisma.tenant.update({
+      where: { id: tenantId },
+      data: parsed.data,
+    });
 
-  await createAuditLog({
-    tenantId: null,
-    actorType: "platform_user",
-    actorId: (session as unknown as { userId: string }).userId,
-    actorName: (session as unknown as { user?: { name?: string | null } }).user?.name ?? undefined,
-    action: "tenant.update",
-    entityName: "Tenant",
-    entityId: tenant.id,
-    beforeJson: JSON.stringify({ name: before.name, status: before.status }),
-    afterJson: JSON.stringify({ name: tenant.name, status: tenant.status }),
-  });
+    await createAuditLog({
+      tenantId: null,
+      actorType: "platform_user",
+      actorId: (session as unknown as { userId: string }).userId,
+      actorName: (session as unknown as { user?: { name?: string | null } }).user?.name ?? undefined,
+      action: "tenant.update",
+      entityName: "Tenant",
+      entityId: tenant.id,
+      beforeJson: JSON.stringify({ name: before.name, status: before.status }),
+      afterJson: JSON.stringify({ name: tenant.name, status: tenant.status }),
+    });
 
-  revalidatePath("/platform");
-  revalidatePath("/platform/tenants");
-  revalidatePath(`/platform/tenants/${tenant.slug}`);
-  return { data: tenant };
+    revalidatePath("/platform");
+    revalidatePath("/platform/tenants");
+    revalidatePath(`/platform/tenants/${tenant.slug}`);
+    return { data: tenant };
+  } catch (err) {
+    console.error("updateTenant", err);
+    return { error: "Error al guardar. Revisá los datos e intentá de nuevo." };
+  }
 }
 
 export async function deleteTenant(tenantId: string) {
