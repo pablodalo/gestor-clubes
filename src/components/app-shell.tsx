@@ -372,36 +372,52 @@ export function AppShell({
           </aside>
         )}
 
-        {/* Desktop horizontal: barra de navegación tipo escritorio (links visibles, no dropdown tipo celular) */}
+        {/* Desktop horizontal: dropdown de navegación (sin scroll horizontal que rompe el contenido) */}
         {navigationLayout === "horizontal" && (
           <header className="hidden md:block sticky top-0 z-20 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-sm">
-            <div className="flex h-12 w-full items-center gap-6 px-4 max-w-7xl mx-auto">
+            <div className="flex h-12 w-full items-center justify-between gap-4 px-4 max-w-7xl mx-auto">
               <Link href={`/app/${tenant.slug}`} className="shrink-0 flex items-center gap-2 font-semibold text-foreground min-w-0 max-w-[160px] sm:max-w-[200px]">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
                   {tenant.name.slice(0, 2).toUpperCase()}
                 </span>
                 <span className="truncate hidden sm:inline">{tenant.name}</span>
               </Link>
-              <nav className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto overflow-y-hidden py-1 scrollbar-thin" aria-label="Navegación principal">
-                {groups.map((group) =>
-                  group.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href;
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                          "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
-                          isActive ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+              <nav className="flex items-center shrink-0" aria-label="Navegación principal">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-2 text-foreground font-medium">
+                      <Menu className="h-4 w-4" />
+                      {t.menu}
+                      <ChevronDown className="h-4 w-4 opacity-70" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-56 max-h-[min(70vh,420px)] overflow-y-auto">
+                    {groups.map((group) => (
+                      <div key={group.label ?? "main"}>
+                        {group.label != null && (
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            {group.label}
+                          </div>
                         )}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })
-                )}
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = pathname === item.href;
+                          return (
+                            <DropdownMenuItem key={item.href} asChild>
+                              <Link
+                                href={item.href}
+                                className={cn("flex items-center gap-2 cursor-pointer", isActive && "bg-primary/10 text-primary")}
+                              >
+                                <Icon className="h-4 w-4 shrink-0" />
+                                {item.label}
+                              </Link>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </nav>
               <div className="flex items-center gap-1 shrink-0">
                 <ThemeToggle />

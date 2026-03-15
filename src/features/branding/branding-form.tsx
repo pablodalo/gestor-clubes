@@ -19,11 +19,15 @@ import { cn } from "@/lib/utils";
 import type { TenantBranding } from "@prisma/client";
 import { PanelLeft, PanelTop, Upload } from "lucide-react";
 
+export type BrandingSectionKey = "logo" | "identity" | "colors" | "typography" | "nav" | "login";
+
 type Props = {
   tenantId: string;
   initial?: TenantBranding | null;
   compact?: boolean;
   embed?: boolean;
+  /** Si se define, solo se muestran estas secciones (para dividir en pestañas). Al guardar se envían el resto desde initial. */
+  onlySections?: BrandingSectionKey[];
 };
 
 function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
@@ -35,7 +39,11 @@ function Section({ title, children, className }: { title: string; children: Reac
   );
 }
 
-export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
+function showSection(key: BrandingSectionKey, onlySections: BrandingSectionKey[] | undefined) {
+  return !onlySections || onlySections.includes(key);
+}
+
+export function BrandingForm({ tenantId, initial, compact, embed, onlySections }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
@@ -71,22 +79,24 @@ export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
     setLoading(true);
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const result = await updateTenantBranding(tenantId, {
-      appName: (formData.get("appName") as string) || null,
-      shortName: (formData.get("shortName") as string) || null,
-      logoUrl: logoUrl?.trim() || null,
-      primaryColor: (formData.get("primaryColor") as string) || null,
-      secondaryColor: (formData.get("secondaryColor") as string) || null,
-      accentColor: (formData.get("accentColor") as string) || null,
-      backgroundColor: (formData.get("backgroundColor") as string) || null,
-      fontFamily: fontFamily || null,
-      radiusScale: radiusScale || null,
-      darkModeDefault: formData.get("darkModeDefault") === "on",
-      loginTitle: (formData.get("loginTitle") as string) || null,
-      loginSubtitle: (formData.get("loginSubtitle") as string) || null,
-      portalBannerUrl: (formData.get("portalBannerUrl") as string) || null,
-      navigationLayout,
-    });
+    const fromInitial = initial ?? undefined;
+    const payload = {
+      appName: showSection("identity", onlySections) ? (formData.get("appName") as string) || null : (fromInitial?.appName ?? null),
+      shortName: showSection("identity", onlySections) ? (formData.get("shortName") as string) || null : (fromInitial?.shortName ?? null),
+      logoUrl: showSection("logo", onlySections) ? (logoUrl?.trim() || null) : (fromInitial?.logoUrl ?? null),
+      primaryColor: showSection("colors", onlySections) ? (formData.get("primaryColor") as string) || null : (fromInitial?.primaryColor ?? null),
+      secondaryColor: showSection("colors", onlySections) ? (formData.get("secondaryColor") as string) || null : (fromInitial?.secondaryColor ?? null),
+      accentColor: showSection("colors", onlySections) ? (formData.get("accentColor") as string) || null : (fromInitial?.accentColor ?? null),
+      backgroundColor: showSection("colors", onlySections) ? (formData.get("backgroundColor") as string) || null : (fromInitial?.backgroundColor ?? null),
+      fontFamily: showSection("typography", onlySections) ? fontFamily || null : (fromInitial?.fontFamily ?? null),
+      radiusScale: showSection("typography", onlySections) ? radiusScale || null : (fromInitial?.radiusScale ?? null),
+      darkModeDefault: showSection("login", onlySections) ? formData.get("darkModeDefault") === "on" : (fromInitial?.darkModeDefault ?? false),
+      loginTitle: showSection("login", onlySections) ? (formData.get("loginTitle") as string) || null : (fromInitial?.loginTitle ?? null),
+      loginSubtitle: showSection("login", onlySections) ? (formData.get("loginSubtitle") as string) || null : (fromInitial?.loginSubtitle ?? null),
+      portalBannerUrl: showSection("login", onlySections) ? (formData.get("portalBannerUrl") as string) || null : (fromInitial?.portalBannerUrl ?? null),
+      navigationLayout: showSection("nav", onlySections) ? navigationLayout : (fromInitial?.navigationLayout as "horizontal" | "vertical") ?? "horizontal",
+    };
+    const result = await updateTenantBranding(tenantId, payload);
     setLoading(false);
     if (result.error) {
       setError(result.error);
@@ -103,6 +113,7 @@ export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {errorBlock}
 
+      {showSection("logo", onlySections) && (
       <Section title="Logo del club">
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex flex-col gap-2">
@@ -150,7 +161,9 @@ export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
           </div>
         )}
       </Section>
+      )}
 
+      {showSection("identity", onlySections) && (
       <Section title="Identidad">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -173,7 +186,9 @@ export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
           </div>
         </div>
       </Section>
+      )}
 
+      {showSection("colors", onlySections) && (
       <Section title="Colores">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
@@ -218,7 +233,9 @@ export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
           </div>
         </div>
       </Section>
+      )}
 
+      {showSection("typography", onlySections) && (
       <Section title="Tipografía">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -252,7 +269,9 @@ export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
           </div>
         </div>
       </Section>
+      )}
 
+      {showSection("nav", onlySections) && (
       <Section title="Navegación del panel">
         <p className="text-xs text-muted-foreground mb-2">
           Cómo se muestra el menú principal. En celular siempre se usa menú tipo drawer.
@@ -290,7 +309,9 @@ export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
           </button>
         </div>
       </Section>
+      )}
 
+      {showSection("login", onlySections) && (
       <Section title="Pantalla de login">
         <div className="flex items-center gap-2 mb-4">
           <input
@@ -322,6 +343,7 @@ export function BrandingForm({ tenantId, initial, compact, embed }: Props) {
           </div>
         </div>
       </Section>
+      )}
 
       <div className="pt-2">
         <Button type="submit" disabled={loading}>

@@ -6,7 +6,7 @@ import { TenantEditForm } from "@/features/tenants/tenant-edit-form";
 import { BrandingForm } from "@/features/branding/branding-form";
 import { cn } from "@/lib/utils";
 import type { TenantBranding } from "@prisma/client";
-import { Palette, Settings } from "lucide-react";
+import { Layout, Palette, Settings } from "lucide-react";
 
 type Tenant = { id: string; name: string; slug: string; status: string; timezone?: string; locale?: string; currency?: string };
 
@@ -15,14 +15,15 @@ type Props = {
   branding: TenantBranding | null | undefined;
 };
 
-type TabId = "general" | "apariencia";
+type TabId = "general" | "apariencia" | "menu-login";
 
 export function TenantDetailTabs({ tenant, branding }: Props) {
   const [tab, setTab] = useState<TabId>("general");
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: "general", label: "General", icon: <Settings className="h-4 w-4" /> },
-    { id: "apariencia", label: "Apariencia y navegación", icon: <Palette className="h-4 w-4" /> },
+    { id: "apariencia", label: "Apariencia", icon: <Palette className="h-4 w-4" /> },
+    { id: "menu-login", label: "Menú y login", icon: <Layout className="h-4 w-4" /> },
   ];
 
   return (
@@ -60,12 +61,34 @@ export function TenantDetailTabs({ tenant, branding }: Props) {
 
       {tab === "apariencia" && (
         <Card>
-          <CardHeader className="pb-4 shrink-0">
-            <CardTitle className="text-lg">Logo, colores y menú</CardTitle>
-            <CardDescription>Apariencia del panel y pantalla de login.</CardDescription>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Logo, identidad y colores</CardTitle>
+            <CardDescription>Logo, nombre de la app, colores y tipografía.</CardDescription>
           </CardHeader>
-          <CardContent className="max-h-[calc(100vh-16rem)] overflow-y-auto">
-            <BrandingForm tenantId={tenant.id} initial={branding ?? undefined} embed />
+          <CardContent>
+            <BrandingForm
+              tenantId={tenant.id}
+              initial={branding ?? undefined}
+              embed
+              onlySections={["logo", "identity", "colors", "typography"]}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "menu-login" && (
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Menú y pantalla de login</CardTitle>
+            <CardDescription>Layout del menú del panel y textos del login.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BrandingForm
+              tenantId={tenant.id}
+              initial={branding ?? undefined}
+              embed
+              onlySections={["nav", "login"]}
+            />
           </CardContent>
         </Card>
       )}
