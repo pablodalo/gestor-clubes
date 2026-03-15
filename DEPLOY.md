@@ -65,7 +65,7 @@ npx prisma db push
 npx prisma db seed
 ```
 
-- `db push`: crea/actualiza todas las tablas en Neon (incluye `ErrorLog` para /platform/errors). Si ya habías hecho push antes y luego se agregó el modelo ErrorLog, ejecutá de nuevo `npx prisma db push` para crear esa tabla.
+- `db push`: crea/actualiza todas las tablas en Neon (incluye `ErrorLog` para /platform/errors). Si ya habías hecho push antes y luego se agregó el modelo ErrorLog o una nueva columna (ej. `TenantBranding.navigationLayout`), ejecutá de nuevo `npx prisma db push` para aplicar los cambios.
 - `db seed`: inserta el usuario admin, tenants demo, socios, etc.
 
 **Opción B – Sin poner la URL en la terminal**
@@ -157,3 +157,5 @@ También podés usar por separado:
 4. Probar la app en la URL de Vercel.
 
 A partir de ahí, cada **push a main** vuelve a desplegar solo la app; no hace falta repetir `db push` ni `db seed` salvo que cambies el schema o quieras resetear datos.
+
+**Si el panel del club da error tipo "column TenantBranding.navigationLayout does not exist":** en el repo se agregó esa columna por migración. Ejecutá **una vez** contra la base de producción (con `DATABASE_URL` de Neon): `npx prisma db push` o `npx prisma migrate deploy`. Después el deploy de Vercel ya no toca la DB; solo hace `prisma generate` y `next build`.

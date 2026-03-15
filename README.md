@@ -126,7 +126,7 @@ Abrir http://localhost:3000.
    La primera vez puedes hacer `prisma db push` desde tu máquina apuntando a `DATABASE_URL` de producción y luego `prisma db seed`.
 
 5. **Build**  
-   El proyecto usa `prisma generate` en el build (ver `vercel.json`). Asegurarse de que `DATABASE_URL` esté definida en Vercel para que el build no falle.
+   El proyecto usa `prisma generate` y `next build` en Vercel (ver `vercel.json`). El build **no** requiere `DATABASE_URL`; las migraciones se aplican aparte (desde tu máquina con `npx prisma db push` o `npx prisma migrate deploy`). `DATABASE_URL` en Vercel es para **runtime** (que la app se conecte a la DB).
 
 6. **Calidad de deploy**  
    El build en Vercel ejecuta typecheck y lint (`next.config.js` tiene `ignoreBuildErrors: false` y `ignoreDuringBuilds: false`). Antes de push ejecutá localmente:
