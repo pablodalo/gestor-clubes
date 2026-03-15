@@ -4,22 +4,51 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import type { TenantContext } from "@/lib/tenant";
+import { ChevronDown } from "lucide-react";
 
-/** Permiso requerido para cada ítem; sin permiso = siempre visible (ej. Dashboard). */
-const nav = (slug: string) => [
-  { href: `/app/${slug}`, label: "Dashboard", permission: undefined as string | undefined },
-  { href: `/app/${slug}/users`, label: "Usuarios", permission: "users.read" },
-  { href: `/app/${slug}/members`, label: "Socios", permission: "members.read" },
-  { href: `/app/${slug}/locations`, label: "Ubicaciones", permission: "inventory.read" },
-  { href: `/app/${slug}/lots`, label: "Lotes", permission: "lots.read" },
-  { href: `/app/${slug}/inventory`, label: "Inventario", permission: "inventory.read" },
-  { href: `/app/${slug}/devices`, label: "Dispositivos", permission: "devices.read" },
-  { href: `/app/${slug}/tickets`, label: "Tickets", permission: "tickets.read" },
-  { href: `/app/${slug}/reports`, label: "Reportes", permission: "reports.read" },
-];
+type NavItem = { href: string; label: string; permission?: string };
+
+/** Navegación agrupada: Admin ve todo; Cultivador solo Operaciones + Monitoreo + Control (sin Gestión del club). */
+function buildNavGroups(slug: string): { label: string | null; items: NavItem[] }[] {
+  return [
+    { label: null, items: [{ href: `/app/${slug}`, label: "Dashboard" }] },
+    {
+      label: "Operaciones",
+      items: [
+        { href: `/app/${slug}/locations`, label: "Ubicaciones", permission: "inventory.read" },
+        { href: `/app/${slug}/lots`, label: "Lotes", permission: "lots.read" },
+        { href: `/app/${slug}/inventory`, label: "Inventario", permission: "inventory.read" },
+      ],
+    },
+    {
+      label: "Monitoreo",
+      items: [{ href: `/app/${slug}/devices`, label: "Dispositivos", permission: "devices.read" }],
+    },
+    {
+      label: "Gestión del club",
+      items: [
+        { href: `/app/${slug}/users`, label: "Usuarios", permission: "users.read" },
+        { href: `/app/${slug}/members`, label: "Socios", permission: "members.read" },
+      ],
+    },
+    {
+      label: "Control",
+      items: [
+        { href: `/app/${slug}/tickets`, label: "Tickets", permission: "tickets.read" },
+        { href: `/app/${slug}/reports`, label: "Reportes", permission: "reports.read" },
+      ],
+    },
+  ];
+}
 
 export function AppShell({
   tenant,
@@ -37,7 +66,10 @@ export function AppShell({
   const ctx = (session as { context?: string } | null)?.context;
   const isPlatformViewer = ctx === "platform";
   const allowed = (key: string | undefined) => key == null || permissions === null || permissions.has(key);
-  const links = nav(tenant.slug).filter((item) => allowed(item.permission));
+
+  const groups = buildNavGroups(tenant.slug)
+    .map((g) => ({ ...g, items: g.items.filter((item) => allowed(item.permission)) }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -56,20 +88,65 @@ export function AppShell({
               {tenant.name}
             </span>
             <nav className="flex items-center gap-1">
-              {links.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    pathname === item.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {groups.map((group) => {
+                if (group.label === null) {
+                  const item = group.items[0];
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                        pathname === item.href ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
+                if (group.items.length === 1) {
+                  const item = group.items[0];
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                        pathname === item.href ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
+                const activeInGroup = group.items.some((item) => pathname === item.href);
+                return (
+                  <DropdownMenu key={group.label}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "gap-1 text-sm font-medium",
+                          activeInGroup ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {group.label}
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[180px]">
+                      {group.items.map((item) => (
+                        <DropdownMenuItem key={item.href} asChild>
+                          <Link href={item.href} className={cn(pathname === item.href && "bg-accent")}>
+                            {item.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })}
             </nav>
           </div>
           <ThemeToggle className="shrink-0" />

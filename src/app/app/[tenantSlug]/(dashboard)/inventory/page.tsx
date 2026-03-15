@@ -1,17 +1,9 @@
-import type { Prisma } from "@prisma/client";
 import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
-import { DataTable, type DataTableColumn } from "@/components/data-table";
-import { Badge } from "@/components/ui/badge";
-import { ListPageLayout } from "@/components/list-page-layout";
-import { ExportButtons } from "@/components/export-buttons";
-import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { NoPermissionMessage } from "@/components/no-permission";
-import { Package } from "lucide-react";
-
-type ItemWithLot = Prisma.InventoryItemGetPayload<{ include: { lot: true } }>;
+import { InventoryTable } from "@/features/inventory/inventory-table";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -31,40 +23,37 @@ export default async function InventoryPage({ params }: Props) {
     );
   }
 
-  const items = await prisma.inventoryItem.findMany({
-    where: { tenantId: tenant.id },
-    include: { lot: true },
-    orderBy: { code: "asc" },
-    take: 100,
-  });
+  const canCreate = permissions === null || permissions.has(PERMISSION_KEYS.inventory_create);
+  const canAdjust = permissions === null || permissions.has(PERMISSION_KEYS.inventory_adjust);
 
-  const columns: DataTableColumn<ItemWithLot>[] = [
-    { key: "code", header: "Código", render: (i) => <span className="font-mono font-medium text-foreground">{i.code}</span> },
-    { key: "lot", header: "Lote", render: (i) => <span className="text-muted-foreground">{i.lot.code}</span> },
-    { key: "quantityCurrent", header: "Cantidad", render: (i) => String(i.quantityCurrent) },
-    { key: "status", header: "Estado", render: (i) => <Badge variant={getStatusVariant(i.status)}>{getStatusLabel(i.status) ?? i.status}</Badge> },
-  ];
-
-  const exportData = items.map((i) => ({
-    id: i.id,
-    code: i.code,
-    lotCode: i.lot.code,
-    quantityCurrent: String(i.quantityCurrent),
-    status: i.status,
-  }));
+  const [items, lots, locations] = await Promise.all([
+    prisma.inventoryItem.findMany({
+      where: { tenantId: tenant.id },
+      include: { lot: true },
+      orderBy: { code: "asc" },
+      take: 100,
+    }),
+    prisma.inventoryLot.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { code: "asc" },
+      select: { id: true, code: true },
+    }),
+    prisma.location.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
 
   return (
-    <ListPageLayout
-      title="Inventario"
-      description="Ítems de inventario."
-      actions={<ExportButtons data={exportData} filename="inventario" />}
-    >
-      <DataTable
-        columns={columns}
-        data={items}
-        keyExtractor={(i) => i.id}
-        emptyState={{ icon: Package, title: "Sin ítems", description: "No hay ítems en inventario." }}
+    <div className="space-y-6">
+      <InventoryTable
+        items={items}
+        lots={lots}
+        locations={locations}
+        canCreate={canCreate}
+        canAdjust={canAdjust}
       />
-    </ListPageLayout>
+    </div>
   );
 }
