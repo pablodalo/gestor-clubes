@@ -2,6 +2,7 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
+import { ensureTenantPanelRoles } from "@/lib/ensure-tenant-panel-roles";
 import { UsersTable } from "@/features/users/users-table";
 import { NoPermissionMessage } from "@/components/no-permission";
 
@@ -27,6 +28,8 @@ export default async function UsersPage({ params }: Props) {
   const canUpdate = permissions === null || permissions.has(PERMISSION_KEYS.users_update);
   const canDelete = permissions === null || permissions.has(PERMISSION_KEYS.users_delete);
 
+  await ensureTenantPanelRoles(tenant.id);
+
   const [users, allRoles] = await Promise.all([
     prisma.user.findMany({
       where: { tenantId: tenant.id },
@@ -39,7 +42,7 @@ export default async function UsersPage({ params }: Props) {
     }),
   ]);
 
-  // Solo roles de panel (socio es para portal, no para usuarios del panel)
+  // Solo roles de panel: Administrador, Operador, Cultivador (socio es para portal)
   const roles = allRoles.filter((r) => r.name !== "socio");
 
   return (
