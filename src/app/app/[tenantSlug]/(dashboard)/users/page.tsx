@@ -27,7 +27,7 @@ export default async function UsersPage({ params }: Props) {
   const canUpdate = permissions === null || permissions.has(PERMISSION_KEYS.users_update);
   const canDelete = permissions === null || permissions.has(PERMISSION_KEYS.users_delete);
 
-  const [users, roles] = await Promise.all([
+  const [users, allRoles] = await Promise.all([
     prisma.user.findMany({
       where: { tenantId: tenant.id },
       include: { role: true },
@@ -38,6 +38,9 @@ export default async function UsersPage({ params }: Props) {
       orderBy: { name: "asc" },
     }),
   ]);
+
+  // Solo roles de panel (socio es para portal, no para usuarios del panel)
+  const roles = allRoles.filter((r) => r.name !== "socio");
 
   return (
     <div className="space-y-6">

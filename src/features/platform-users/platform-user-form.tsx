@@ -75,9 +75,9 @@ export function PlatformUserFormDialog({ open, onOpenChange, onSuccess, edit }: 
     setLoading(true);
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const name = (formData.get("name") as string).trim();
-    const email = (formData.get("email") as string).trim();
-    const password = (formData.get("password") as string);
+    const name = String(formData.get("name") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "").trim();
     const permissions: PlatformPermissionKey[] = [];
     if (audit) permissions.push(PLATFORM_PERMISSION_KEYS.audit_read);
     if (errorsPerm) permissions.push(PLATFORM_PERMISSION_KEYS.errors_read);
@@ -87,7 +87,7 @@ export function PlatformUserFormDialog({ open, onOpenChange, onSuccess, edit }: 
       // Superadmin: no enviamos role para no forzar validación; el backend mantiene platform_owner.
       const payload: { name: string; password?: string; role?: "platform_admin" | "support_agent" | "billing_admin"; permissions: PlatformPermissionKey[] } = {
         name,
-        password: password || undefined,
+        password: password === "" ? undefined : password,
         permissions,
       };
       if (edit.role !== "platform_owner") payload.role = role as "platform_admin" | "support_agent" | "billing_admin";
@@ -156,6 +156,7 @@ export function PlatformUserFormDialog({ open, onOpenChange, onSuccess, edit }: 
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="new-password"
                 minLength={edit ? 0 : 8}
                 placeholder={edit ? "Dejar en blanco para no cambiar" : "Mínimo 8 caracteres"}
               />

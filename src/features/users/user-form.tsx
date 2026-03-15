@@ -62,16 +62,16 @@ export function UserFormDialog({ open, onOpenChange, onSuccess, edit, roles }: P
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const name = (formData.get("name") as string).trim();
-    const email = (formData.get("email") as string).trim();
-    const password = (formData.get("password") as string);
+    const name = String(formData.get("name") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "").trim();
     const status = (formData.get("status") as "active" | "suspended" | "inactive") || "active";
 
     if (edit) {
       const result = await updateTenantUser(edit.id, {
         name,
         email,
-        password: password || undefined,
+        password: password === "" ? undefined : password,
         roleId: roleId || undefined,
         status,
       });
@@ -156,9 +156,9 @@ export function UserFormDialog({ open, onOpenChange, onSuccess, edit, roles }: P
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="new-password"
                 minLength={edit ? 0 : 8}
                 placeholder={edit ? "••••••••" : "Mínimo 8 caracteres"}
-                autoComplete={edit ? "new-password" : "new-password"}
               />
             </div>
             <div className="space-y-2">
