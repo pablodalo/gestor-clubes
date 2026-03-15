@@ -28,6 +28,7 @@ export function TenantEditForm({ tenant }: Props) {
       name: (formData.get("name") as string).trim(),
       status: (formData.get("status") as "active" | "suspended" | "trial") || undefined,
       timezone: (formData.get("timezone") as string) || undefined,
+      locale: (formData.get("locale") as string) || undefined,
       currency: (formData.get("currency") as string) || undefined,
     });
     setLoading(false);
@@ -68,6 +69,19 @@ export function TenantEditForm({ tenant }: Props) {
             name="timezone"
             defaultValue={tenant.timezone ?? "America/Argentina/Buenos_Aires"}
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="locale">Idioma del panel</Label>
+          <select
+            id="locale"
+            name="locale"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            defaultValue={tenant.locale ?? "es-AR"}
+          >
+            <option value="es-AR">Español (Argentina)</option>
+            <option value="es">Español</option>
+            <option value="en">English</option>
+          </select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="currency">Moneda</Label>

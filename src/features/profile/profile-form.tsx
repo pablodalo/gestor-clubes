@@ -11,9 +11,11 @@ import { updateMyProfile } from "@/actions/users";
 type Props = {
   initialName: string;
   initialEmail: string;
+  /** Llamado tras guardar con éxito (ej. cerrar modal). */
+  onSuccess?: () => void;
 };
 
-export function ProfileForm({ initialName, initialEmail }: Props) {
+export function ProfileForm({ initialName, initialEmail, onSuccess }: Props) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,10 +41,11 @@ export function ProfileForm({ initialName, initialEmail }: Props) {
       return;
     }
     router.refresh();
+    onSuccess?.();
   }
 
   return (
-    <Card className="max-w-md">
+    <Card className="max-w-md border-0 shadow-none">
       <form onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle>Mi perfil</CardTitle>

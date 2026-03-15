@@ -417,6 +417,7 @@ model AuditLog {
   tenant     Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   actorType  String   // platform_user | user | member
   actorId    String
+  actorName  String?  // nombre del usuario que realizó la acción (para mostrar en auditoría)
   action     String
   entityName String
   entityId   String?

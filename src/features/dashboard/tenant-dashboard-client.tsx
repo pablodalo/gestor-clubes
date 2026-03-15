@@ -73,13 +73,13 @@ export function TenantDashboardClient({ tenantSlug, kpis, membersChartData }: Pr
         </Link>
       </div>
       {membersChartData.length > 0 && (
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader>
             <CardTitle>Socios por estado</CardTitle>
             <p className="text-sm text-muted-foreground">Distribución de socios activos, suspendidos e inactivos.</p>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px] w-full">
+            <div className="h-[240px] w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={membersChartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

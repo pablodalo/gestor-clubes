@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ProfileForm } from "@/features/profile/profile-form";
+import { getTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { TenantContext } from "@/lib/tenant";
 import type { LucideIcon } from "lucide-react";
@@ -39,33 +41,34 @@ import {
 
 type NavItem = { href: string; label: string; permission?: string; icon: LucideIcon };
 
-function buildNavGroups(slug: string): { label: string | null; items: NavItem[] }[] {
+function buildNavGroups(slug: string, locale: string | undefined): { label: string | null; items: NavItem[] }[] {
+  const t = getTranslations(locale);
   return [
-    { label: null, items: [{ href: `/app/${slug}`, label: "Dashboard", icon: LayoutDashboard }] },
+    { label: null, items: [{ href: `/app/${slug}`, label: t.dashboard, icon: LayoutDashboard }] },
     {
-      label: "Operaciones",
+      label: t.operations,
       items: [
-        { href: `/app/${slug}/locations`, label: "Ubicaciones", permission: "inventory.read", icon: MapPin },
-        { href: `/app/${slug}/lots`, label: "Lotes", permission: "lots.read", icon: Layers },
-        { href: `/app/${slug}/inventory`, label: "Inventario", permission: "inventory.read", icon: Package },
+        { href: `/app/${slug}/locations`, label: t.locations, permission: "inventory.read", icon: MapPin },
+        { href: `/app/${slug}/lots`, label: t.lots, permission: "lots.read", icon: Layers },
+        { href: `/app/${slug}/inventory`, label: t.inventory, permission: "inventory.read", icon: Package },
       ],
     },
     {
-      label: "Monitoreo",
-      items: [{ href: `/app/${slug}/devices`, label: "Dispositivos", permission: "devices.read", icon: Cpu }],
+      label: t.monitoring,
+      items: [{ href: `/app/${slug}/devices`, label: t.devices, permission: "devices.read", icon: Cpu }],
     },
     {
-      label: "Gestión del club",
+      label: t.clubManagement,
       items: [
-        { href: `/app/${slug}/users`, label: "Usuarios", permission: "users.read", icon: Users },
-        { href: `/app/${slug}/members`, label: "Socios", permission: "members.read", icon: UserCircle },
+        { href: `/app/${slug}/users`, label: t.users, permission: "users.read", icon: Users },
+        { href: `/app/${slug}/members`, label: t.members, permission: "members.read", icon: UserCircle },
       ],
     },
     {
-      label: "Control",
+      label: t.control,
       items: [
-        { href: `/app/${slug}/tickets`, label: "Tickets", permission: "tickets.read", icon: Ticket },
-        { href: `/app/${slug}/reports`, label: "Reportes", permission: "reports.read", icon: BarChart2 },
+        { href: `/app/${slug}/tickets`, label: t.tickets, permission: "tickets.read", icon: Ticket },
+        { href: `/app/${slug}/reports`, label: t.reports, permission: "reports.read", icon: BarChart2 },
       ],
     },
   ];
@@ -179,11 +182,16 @@ function UserMenu({
   tenantSlug,
   isPlatformViewer,
   userName,
+  onOpenProfile,
+  locale,
 }: {
   tenantSlug: string;
   isPlatformViewer: boolean;
   userName: string;
+  onOpenProfile?: () => void;
+  locale?: string;
 }) {
+  const t = getTranslations(locale);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -198,12 +206,19 @@ function UserMenu({
       <DropdownMenuContent align="end" className="w-56">
         {!isPlatformViewer && (
           <>
-            <DropdownMenuItem asChild>
-              <Link href={`/app/${tenantSlug}/profile`} className="flex items-center gap-2">
+            {onOpenProfile ? (
+              <DropdownMenuItem onClick={onOpenProfile} className="flex items-center gap-2 cursor-pointer">
                 <User className="h-4 w-4 shrink-0" />
-                Mi perfil
-              </Link>
-            </DropdownMenuItem>
+                {t.myProfile}
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem asChild>
+                <Link href={`/app/${tenantSlug}/profile`} className="flex items-center gap-2">
+                  <User className="h-4 w-4 shrink-0" />
+                  {t.myProfile}
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
           </>
         )}
@@ -212,14 +227,14 @@ function UserMenu({
             <DropdownMenuItem asChild>
               <Link href="/platform" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4 shrink-0" />
-                Volver a Platform
+                {t.backToPlatform}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
         <DropdownMenuItem onClick={() => signOut({ callbackUrl: `/app/${tenantSlug}/login` })}>
-          Salir
+          {t.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -242,12 +257,16 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const ctx = (session as { context?: string } | null)?.context;
   const isPlatformViewer = ctx === "platform";
   const userName = (session as { user?: { name?: string | null } } | null)?.user?.name ?? "";
+  const userEmail = (session as { user?: { email?: string | null } } | null)?.user?.email ?? "";
   const allowed = (key: string | undefined) => key == null || permissions === null || permissions.has(key);
+  const openProfile = () => setProfileDialogOpen(true);
+  const t = getTranslations(tenant.locale);
 
-  const groups = buildNavGroups(tenant.slug)
+  const groups = buildNavGroups(tenant.slug, tenant.locale)
     .map((g) => ({ ...g, items: g.items.filter((item) => allowed(item.permission)) }))
     .filter((g) => g.items.length > 0);
 
@@ -276,9 +295,23 @@ export function AppShell({
         {logoBlock}
         <div className="flex items-center gap-1 shrink-0">
           <ThemeToggle />
-          <UserMenu tenantSlug={tenant.slug} isPlatformViewer={isPlatformViewer} userName={userName} />
+          <UserMenu tenantSlug={tenant.slug} isPlatformViewer={isPlatformViewer} userName={userName} onOpenProfile={openProfile} locale={tenant.locale} />
         </div>
       </header>
+
+      {/* Diálogo Mi perfil (form para editar perfil) */}
+      {!isPlatformViewer && (
+        <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+          <DialogContent className="max-w-md" showClose={true}>
+            <DialogTitle className="sr-only">Mi perfil</DialogTitle>
+            <ProfileForm
+              initialName={userName}
+              initialEmail={userEmail}
+              onSuccess={() => setProfileDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Mobile drawer */}
       <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -307,13 +340,16 @@ export function AppShell({
               <div className="border-t px-4 py-3 mt-auto">
                 <p className="text-xs text-muted-foreground">Logueado como</p>
                 <p className="font-medium truncate">{userName || "Usuario"}</p>
-                <Link
-                  href={`/app/${tenant.slug}/profile`}
-                  className="text-sm text-primary hover:underline mt-1 inline-block"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button
+                  type="button"
+                  className="text-sm text-primary hover:underline mt-1 inline-block text-left"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setProfileDialogOpen(true);
+                  }}
                 >
                   Mi perfil
-                </Link>
+                </button>
               </div>
             )}
           </div>
@@ -330,30 +366,70 @@ export function AppShell({
             <div className="border-t p-3 flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <ThemeToggle />
-                <UserMenu tenantSlug={tenant.slug} isPlatformViewer={isPlatformViewer} userName={userName} />
+                <UserMenu tenantSlug={tenant.slug} isPlatformViewer={isPlatformViewer} userName={userName} onOpenProfile={openProfile} locale={tenant.locale} />
               </div>
             </div>
           </aside>
         )}
 
-        {/* Desktop horizontal: header con nav (nav con overflow interno para evitar scroll de página) */}
+        {/* Desktop horizontal: header con un solo dropdown "Menú" para evitar scroll */}
         {navigationLayout === "horizontal" && (
-          <header className="hidden md:block sticky top-0 z-20 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-sm overflow-hidden">
-            <div className="flex h-14 w-full items-center gap-2 px-4 min-w-0">
-              <Link href={`/app/${tenant.slug}`} className="shrink-0 flex items-center gap-2 font-semibold text-foreground min-w-0 max-w-[140px] sm:max-w-[200px]">
+          <header className="hidden md:block sticky top-0 z-20 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-sm">
+            <div className="flex h-14 w-full items-center justify-between gap-4 px-4 max-w-7xl mx-auto">
+              <Link href={`/app/${tenant.slug}`} className="shrink-0 flex items-center gap-2 font-semibold text-foreground min-w-0 max-w-[180px] sm:max-w-[220px]">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
                   {tenant.name.slice(0, 2).toUpperCase()}
                 </span>
                 <span className="truncate hidden sm:inline">{tenant.name}</span>
               </Link>
-              <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto py-1 overflow-y-hidden" aria-label="Navegación principal">
-                <div className="flex items-center gap-0.5 flex-nowrap">
-                  <NavContent slug={tenant.slug} pathname={pathname} groups={groups} variant="header" />
-                </div>
+              <nav className="flex items-center gap-1 shrink-0" aria-label="Navegación principal">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Menu className="h-4 w-4" />
+                      {t.menu}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64 max-h-[min(70vh,400px)] overflow-y-auto">
+                    {groups.map((group) => {
+                      if (group.label === null) {
+                        const item = group.items[0];
+                        const Icon = item.icon;
+                        return (
+                          <DropdownMenuItem key={item.href} asChild>
+                            <Link href={item.href} className="flex items-center gap-2">
+                              <Icon className="h-4 w-4 shrink-0" />
+                              {item.label}
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      }
+                      return (
+                        <div key={group.label}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            {group.label}
+                          </div>
+                          {group.items.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <DropdownMenuItem key={item.href} asChild>
+                                <Link href={item.href} className={cn("flex items-center gap-2", pathname === item.href && "bg-accent")}>
+                                  <Icon className="h-4 w-4 shrink-0" />
+                                  {item.label}
+                                </Link>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </nav>
-              <div className="flex items-center gap-1 shrink-0 pl-2">
+              <div className="flex items-center gap-1 shrink-0">
                 <ThemeToggle />
-                <UserMenu tenantSlug={tenant.slug} isPlatformViewer={isPlatformViewer} userName={userName} />
+                <UserMenu tenantSlug={tenant.slug} isPlatformViewer={isPlatformViewer} userName={userName} onOpenProfile={openProfile} locale={tenant.locale} />
               </div>
             </div>
           </header>

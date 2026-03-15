@@ -51,6 +51,7 @@ export async function createTicket(input: CreateTicketInput) {
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+      actorName: ctx.name ?? undefined,
     action: "ticket.create",
     entityName: "Ticket",
     entityId: ticket.id,

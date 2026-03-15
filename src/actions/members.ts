@@ -29,6 +29,7 @@ async function getTenantContext(): Promise<{
   tenantId: string;
   tenantSlug: string;
   userId: string;
+  actorName: string | null;
 } | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
@@ -37,7 +38,8 @@ async function getTenantContext(): Promise<{
   const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
   const userId = (session as unknown as { userId?: string }).userId;
   if (ctx !== "tenant" || !tenantId || !tenantSlug || !userId) return null;
-  return { tenantId, tenantSlug, userId };
+  const actorName = (session as unknown as { user?: { name?: string | null } }).user?.name ?? null;
+  return { tenantId, tenantSlug, userId, actorName };
 }
 
 export async function createMember(input: CreateMemberInput) {
@@ -81,6 +83,7 @@ export async function createMember(input: CreateMemberInput) {
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "member.create",
     entityName: "Member",
     entityId: member.id,
@@ -123,6 +126,7 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "member.update",
     entityName: "Member",
     entityId: member.id,
@@ -157,6 +161,7 @@ export async function deleteMember(memberId: string) {
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "member.delete",
     entityName: "Member",
     entityId: memberId,

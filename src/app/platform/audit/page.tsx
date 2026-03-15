@@ -12,6 +12,7 @@ import { AuditTenantFilter } from "@/features/audit/audit-tenant-filter";
 type AuditRow = {
   id: string;
   actorType: string;
+  actorName: string | null;
   action: string;
   entityName: string;
   entityId: string | null;
@@ -45,7 +46,7 @@ export default async function AuditPage({
       orderBy: { createdAt: "desc" },
       skip,
       take: PAGE_SIZE,
-      select: { id: true, actorType: true, action: true, entityName: true, entityId: true, createdAt: true, tenantId: true },
+      select: { id: true, actorType: true, actorName: true, action: true, entityName: true, entityId: true, createdAt: true, tenantId: true },
     }),
     prisma.auditLog.count({ where }),
   ]);
@@ -58,6 +59,7 @@ export default async function AuditPage({
   const rows: AuditRow[] = logs.map((l) => ({
     id: l.id,
     actorType: l.actorType,
+    actorName: l.actorName,
     action: l.action,
     entityName: l.entityName,
     entityId: l.entityId,
@@ -67,7 +69,7 @@ export default async function AuditPage({
 
   const columns: DataTableColumn<AuditRow>[] = [
     { key: "createdAt", header: "Fecha", render: (r) => <span className="text-muted-foreground">{new Date(r.createdAt).toLocaleString("es-AR")}</span> },
-    { key: "actorType", header: "Actor", render: (r) => <span className="font-medium text-foreground">{r.actorType}</span> },
+    { key: "actor", header: "Actor", render: (r) => <span className="font-medium text-foreground">{r.actorName ?? r.actorType}</span> },
     { key: "action", header: "Acción", render: (r) => r.action },
     { key: "entityName", header: "Entidad", render: (r) => r.entityName },
     { key: "entityId", header: "ID entidad", render: (r) => <span className="font-mono text-muted-foreground text-xs">{r.entityId ?? "—"}</span> },
@@ -78,6 +80,7 @@ export default async function AuditPage({
 
   const exportData = rows.map((r) => ({
     id: r.id,
+    actor: r.actorName ?? r.actorType,
     actorType: r.actorType,
     action: r.action,
     entityName: r.entityName,

@@ -4,6 +4,8 @@ type AuditParams = {
   tenantId: string | null;
   actorType: "platform_user" | "user" | "member";
   actorId: string;
+  /** Nombre del usuario/actor para mostrar en auditoría. */
+  actorName?: string | null;
   action: string;
   entityName: string;
   entityId?: string | null;
@@ -20,6 +22,7 @@ export async function createAuditLog(params: AuditParams): Promise<void> {
       tenantId: params.tenantId,
       actorType: params.actorType,
       actorId: params.actorId,
+      actorName: params.actorName ?? null,
       action: params.action,
       entityName: params.entityName,
       entityId: params.entityId,

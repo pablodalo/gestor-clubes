@@ -30,6 +30,7 @@ async function getTenantContext(): Promise<{
   tenantId: string;
   tenantSlug: string;
   userId: string;
+  actorName: string | null;
 } | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
@@ -38,7 +39,8 @@ async function getTenantContext(): Promise<{
   const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
   const userId = (session as unknown as { userId?: string }).userId;
   if (ctx !== "tenant" || !tenantId || !tenantSlug || !userId) return null;
-  return { tenantId, tenantSlug, userId };
+  const actorName = (session as unknown as { user?: { name?: string | null } }).user?.name ?? null;
+  return { tenantId, tenantSlug, userId, actorName };
 }
 
 export async function createTenantUser(input: z.infer<typeof createUserSchema>) {
@@ -83,6 +85,7 @@ export async function createTenantUser(input: z.infer<typeof createUserSchema>) 
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "user.create",
     entityName: "User",
     entityId: user.id,
@@ -147,6 +150,7 @@ export async function updateTenantUser(
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "user.update",
     entityName: "User",
     entityId: userId,
@@ -177,6 +181,7 @@ export async function deleteTenantUser(userId: string) {
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "user.delete",
     entityName: "User",
     entityId: userId,
@@ -231,6 +236,7 @@ export async function updateMyProfile(input: z.infer<typeof updateMyProfileSchem
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "user.update",
     entityName: "User",
     entityId: ctx.userId,

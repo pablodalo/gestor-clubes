@@ -25,6 +25,7 @@ async function getTenantContext(): Promise<{
   tenantId: string;
   tenantSlug: string;
   userId: string;
+  actorName: string | null;
 } | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
@@ -33,7 +34,8 @@ async function getTenantContext(): Promise<{
   const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
   const userId = (session as unknown as { userId?: string }).userId;
   if (ctx !== "tenant" || !tenantId || !tenantSlug || !userId) return null;
-  return { tenantId, tenantSlug, userId };
+  const actorName = (session as unknown as { user?: { name?: string | null } }).user?.name ?? null;
+  return { tenantId, tenantSlug, userId, actorName };
 }
 
 export async function createLocation(input: CreateLocationInput) {
@@ -65,6 +67,7 @@ export async function createLocation(input: CreateLocationInput) {
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "location.create",
     entityName: "Location",
     entityId: location.id,
@@ -104,6 +107,7 @@ export async function updateLocation(locationId: string, input: UpdateLocationIn
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "location.update",
     entityName: "Location",
     entityId: location.id,
@@ -134,6 +138,7 @@ export async function deleteLocation(locationId: string) {
     tenantId: ctx.tenantId,
     actorType: "user",
     actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
     action: "location.delete",
     entityName: "Location",
     entityId: locationId,

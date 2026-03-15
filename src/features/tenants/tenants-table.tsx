@@ -75,9 +75,9 @@ export function TenantsTable({ tenants }: Props) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/platform/tenants/${t.slug}`}>
+                <Link href={`/app/${t.slug}`} target="_blank" rel="noopener noreferrer">
                   <Eye className="h-4 w-4 mr-2" />
-                  Ver
+                  Ver (panel del club)
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
