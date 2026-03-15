@@ -185,3 +185,58 @@ export async function deleteTenantUser(userId: string) {
   revalidatePath(`/app/${ctx.tenantSlug}/users`);
   return { data: null };
 }
+
+const updateMyProfileSchema = z.object({
+  name: z.string().min(1, "Nombre requerido"),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(8, "Mínimo 8 caracteres").optional().or(z.literal("")),
+});
+
+/** Actualiza el perfil del usuario logueado (solo nombre, email y/o contraseña). No requiere permiso users_update. */
+export async function updateMyProfile(input: z.infer<typeof updateMyProfileSchema>) {
+  const ctx = await getTenantContext();
+  if (!ctx) return { error: "No autorizado" };
+
+  const parsed = updateMyProfileSchema.safeParse(input);
+  if (!parsed.success) {
+    const msg = Object.values(parsed.error.flatten().fieldErrors).flat()[0];
+    return { error: (msg as string) ?? "Datos inválidos" };
+  }
+
+  const data = parsed.data;
+  const existing = await prisma.user.findFirst({
+    where: { id: ctx.userId, tenantId: ctx.tenantId },
+  });
+  if (!existing) return { error: "Usuario no encontrado" };
+
+  const update: { name?: string; email?: string; passwordHash?: string } = {};
+  update.name = data.name;
+  if (data.email !== existing.email) {
+    const duplicate = await prisma.user.findUnique({
+      where: { tenantId_email: { tenantId: ctx.tenantId, email: data.email } },
+    });
+    if (duplicate) return { error: "Ya existe otro usuario con ese email" };
+    update.email = data.email;
+  }
+  if (data.password != null && data.password !== "") {
+    update.passwordHash = await hash(data.password, 10);
+  }
+
+  await prisma.user.update({
+    where: { id: ctx.userId },
+    data: update,
+  });
+
+  await createAuditLog({
+    tenantId: ctx.tenantId,
+    actorType: "user",
+    actorId: ctx.userId,
+    action: "user.update",
+    entityName: "User",
+    entityId: ctx.userId,
+  });
+
+  revalidatePath(`/app/${ctx.tenantSlug}/profile`);
+  revalidatePath(`/app/${ctx.tenantSlug}/users`);
+  return { data: null };
+}

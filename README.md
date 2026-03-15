@@ -25,6 +25,7 @@ SaaS multi-tenant white-label para operar múltiples clubes desde una sola base 
 - `/` — Inicio (links a las 3 áreas)
 - `/platform` — Superadmin (tenants, branding, usuarios plataforma)
 - `/app/[tenantSlug]` — Panel del club (usuarios internos, socios, inventario, etc.)
+- `/app/[tenantSlug]/profile` — Mi perfil (editar nombre, email y contraseña del usuario logueado; piso de todas las apps tenant)
 - `/portal/[tenantSlug]` — Portal de socios (login, perfil, movimientos, tickets)
 
 ## Requisitos
