@@ -681,7 +681,7 @@ async function main() {
         },
         create: {
           tenantId: tenant.id,
-          cultivationLot: { connect: { id: cultivationLot.id } },
+          cultivationLotId: cultivationLot.id,
           strainId: strain.id,
           code: "TDC-PL-001",
           stage: "floracion",
@@ -721,7 +721,7 @@ async function main() {
       await prisma.cultivationControl.create({
         data: {
           tenantId: tenant.id,
-          cultivationLot: { connect: { id: cultivationLot.id } },
+          cultivationLotId: cultivationLot.id,
           controlDate: new Date("2024-12-06"),
           temperature: 24.5,
           humidity: 55,
