@@ -158,6 +158,11 @@ model Member {
   memberNumber   String
   firstName      String
   lastName       String
+  reprocannNumber String?
+  reprocannAffiliateNumber String?
+  reprocannStartDate DateTime?
+  reprocannEndDate DateTime?
+  reprocannActive Boolean  @default(false)
   documentType   String?
   documentNumber String?
   birthDate      DateTime?

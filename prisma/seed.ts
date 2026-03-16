@@ -250,6 +250,11 @@ async function main() {
         status: "active",
         documentType: "DNI",
         documentNumber: "12345678",
+        reprocannNumber: `RPR-${tenant.slug.slice(0, 2).toUpperCase()}-1001`,
+        reprocannAffiliateNumber: `AFI-${tenant.slug.slice(0, 2).toUpperCase()}-501`,
+        reprocannStartDate: new Date("2024-01-15"),
+        reprocannEndDate: new Date("2025-01-15"),
+        reprocannActive: true,
       },
       create: {
         tenantId: tenant.id,
@@ -260,6 +265,11 @@ async function main() {
         status: "active",
         documentType: "DNI",
         documentNumber: "12345678",
+        reprocannNumber: `RPR-${tenant.slug.slice(0, 2).toUpperCase()}-1001`,
+        reprocannAffiliateNumber: `AFI-${tenant.slug.slice(0, 2).toUpperCase()}-501`,
+        reprocannStartDate: new Date("2024-01-15"),
+        reprocannEndDate: new Date("2025-01-15"),
+        reprocannActive: true,
       },
     });
 
@@ -274,6 +284,96 @@ async function main() {
       },
     });
     console.log(`Member: ${member1.email}`);
+
+    if (tenant.slug === "club-ejemplo") {
+      const extraMembers = [
+        {
+          memberNumber: "TDC-002",
+          firstName: "Carla",
+          lastName: "Dominguez",
+          email: "carla@thedabclub.ar",
+          documentType: "DNI",
+          documentNumber: "27123456",
+          reprocannNumber: "RPR-TDC-2002",
+          reprocannAffiliateNumber: "AFI-TDC-602",
+          reprocannStartDate: new Date("2023-06-01"),
+          reprocannEndDate: new Date("2024-06-01"),
+          reprocannActive: false,
+        },
+        {
+          memberNumber: "TDC-003",
+          firstName: "Matias",
+          lastName: "Rossi",
+          email: "matias@thedabclub.ar",
+          documentType: "DNI",
+          documentNumber: "30111222",
+          reprocannNumber: "RPR-TDC-2003",
+          reprocannAffiliateNumber: "AFI-TDC-603",
+          reprocannStartDate: new Date("2024-02-10"),
+          reprocannEndDate: new Date("2025-02-10"),
+          reprocannActive: true,
+        },
+        {
+          memberNumber: "TDC-004",
+          firstName: "Agustina",
+          lastName: "Vega",
+          email: "agustina@thedabclub.ar",
+          documentType: "DNI",
+          documentNumber: "33999888",
+          reprocannNumber: "RPR-TDC-2004",
+          reprocannAffiliateNumber: "AFI-TDC-604",
+          reprocannStartDate: new Date("2022-09-20"),
+          reprocannEndDate: new Date("2023-09-20"),
+          reprocannActive: false,
+        },
+      ];
+
+      for (const m of extraMembers) {
+        const member = await prisma.member.upsert({
+          where: { tenantId_memberNumber: { tenantId: tenant.id, memberNumber: m.memberNumber } },
+          update: {
+            firstName: m.firstName,
+            lastName: m.lastName,
+            email: m.email,
+            status: "active",
+            documentType: m.documentType,
+            documentNumber: m.documentNumber,
+            reprocannNumber: m.reprocannNumber,
+            reprocannAffiliateNumber: m.reprocannAffiliateNumber,
+            reprocannStartDate: m.reprocannStartDate,
+            reprocannEndDate: m.reprocannEndDate,
+            reprocannActive: m.reprocannActive,
+          },
+          create: {
+            tenantId: tenant.id,
+            memberNumber: m.memberNumber,
+            firstName: m.firstName,
+            lastName: m.lastName,
+            email: m.email,
+            status: "active",
+            documentType: m.documentType,
+            documentNumber: m.documentNumber,
+            reprocannNumber: m.reprocannNumber,
+            reprocannAffiliateNumber: m.reprocannAffiliateNumber,
+            reprocannStartDate: m.reprocannStartDate,
+            reprocannEndDate: m.reprocannEndDate,
+            reprocannActive: m.reprocannActive,
+          },
+        });
+
+        await prisma.memberAccount.upsert({
+          where: { memberId: member.id },
+          update: { email: m.email, status: "active" },
+          create: {
+            memberId: member.id,
+            email: m.email,
+            passwordHash: await hash("Socio123!", 10),
+            status: "active",
+          },
+        });
+      }
+      console.log("Extra members for The Dab Club: TDC-002, TDC-003, TDC-004");
+    }
 
     const lotCode = `LOT-${tenant.slug.slice(0, 2).toUpperCase()}-001`;
     const lot = await prisma.inventoryLot.upsert({

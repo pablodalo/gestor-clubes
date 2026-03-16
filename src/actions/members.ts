@@ -15,6 +15,11 @@ const createMemberSchema = z.object({
   lastName: z.string().min(1, "Apellido requerido"),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
+  reprocannNumber: z.string().optional(),
+  reprocannAffiliateNumber: z.string().optional(),
+  reprocannStartDate: z.string().optional(),
+  reprocannEndDate: z.string().optional(),
+  reprocannActive: z.boolean().optional(),
   documentType: z.string().optional(),
   documentNumber: z.string().optional(),
   status: z.enum(["active", "suspended", "inactive"]).default("active"),
@@ -59,6 +64,8 @@ export async function createMember(input: CreateMemberInput) {
 
   const data = parsed.data;
   const email = data.email?.trim() || null;
+  const reprocannStartDate = data.reprocannStartDate ? new Date(data.reprocannStartDate) : null;
+  const reprocannEndDate = data.reprocannEndDate ? new Date(data.reprocannEndDate) : null;
 
   const existing = await prisma.member.findUnique({
     where: { tenantId_memberNumber: { tenantId: ctx.tenantId, memberNumber: data.memberNumber } },
@@ -73,6 +80,11 @@ export async function createMember(input: CreateMemberInput) {
       lastName: data.lastName,
       email,
       phone: data.phone || null,
+      reprocannNumber: data.reprocannNumber || null,
+      reprocannAffiliateNumber: data.reprocannAffiliateNumber || null,
+      reprocannStartDate,
+      reprocannEndDate,
+      reprocannActive: data.reprocannActive ?? false,
       documentType: data.documentType || null,
       documentNumber: data.documentNumber || null,
       status: data.status,
@@ -113,12 +125,19 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
   if (!existing) return { error: "Socio no encontrado" };
 
   const data = parsed.data as Record<string, unknown>;
+  const reprocannStartDate = data.reprocannStartDate ? new Date(String(data.reprocannStartDate)) : null;
+  const reprocannEndDate = data.reprocannEndDate ? new Date(String(data.reprocannEndDate)) : null;
   const member = await prisma.member.update({
     where: { id: memberId },
     data: {
       ...data,
       email: data.email === "" ? null : (data.email as string | null),
       phone: data.phone === "" ? null : (data.phone as string | null),
+      reprocannNumber: data.reprocannNumber === "" ? null : (data.reprocannNumber as string | null),
+      reprocannAffiliateNumber:
+        data.reprocannAffiliateNumber === "" ? null : (data.reprocannAffiliateNumber as string | null),
+      reprocannStartDate: data.reprocannStartDate ? reprocannStartDate : undefined,
+      reprocannEndDate: data.reprocannEndDate ? reprocannEndDate : undefined,
     },
   });
 

@@ -32,6 +32,8 @@ const statusOptions = [
 export function MemberFormDialog({ tenantSlug, open, onOpenChange, onSuccess, edit }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const toDateInput = (value?: Date | string | null) =>
+    value ? new Date(value).toISOString().slice(0, 10) : "";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,6 +48,11 @@ export function MemberFormDialog({ tenantSlug, open, onOpenChange, onSuccess, ed
       lastName: (formData.get("lastName") as string).trim(),
       email: (formData.get("email") as string).trim() || undefined,
       phone: (formData.get("phone") as string).trim() || undefined,
+      reprocannNumber: (formData.get("reprocannNumber") as string).trim() || undefined,
+      reprocannAffiliateNumber: (formData.get("reprocannAffiliateNumber") as string).trim() || undefined,
+      reprocannStartDate: (formData.get("reprocannStartDate") as string).trim() || undefined,
+      reprocannEndDate: (formData.get("reprocannEndDate") as string).trim() || undefined,
+      reprocannActive: (formData.get("reprocannActive") as string) === "active",
       documentType: (formData.get("documentType") as string).trim() || undefined,
       documentNumber: (formData.get("documentNumber") as string).trim() || undefined,
       status: (formData.get("status") as CreateMemberInput["status"]) || "active",
@@ -111,6 +118,61 @@ export function MemberFormDialog({ tenantSlug, open, onOpenChange, onSuccess, ed
                       {o.label}
                     </option>
                   ))}
+                </select>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <p className="text-sm font-medium text-foreground">Reprocann</p>
+              <div className="mt-3 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reprocannNumber">Nº Reprocann</Label>
+                  <Input
+                    id="reprocannNumber"
+                    name="reprocannNumber"
+                    defaultValue={edit?.reprocannNumber ?? ""}
+                    placeholder="RPR-12345"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reprocannAffiliateNumber">Nº de afiliado</Label>
+                  <Input
+                    id="reprocannAffiliateNumber"
+                    name="reprocannAffiliateNumber"
+                    defaultValue={edit?.reprocannAffiliateNumber ?? ""}
+                    placeholder="AFI-00981"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reprocannStartDate">Inicio</Label>
+                  <Input
+                    id="reprocannStartDate"
+                    name="reprocannStartDate"
+                    type="date"
+                    defaultValue={toDateInput(edit?.reprocannStartDate)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reprocannEndDate">Vencimiento</Label>
+                  <Input
+                    id="reprocannEndDate"
+                    name="reprocannEndDate"
+                    type="date"
+                    defaultValue={toDateInput(edit?.reprocannEndDate)}
+                  />
+                </div>
+              </div>
+              <div className="mt-3 space-y-2">
+                <Label htmlFor="reprocannActive">Estado Reprocann</Label>
+                <select
+                  id="reprocannActive"
+                  name="reprocannActive"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  defaultValue={edit?.reprocannActive ? "active" : "inactive"}
+                >
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
                 </select>
               </div>
             </div>

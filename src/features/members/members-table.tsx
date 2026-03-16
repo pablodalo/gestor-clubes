@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,7 +37,18 @@ export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDel
 
   const columns: DataTableColumn<Member>[] = [
     { key: "memberNumber", header: "Nº", render: (m) => <span className="font-mono text-foreground">{m.memberNumber}</span> },
-    { key: "firstName", header: "Nombre", render: (m) => <span className="font-medium">{m.firstName} {m.lastName}</span> },
+    {
+      key: "firstName",
+      header: "Nombre",
+      render: (m) => (
+        <Link
+          href={`/app/${tenantSlug}/members/${m.id}`}
+          className="font-medium text-foreground hover:underline"
+        >
+          {m.firstName} {m.lastName}
+        </Link>
+      ),
+    },
     { key: "email", header: "Email", render: (m) => <span className="text-muted-foreground">{m.email ?? "—"}</span> },
     { key: "status", header: "Estado", render: (m) => <Badge variant={getStatusVariant(m.status)}>{getStatusLabel(m.status) ?? m.status}</Badge> },
   ];
@@ -84,12 +96,15 @@ export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDel
             canUpdate || canDelete ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground hover:text-foreground">
                     <MoreHorizontal className="h-4 w-4" />
                     <span className="sr-only">Abrir menú</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => router.push(`/app/${tenantSlug}/members/${m.id}`)}>
+                    Ver ficha
+                  </DropdownMenuItem>
                   {canUpdate && (
                     <DropdownMenuItem onClick={() => { setEditing(m); setDialogOpen(true); }}>
                       <Pencil className="h-4 w-4 mr-2" />
