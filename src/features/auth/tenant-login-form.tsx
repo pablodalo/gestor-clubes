@@ -57,11 +57,11 @@ export function TenantLoginForm({ tenantSlug, logoUrl, appName, loginTitle, logi
       <Card className="w-full max-w-md overflow-hidden">
         <CardHeader className="text-center pb-2">
           {logoUrl ? (
-            <div className="flex justify-center mb-3">
+            <div className="flex justify-center mb-4 p-3 rounded-xl bg-muted/50 border border-border/80">
               <img
                 src={logoUrl}
                 alt={displayName}
-                className="h-14 w-auto max-w-[200px] object-contain"
+                className="h-16 w-auto max-w-[220px] object-contain"
               />
             </div>
           ) : null}

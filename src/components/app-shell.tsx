@@ -299,15 +299,15 @@ export function AppShell({
 
   const displayName = appName?.trim() || tenant.name;
   const logoBlock = (
-    <span className="flex items-center gap-2 font-semibold text-foreground truncate max-w-[180px] sm:max-w-none">
+    <span className="flex items-center gap-2.5 font-semibold text-foreground truncate max-w-[200px] sm:max-w-none">
       {logoUrl ? (
         <img
           src={logoUrl}
           alt={displayName}
-          className="h-8 w-8 shrink-0 object-contain rounded-md border border-border bg-card"
+          className="h-10 w-10 shrink-0 object-contain rounded-lg border border-border bg-card shadow-sm ring-1 ring-black/5"
         />
       ) : (
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-medium">
           {tenant.name.slice(0, 2).toUpperCase()}
         </span>
       )}
@@ -397,15 +397,15 @@ export function AppShell({
         {navigationLayout === "vertical" && (
           <aside className="hidden md:flex md:flex-col md:w-56 md:fixed md:inset-y-0 md:border-r md:bg-card/50 z-20 tdc-sidebar">
             <div className="shrink-0 px-3 py-3 border-b border-border/80">
-              <Link href={`/app/${tenant.slug}`} className="flex items-center gap-2 font-semibold text-foreground min-w-0">
+              <Link href={`/app/${tenant.slug}`} className="flex items-center gap-2.5 font-semibold text-foreground min-w-0">
                 {logoUrl ? (
                   <img
                     src={logoUrl}
                     alt={displayName}
-                    className="h-8 w-8 shrink-0 object-contain rounded-md border border-border bg-card"
+                    className="h-10 w-10 shrink-0 object-contain rounded-lg border border-border bg-card shadow-sm ring-1 ring-black/5"
                   />
                 ) : (
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-medium">
                     {tenant.name.slice(0, 2).toUpperCase()}
                   </span>
                 )}
@@ -427,11 +427,19 @@ export function AppShell({
         {/* Desktop horizontal: header con submenús (Dashboard + Operaciones, Monitoreo, etc. con dropdowns) */}
         {navigationLayout === "horizontal" && (
           <header className="hidden md:flex sticky top-0 z-20 w-full shrink-0 min-h-12 flex-wrap items-center gap-2 py-2 px-4 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-sm">
-            <Link href={`/app/${tenant.slug}`} className="shrink-0 flex items-center gap-2 font-semibold text-foreground min-w-0 max-w-[160px] sm:max-w-[200px]">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
-                {tenant.name.slice(0, 2).toUpperCase()}
-              </span>
-              <span className="truncate hidden sm:inline">{tenant.name}</span>
+            <Link href={`/app/${tenant.slug}`} className="shrink-0 flex items-center gap-2.5 font-semibold text-foreground min-w-0 max-w-[180px] sm:max-w-[220px]">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={displayName}
+                  className="h-10 w-10 shrink-0 object-contain rounded-lg border border-border bg-card shadow-sm ring-1 ring-black/5"
+                />
+              ) : (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-medium">
+                  {tenant.name.slice(0, 2).toUpperCase()}
+                </span>
+              )}
+              <span className="truncate hidden sm:inline">{displayName}</span>
             </Link>
             <nav className="flex items-center gap-0.5 flex-1 min-w-0 flex-wrap" aria-label="Navegación principal">
               <NavContent slug={tenant.slug} pathname={pathname} groups={groups} variant="header" />
