@@ -240,10 +240,20 @@ async function main() {
       },
     });
 
-    const member1 = await prisma.member.create({
-      data: {
+    const memberNumber = `SOC-${tenant.slug.slice(0, 2).toUpperCase()}-001`;
+    const member1 = await prisma.member.upsert({
+      where: { tenantId_memberNumber: { tenantId: tenant.id, memberNumber } },
+      update: {
+        firstName: "Juan",
+        lastName: "Socio",
+        email: `socio@${tenant.slug}.com`,
+        status: "active",
+        documentType: "DNI",
+        documentNumber: "12345678",
+      },
+      create: {
         tenantId: tenant.id,
-        memberNumber: `SOC-${tenant.slug.slice(0, 2).toUpperCase()}-001`,
+        memberNumber,
         firstName: "Juan",
         lastName: "Socio",
         email: `socio@${tenant.slug}.com`,
@@ -265,10 +275,17 @@ async function main() {
     });
     console.log(`Member: ${member1.email}`);
 
-    const lot = await prisma.inventoryLot.create({
-      data: {
+    const lotCode = `LOT-${tenant.slug.slice(0, 2).toUpperCase()}-001`;
+    const lot = await prisma.inventoryLot.upsert({
+      where: { tenantId_code: { tenantId: tenant.id, code: lotCode } },
+      update: {
+        description: "Lote demo",
+        status: "active",
+        locationId: loc1.id,
+      },
+      create: {
         tenantId: tenant.id,
-        code: `LOT-${tenant.slug.slice(0, 2).toUpperCase()}-001`,
+        code: lotCode,
         description: "Lote demo",
         status: "active",
         locationId: loc1.id,
