@@ -50,6 +50,15 @@ export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDel
       ),
     },
     { key: "email", header: "Email", render: (m) => <span className="text-muted-foreground">{m.email ?? "—"}</span> },
+    {
+      key: "reprocannActive",
+      header: "Reprocann",
+      render: (m) => (
+        <Badge variant={m.reprocannActive ? "success" : "secondary"}>
+          {m.reprocannActive ? "Activo" : "Inactivo"}
+        </Badge>
+      ),
+    },
     { key: "status", header: "Estado", render: (m) => <Badge variant={getStatusVariant(m.status)}>{getStatusLabel(m.status) ?? m.status}</Badge> },
   ];
 
@@ -67,6 +76,7 @@ export function MembersTable({ tenantSlug, members, canCreate, canUpdate, canDel
     firstName: m.firstName,
     lastName: m.lastName,
     email: m.email ?? "",
+    reprocannActive: m.reprocannActive ? "Activo" : "Inactivo",
     status: m.status,
   }));
 
