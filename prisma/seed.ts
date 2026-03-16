@@ -105,13 +105,13 @@ async function main() {
     update: {
       appName: "The Dab Club",
       shortName: "TDC",
-      primaryColor: "#d4af37",
-      secondaryColor: "#8a6f2f",
-      accentColor: "#f3d27a",
-      backgroundColor: "#0b0b0b",
+      primaryColor: "#1a1a1a",
+      secondaryColor: "#e6dcc8",
+      accentColor: "#c6a15b",
+      backgroundColor: "#f7f2e8",
       fontFamily: "var(--font-tdc)",
-      radiusScale: "0.25",
-      darkModeDefault: true,
+      radiusScale: "0.5",
+      darkModeDefault: false,
       navigationLayout: "vertical",
       loginTitle: "Bienvenido a The Dab Club",
       loginSubtitle: "Ingresá a tu portal de socios.",
@@ -120,13 +120,13 @@ async function main() {
       tenantId: tenant2.id,
       appName: "The Dab Club",
       shortName: "TDC",
-      primaryColor: "#d4af37",
-      secondaryColor: "#8a6f2f",
-      accentColor: "#f3d27a",
-      backgroundColor: "#0b0b0b",
+      primaryColor: "#1a1a1a",
+      secondaryColor: "#e6dcc8",
+      accentColor: "#c6a15b",
+      backgroundColor: "#f7f2e8",
       fontFamily: "var(--font-tdc)",
-      radiusScale: "0.25",
-      darkModeDefault: true,
+      radiusScale: "0.5",
+      darkModeDefault: false,
       navigationLayout: "vertical",
       loginTitle: "Bienvenido a The Dab Club",
       loginSubtitle: "Ingresá a tu portal de socios.",
@@ -595,26 +595,42 @@ async function main() {
 
       const supplier = await prisma.supplier.upsert({
         where: { tenantId_name: { tenantId: tenant.id, name: "Grow Supply BA" } },
-        update: {},
+        update: {
+          suppliesProvided: "Fertilizantes, sustratos y bioestimulantes",
+          paymentStatus: "pending",
+          pendingPayment: true,
+          pendingDelivery: true,
+          nextDeliveryAt: new Date("2024-12-14"),
+        },
         create: {
           tenantId: tenant.id,
           name: "Grow Supply BA",
           email: "ventas@growsupply.com",
           phone: "+54 11 4444-5555",
+          suppliesProvided: "Fertilizantes, sustratos y bioestimulantes",
+          paymentStatus: "pending",
+          pendingPayment: true,
+          pendingDelivery: true,
+          nextDeliveryAt: new Date("2024-12-14"),
           status: "active",
         },
       });
 
       const supplies = [
-        { name: "Fertilizante A", category: "fertilizante", unit: "l", minQty: 5 },
-        { name: "Sustrato Premium", category: "sustrato", unit: "kg", minQty: 20 },
-        { name: "Bioestimulante", category: "insumo", unit: "l", minQty: 2 },
+        { name: "Fertilizante A", category: "fertilizante", unit: "l", minQty: 5, currentQty: 3, isMissing: true, renewalAt: new Date("2024-12-11") },
+        { name: "Sustrato Premium", category: "sustrato", unit: "kg", minQty: 20, currentQty: 40, isMissing: false, renewalAt: new Date("2024-12-20") },
+        { name: "Bioestimulante", category: "insumo", unit: "l", minQty: 2, currentQty: 1, isMissing: true, renewalAt: new Date("2024-12-09") },
       ];
 
       for (const s of supplies) {
         await prisma.supplyItem.upsert({
           where: { tenantId_name: { tenantId: tenant.id, name: s.name } },
-          update: {},
+          update: {
+            currentQty: s.currentQty,
+            minQty: s.minQty,
+            isMissing: s.isMissing,
+            renewalAt: s.renewalAt,
+          },
           create: {
             tenantId: tenant.id,
             supplierId: supplier.id,
@@ -622,7 +638,9 @@ async function main() {
             category: s.category,
             unit: s.unit,
             minQty: s.minQty,
-            currentQty: s.minQty * 2,
+            currentQty: s.currentQty,
+            isMissing: s.isMissing,
+            renewalAt: s.renewalAt,
             status: "active",
           },
         });
@@ -658,9 +676,12 @@ async function main() {
 
       await prisma.plant.upsert({
         where: { tenantId_code: { tenantId: tenant.id, code: "TDC-PL-001" } },
-        update: {},
+        update: {
+          cultivationLotId: cultivationLot.id,
+        },
         create: {
           tenantId: tenant.id,
+          cultivationLotId: cultivationLot.id,
           strainId: strain.id,
           code: "TDC-PL-001",
           stage: "floracion",
@@ -700,6 +721,7 @@ async function main() {
       await prisma.cultivationControl.create({
         data: {
           tenantId: tenant.id,
+          cultivationLotId: cultivationLot.id,
           controlDate: new Date("2024-12-06"),
           temperature: 24.5,
           humidity: 55,
