@@ -267,6 +267,8 @@ export function AppShell({
   session,
   permissions,
   navigationLayout = "horizontal",
+  logoUrl,
+  appName,
   children,
 }: {
   tenant: TenantContext;
@@ -274,6 +276,10 @@ export function AppShell({
   permissions: Set<string> | null;
   /** "vertical" = sidebar; "horizontal" = header. Desde branding del tenant. */
   navigationLayout?: "horizontal" | "vertical";
+  /** Logo del tenant (branding). Si no hay, se muestran iniciales + nombre. */
+  logoUrl?: string | null;
+  /** Nombre de la app (branding). Fallback a tenant.name */
+  appName?: string | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -291,12 +297,21 @@ export function AppShell({
     .map((g) => ({ ...g, items: g.items.filter((item) => allowed(item.permission)) }))
     .filter((g) => g.items.length > 0);
 
+  const displayName = appName?.trim() || tenant.name;
   const logoBlock = (
     <span className="flex items-center gap-2 font-semibold text-foreground truncate max-w-[180px] sm:max-w-none">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
-        {tenant.name.slice(0, 2).toUpperCase()}
-      </span>
-      <span className="hidden sm:inline">{tenant.name}</span>
+      {logoUrl ? (
+        <img
+          src={logoUrl}
+          alt={displayName}
+          className="h-8 w-8 shrink-0 object-contain rounded-md border border-border bg-card"
+        />
+      ) : (
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
+          {tenant.name.slice(0, 2).toUpperCase()}
+        </span>
+      )}
+      <span className="hidden sm:inline truncate">{displayName}</span>
     </span>
   );
 
@@ -381,7 +396,23 @@ export function AppShell({
         {/* Desktop vertical: sidebar */}
         {navigationLayout === "vertical" && (
           <aside className="hidden md:flex md:flex-col md:w-56 md:fixed md:inset-y-0 md:border-r md:bg-card/50 z-20 tdc-sidebar">
-            <div className="flex flex-col gap-2 px-3 py-4 overflow-y-auto flex-1">
+            <div className="shrink-0 px-3 py-3 border-b border-border/80">
+              <Link href={`/app/${tenant.slug}`} className="flex items-center gap-2 font-semibold text-foreground min-w-0">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={displayName}
+                    className="h-8 w-8 shrink-0 object-contain rounded-md border border-border bg-card"
+                  />
+                ) : (
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
+                    {tenant.name.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+                <span className="truncate">{displayName}</span>
+              </Link>
+            </div>
+            <div className="flex flex-col gap-2 px-3 py-4 overflow-y-auto flex-1 min-h-0">
               <NavContent slug={tenant.slug} pathname={pathname} groups={groups} variant="sidebar" />
             </div>
             <div className="border-t p-3 flex flex-col gap-2">
