@@ -72,9 +72,15 @@ async function main() {
 
   const tenant2 = await prisma.tenant.upsert({
     where: { slug: "club-ejemplo" },
-    update: {},
+    update: {
+      name: "The Dab Club",
+      status: "active",
+      timezone: "America/Argentina/Buenos_Aires",
+      locale: "es-AR",
+      currency: "ARS",
+    },
     create: {
-      name: "Club Ejemplo",
+      name: "The Dab Club",
       slug: "club-ejemplo",
       status: "active",
       timezone: "America/Argentina/Buenos_Aires",
@@ -85,19 +91,36 @@ async function main() {
 
   await prisma.tenantBranding.upsert({
     where: { tenantId: tenant2.id },
-    update: {},
+    update: {
+      appName: "The Dab Club",
+      shortName: "TDC",
+      primaryColor: "#d4af37",
+      secondaryColor: "#8a6f2f",
+      accentColor: "#f3d27a",
+      backgroundColor: "#0b0b0b",
+      fontFamily: "Montserrat, system-ui",
+      radiusScale: "0.25",
+      darkModeDefault: true,
+      loginTitle: "Bienvenido a The Dab Club",
+      loginSubtitle: "Ingresá a tu portal de socios.",
+    },
     create: {
       tenantId: tenant2.id,
-      appName: "Club Ejemplo",
-      shortName: "CE",
-      primaryColor: "#7c3aed",
-      secondaryColor: "#5b21b6",
-      accentColor: "#a78bfa",
-      darkModeDefault: false,
+      appName: "The Dab Club",
+      shortName: "TDC",
+      primaryColor: "#d4af37",
+      secondaryColor: "#8a6f2f",
+      accentColor: "#f3d27a",
+      backgroundColor: "#0b0b0b",
+      fontFamily: "Montserrat, system-ui",
+      radiusScale: "0.25",
+      darkModeDefault: true,
+      loginTitle: "Bienvenido a The Dab Club",
+      loginSubtitle: "Ingresá a tu portal de socios.",
     },
   });
 
-  console.log("Tenants: demo-club, club-ejemplo");
+  console.log("Tenants: demo-club, club-ejemplo (The Dab Club)");
 
   const OPERADOR_PERMISSION_KEYS = [
     "members.read", "members.create", "members.update",
