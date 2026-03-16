@@ -55,9 +55,15 @@ async function main() {
 
   const tenant1 = await prisma.tenant.upsert({
     where: { slug: "demo-club" },
-    update: {},
+    update: {
+      name: "LeWyd",
+      status: "active",
+      timezone: "America/Argentina/Buenos_Aires",
+      locale: "es-AR",
+      currency: "ARS",
+    },
     create: {
-      name: "Demo Club",
+      name: "LeWyd",
       slug: "demo-club",
       status: "active",
       timezone: "America/Argentina/Buenos_Aires",
@@ -68,16 +74,34 @@ async function main() {
 
   await prisma.tenantBranding.upsert({
     where: { tenantId: tenant1.id },
-    update: {},
+    update: {
+      appName: "LeWyd",
+      shortName: "LW",
+      primaryColor: "#4f2d7f",
+      secondaryColor: "#e8dcff",
+      accentColor: "#b88cff",
+      backgroundColor: "#f7f1ff",
+      fontFamily: "var(--font-tdc)",
+      radiusScale: "0.5",
+      darkModeDefault: false,
+      navigationLayout: "vertical",
+      loginTitle: "Bienvenido a LeWyd",
+      loginSubtitle: "Gestión integral del club y su cultivo.",
+    },
     create: {
       tenantId: tenant1.id,
-      appName: "Demo Club",
-      shortName: "DC",
-      primaryColor: "#0f766e",
-      secondaryColor: "#134e4a",
-      accentColor: "#2dd4bf",
+      appName: "LeWyd",
+      shortName: "LW",
+      primaryColor: "#4f2d7f",
+      secondaryColor: "#e8dcff",
+      accentColor: "#b88cff",
+      backgroundColor: "#f7f1ff",
+      fontFamily: "var(--font-tdc)",
+      radiusScale: "0.5",
       darkModeDefault: false,
-      loginTitle: "Bienvenido a Demo Club",
+      navigationLayout: "vertical",
+      loginTitle: "Bienvenido a LeWyd",
+      loginSubtitle: "Gestión integral del club y su cultivo.",
     },
   });
 
@@ -133,7 +157,7 @@ async function main() {
     },
   });
 
-  console.log("Tenants: demo-club, club-ejemplo (The Dab Club)");
+  console.log("Tenants: demo-club (LeWyd), club-ejemplo (The Dab Club)");
 
   const OPERADOR_PERMISSION_KEYS = [
     "members.read", "members.create", "members.update",

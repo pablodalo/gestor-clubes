@@ -5,6 +5,7 @@ import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { SuppliersTable } from "@/features/admin/suppliers-table";
 import { SupplierForm } from "@/features/admin/supplier-form";
+import { logError } from "@/lib/server-log";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -25,37 +26,49 @@ export default async function SuppliersPage({ params }: Props) {
     );
   }
 
-  const suppliers = await prisma.supplier.findMany({
-    where: { tenantId: tenant.id },
-    include: {
-      supplies: {
-        select: { id: true },
+  try {
+    const suppliers = await prisma.supplier.findMany({
+      where: { tenantId: tenant.id },
+      include: {
+        supplies: {
+          select: { id: true },
+        },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    });
 
-  const rows = suppliers.map((supplier) => ({
-    ...supplier,
-    suppliesCount: supplier.supplies.length,
-  }));
+    const rows = suppliers.map((supplier) => ({
+      ...supplier,
+      suppliesCount: supplier.supplies.length,
+    }));
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Proveedores</h1>
-        <p className="text-muted-foreground mt-1">Gestión de proveedores e insumos.</p>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <SuppliersTable suppliers={rows} />
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Proveedores</h1>
+          <p className="text-muted-foreground mt-1">Gestión de proveedores e insumos.</p>
         </div>
-        {canManage && (
-          <div>
-            <SupplierForm onSuccess={() => {}} />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <SuppliersTable suppliers={rows} />
           </div>
-        )}
+          {canManage && (
+            <div>
+              <SupplierForm onSuccess={() => {}} />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  } catch (error) {
+    logError("SuppliersPage", error, `/app/${tenantSlug}/suppliers`);
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Proveedores</h1>
+          <p className="text-destructive text-sm">No se pudo cargar el módulo en este momento.</p>
+        </div>
+      </div>
+    );
+  }
 }

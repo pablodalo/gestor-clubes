@@ -96,6 +96,39 @@
     linear-gradient(155deg, hsl(42 45% 95%) 0%, hsl(34 35% 91%) 100%);
 }
 
+[data-tenant="lw"] {
+  background:
+    radial-gradient(circle at top left, hsl(274 80% 96% / 0.95) 0%, transparent 34%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(274 52% 98%) 100%);
+}
+
+[data-tenant="lw"] .tdc-sidebar {
+  background: linear-gradient(180deg, hsl(272 54% 97%) 0%, hsl(266 42% 94%) 100%);
+  border-color: hsl(266 28% 84%);
+  box-shadow: inset -1px 0 0 hsl(266 28% 84%);
+}
+
+[data-tenant="lw"] .tdc-sidebar a {
+  color: hsl(270 24% 24%);
+}
+
+[data-tenant="lw"] .tdc-sidebar a:hover {
+  background: hsl(268 48% 88%);
+  color: hsl(268 40% 18%);
+}
+
+[data-tenant="lw"] .tdc-sidebar a.bg-primary\/10,
+[data-tenant="lw"] .tdc-sidebar a.text-primary {
+  background: hsl(268 56% 84%);
+  color: hsl(268 40% 18%);
+}
+
+[data-tenant="lw"] .login-page-bg {
+  background:
+    radial-gradient(circle at top left, hsl(276 82% 94%) 0%, transparent 30%),
+    linear-gradient(155deg, hsl(273 56% 97%) 0%, hsl(264 44% 92%) 100%);
+}
+
 @layer base {
   * {
     @apply border-border;
