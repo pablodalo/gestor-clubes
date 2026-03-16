@@ -488,6 +488,45 @@ async function main() {
           },
         });
       }
+
+      // Pagos de ejemplo para el año actual (Ene, Feb, Mar) para que el gráfico de ingresos muestre "Cobrado"
+      const now = new Date();
+      const year = now.getFullYear();
+      const jan1 = new Date(year, 0, 1);
+      const mar31 = new Date(year, 2, 31, 23, 59, 59);
+      await prisma.membershipPayment.deleteMany({
+        where: {
+          tenantId: tenant.id,
+          paidAt: { gte: jan1, lte: mar31 },
+          notes: "Pago seed año actual",
+        },
+      });
+      const membersForPayments = await prisma.member.findMany({
+        where: { tenantId: tenant.id, status: "active" },
+        select: { id: true, membershipLastAmount: true, membershipCurrency: true, memberNumber: true },
+      });
+      for (const member of membersForPayments) {
+        const amount = Number(member.membershipLastAmount ?? 0);
+        const curr = member.membershipCurrency ?? "ARS";
+        for (const month of [0, 1, 2]) {
+          await prisma.membershipPayment.create({
+            data: {
+              tenantId: tenant.id,
+              memberId: member.id,
+              amount,
+              currency: curr,
+              paidAt: new Date(year, month, 15),
+              method: "transferencia",
+              reference: `TDC-${member.memberNumber}-${year}-${String(month + 1).padStart(2, "0")}`,
+              notes: "Pago seed año actual",
+            },
+          });
+        }
+      }
+      if (membersForPayments.length > 0) {
+        console.log(`Pagos ejemplo año ${year} (Ene–Mar) para ${membersForPayments.length} socios.`);
+      }
+
       console.log("Extra members for The Dab Club: TDC-002, TDC-003, TDC-004");
 
       const cultivationLot = await prisma.cultivationLot.upsert({

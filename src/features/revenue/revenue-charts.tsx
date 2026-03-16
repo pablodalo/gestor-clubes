@@ -35,31 +35,36 @@ export function RevenueCharts({ currency, yearAnnual, currentYear }: Props) {
   const hasAnnual = yearAnnual.some((d) => d.cobrado > 0 || d.proyectado > 0);
 
   return (
-    <Card className="w-full overflow-hidden border-primary/10 bg-gradient-to-br from-card to-muted/20">
+    <Card className="w-full overflow-hidden border-primary/20 bg-card shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold">Vista anual {currentYear}</CardTitle>
+        <CardTitle className="text-lg font-semibold tracking-tight">Vista anual {currentYear}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Por cada mes: Cobrado (real) y Proyectado (recurrencias). Meses pasados pueden tener ambos; meses futuros solo proyección.
+          Cobrado (real) y Proyectado (recurrencias) por mes. Meses pasados: ambos cuando hay datos; meses futuros: solo proyección.
         </p>
       </CardHeader>
       <CardContent className="w-full px-0 sm:px-6">
         {hasAnnual ? (
-          <div className="h-[300px] w-full min-w-0" style={{ width: "100%" }}>
+          <div className="h-[320px] w-full min-w-0" style={{ width: "100%" }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={yearAnnual}
-                margin={{ top: 12, right: 16, left: 12, bottom: 8 }}
-                barCategoryGap="12%"
-                barGap={4}
+                margin={{ top: 16, right: 20, left: 12, bottom: 12 }}
+                barCategoryGap="14%"
+                barGap={6}
               >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted/80" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatMoney(v, currency)} width={72} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted/60" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tickFormatter={(v) => formatMoney(v, currency)}
+                  width={76}
+                />
                 <Tooltip
                   contentStyle={{
                     borderRadius: "var(--radius)",
                     border: "1px solid hsl(var(--border))",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
+                    backgroundColor: "hsl(var(--card))",
                   }}
                   formatter={(value: number, name: string) => [
                     formatMoney(value, currency),
@@ -72,20 +77,22 @@ export function RevenueCharts({ currency, yearAnnual, currentYear }: Props) {
                 <Legend
                   wrapperStyle={{ fontSize: 12 }}
                   formatter={(value) => (value === "cobrado" ? "Cobrado" : "Proyectado")}
+                  iconType="square"
+                  iconSize={10}
                 />
                 <Bar
                   dataKey="cobrado"
                   name="cobrado"
                   fill="hsl(var(--primary))"
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
+                  maxBarSize={44}
                 />
                 <Bar
                   dataKey="proyectado"
                   name="proyectado"
-                  fill="hsl(174 30% 55% / 0.85)"
+                  fill="hsl(174 35% 52%)"
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
+                  maxBarSize={44}
                 />
               </BarChart>
             </ResponsiveContainer>
