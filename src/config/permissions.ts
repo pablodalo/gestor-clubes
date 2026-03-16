@@ -52,6 +52,18 @@ export const PERMISSION_KEYS = {
   sales_read: "sales.read",
   sales_manage: "sales.manage",
   compliance_read: "compliance.read",
+  suppliers_read: "suppliers.read",
+  suppliers_manage: "suppliers.manage",
+  supplies_read: "supplies.read",
+  supplies_manage: "supplies.manage",
+  stock_read: "stock.read",
+  stock_manage: "stock.manage",
+  strains_read: "strains.read",
+  strains_manage: "strains.manage",
+  plants_read: "plants.read",
+  plants_manage: "plants.manage",
+  controls_read: "controls.read",
+  controls_manage: "controls.manage",
 } as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[keyof typeof PERMISSION_KEYS];

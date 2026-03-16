@@ -17,6 +17,12 @@ const PERMISSION_KEYS = [
   "products.read", "products.manage",
   "sales.read", "sales.manage",
   "compliance.read",
+  "suppliers.read", "suppliers.manage",
+  "supplies.read", "supplies.manage",
+  "stock.read", "stock.manage",
+  "strains.read", "strains.manage",
+  "plants.read", "plants.manage",
+  "controls.read", "controls.manage",
   "tickets.read", "tickets.manage", "audit.read",
 ];
 
@@ -140,6 +146,12 @@ async function main() {
     "products.read", "products.manage",
     "sales.read", "sales.manage",
     "compliance.read",
+    "suppliers.read", "suppliers.manage",
+    "supplies.read", "supplies.manage",
+    "stock.read", "stock.manage",
+    "strains.read", "strains.manage",
+    "plants.read", "plants.manage",
+    "controls.read", "controls.manage",
     "tickets.read", "tickets.manage",
   ];
   const CULTIVADOR_PERMISSION_KEYS = [
@@ -580,6 +592,80 @@ async function main() {
           },
         });
       }
+
+      const supplier = await prisma.supplier.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: "Grow Supply BA" } },
+        update: {},
+        create: {
+          tenantId: tenant.id,
+          name: "Grow Supply BA",
+          email: "ventas@growsupply.com",
+          phone: "+54 11 4444-5555",
+          status: "active",
+        },
+      });
+
+      const supplies = [
+        { name: "Fertilizante A", category: "fertilizante", unit: "l", minQty: 5 },
+        { name: "Sustrato Premium", category: "sustrato", unit: "kg", minQty: 20 },
+        { name: "Bioestimulante", category: "insumo", unit: "l", minQty: 2 },
+      ];
+
+      for (const s of supplies) {
+        await prisma.supplyItem.upsert({
+          where: { tenantId_name: { tenantId: tenant.id, name: s.name } },
+          update: {},
+          create: {
+            tenantId: tenant.id,
+            supplierId: supplier.id,
+            name: s.name,
+            category: s.category,
+            unit: s.unit,
+            minQty: s.minQty,
+            currentQty: s.minQty * 2,
+            status: "active",
+          },
+        });
+      }
+
+      const strain = await prisma.plantStrain.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: "Gelato 41" } },
+        update: {},
+        create: {
+          tenantId: tenant.id,
+          name: "Gelato 41",
+          genetics: "Sunset Sherbet x Thin Mint GSC",
+          thcPct: 24.5,
+          cbdPct: 0.8,
+          cycleDays: 65,
+        },
+      });
+
+      await prisma.plant.upsert({
+        where: { tenantId_code: { tenantId: tenant.id, code: "TDC-PL-001" } },
+        update: {},
+        create: {
+          tenantId: tenant.id,
+          strainId: strain.id,
+          code: "TDC-PL-001",
+          stage: "floracion",
+          status: "active",
+          plantedAt: new Date("2024-10-01"),
+        },
+      });
+
+      await prisma.cultivationControl.create({
+        data: {
+          tenantId: tenant.id,
+          controlDate: new Date("2024-12-06"),
+          temperature: 24.5,
+          humidity: 55,
+          ph: 6.2,
+          ec: 1.4,
+          pests: "sin plagas",
+          note: "Ambiente estable",
+        },
+      });
     }
 
     const lotCode = `LOT-${tenant.slug.slice(0, 2).toUpperCase()}-001`;
