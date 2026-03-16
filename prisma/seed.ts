@@ -641,6 +641,21 @@ async function main() {
         },
       });
 
+      await prisma.cultivationLotStrain.upsert({
+        where: { cultivationLotId_strainId: { cultivationLotId: cultivationLot.id, strainId: strain.id } },
+        update: {
+          plantsCount: 24,
+          estimatedYieldGrams: 1200,
+        },
+        create: {
+          tenantId: tenant.id,
+          cultivationLotId: cultivationLot.id,
+          strainId: strain.id,
+          plantsCount: 24,
+          estimatedYieldGrams: 1200,
+        },
+      });
+
       await prisma.plant.upsert({
         where: { tenantId_code: { tenantId: tenant.id, code: "TDC-PL-001" } },
         update: {},
@@ -651,6 +666,34 @@ async function main() {
           stage: "floracion",
           status: "active",
           plantedAt: new Date("2024-10-01"),
+        },
+      });
+
+      await prisma.inventoryStock.upsert({
+        where: {
+          tenantId_category_strainId: {
+            tenantId: tenant.id,
+            category: "flores",
+            strainId: strain.id,
+          },
+        },
+        update: { availableGrams: 750 },
+        create: {
+          tenantId: tenant.id,
+          category: "flores",
+          strainId: strain.id,
+          availableGrams: 750,
+        },
+      });
+
+      await prisma.dispensation.create({
+        data: {
+          tenantId: tenant.id,
+          memberId: member1.id,
+          category: "flores",
+          strainId: strain.id,
+          grams: 10,
+          note: "Dispensación demo",
         },
       });
 

@@ -54,6 +54,10 @@ model Tenant {
   qrScanLogs QrScanLog[]
   membershipPayments MembershipPayment[]
   cultivationLots CultivationLot[]
+  cultivationLotStrains CultivationLotStrain[]
+  inventoryStocks InventoryStock[]
+  inventoryStockMovements InventoryStockMovement[]
+  dispensations Dispensation[]
   products Product[]
   salesOrders SalesOrder[]
   suppliers Supplier[]
@@ -194,6 +198,7 @@ model Member {
   account   MemberAccount?
   membershipPayments MembershipPayment[]
   salesOrders SalesOrder[]
+  dispensations Dispensation[]
 
   @@unique([tenantId, memberNumber])
   @@index([tenantId])
@@ -241,6 +246,10 @@ model CultivationLot {
   status              String   @default("active")
   plantsCount         Int?
   startedAt           DateTime?
+  harvestedAt         DateTime?
+  dryingStartedAt     DateTime?
+  curingStartedAt     DateTime?
+  readyAt             DateTime?
   estimatedHarvestAt  DateTime?
   estimatedYieldGrams Decimal? @db.Decimal(12, 2)
   nextWateringAt      DateTime?
@@ -250,6 +259,8 @@ model CultivationLot {
   updatedAt           DateTime @updatedAt
 
   events CultivationEvent[]
+  strains CultivationLotStrain[]
+  tasks CultivationTask[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -272,6 +283,89 @@ model CultivationEvent {
   @@index([tenantId, happenedAt])
 }
 
+model CultivationTask {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lotId     String
+  lot       CultivationLot @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  type      String   // secado | curado | listo
+  dueAt     DateTime
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([lotId])
+  @@index([tenantId, dueAt])
+}
+
+model CultivationLotStrain {
+  id              String   @id @default(cuid())
+  tenantId        String
+  cultivationLotId String
+  cultivationLot  CultivationLot @relation(fields: [cultivationLotId], references: [id], onDelete: Cascade)
+  strainId        String
+  strain          PlantStrain @relation(fields: [strainId], references: [id], onDelete: Cascade)
+  plantsCount     Int?
+  estimatedYieldGrams Decimal? @db.Decimal(12, 2)
+  harvestedGrams  Decimal? @db.Decimal(12, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([cultivationLotId])
+  @@index([strainId])
+  @@unique([cultivationLotId, strainId])
+}
+
+model InventoryStock {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category      String   // flores | extractos
+  strainId      String
+  strain        PlantStrain @relation(fields: [strainId], references: [id], onDelete: Cascade)
+  availableGrams Decimal @db.Decimal(12, 2) @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, category, strainId])
+  @@index([tenantId])
+}
+
+model InventoryStockMovement {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stockId    String
+  stock      InventoryStock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  type       String   // in | out | adjust
+  grams      Decimal  @db.Decimal(12, 2)
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([stockId])
+  @@index([tenantId, createdAt])
+}
+
+model Dispensation {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  category   String   // flores | extractos
+  strainId   String
+  strain     PlantStrain @relation(fields: [strainId], references: [id], onDelete: Cascade)
+  grams      Decimal  @db.Decimal(12, 2)
+  dispensedAt DateTime @default(now())
+  note       String?
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, dispensedAt])
+}
+
 model Supplier {
   id        String   @id @default(cuid())
   tenantId  String
@@ -281,6 +375,11 @@ model Supplier {
   phone     String?
   address   String?
   notes     String?
+  suppliesProvided String?
+  paymentStatus String? // ok | pending
+  pendingPayment Boolean @default(false)
+  pendingDelivery Boolean @default(false)
+  nextDeliveryAt DateTime?
   status    String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -303,6 +402,8 @@ model SupplyItem {
   unit        String?  // l | kg | u
   currentQty  Decimal  @db.Decimal(12, 2) @default(0)
   minQty      Decimal  @db.Decimal(12, 2) @default(0)
+  renewalAt   DateTime?
+  isMissing   Boolean  @default(false)
   status      String   @default("active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -344,6 +445,9 @@ model PlantStrain {
   updatedAt DateTime @updatedAt
 
   plants Plant[]
+  cultivationLotStrains CultivationLotStrain[]
+  inventoryStocks InventoryStock[]
+  dispensations Dispensation[]
 
   @@unique([tenantId, name])
   @@index([tenantId])

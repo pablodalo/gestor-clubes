@@ -4,6 +4,7 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
+import { StrainForm } from "@/features/cultivation/strain-form";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -40,7 +41,14 @@ export default async function StrainsPage({ params }: Props) {
         <h1 className="text-2xl font-bold tracking-tight">Cepas</h1>
         <p className="text-muted-foreground mt-1">Genéticas y ciclos estimados.</p>
       </div>
-      <DataTable columns={columns} data={strains} keyExtractor={(s) => s.id} emptyMessage="No hay cepas." />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <DataTable columns={columns} data={strains} keyExtractor={(s) => s.id} emptyMessage="No hay cepas." />
+        </div>
+        <div>
+          <StrainForm onSuccess={() => {}} />
+        </div>
+      </div>
     </div>
   );
 }

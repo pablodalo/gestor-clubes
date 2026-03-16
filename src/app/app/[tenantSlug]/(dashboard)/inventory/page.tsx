@@ -3,7 +3,9 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
 import { NoPermissionMessage } from "@/components/no-permission";
-import { InventoryTable } from "@/features/inventory/inventory-table";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DispensationForm } from "@/features/inventory/dispensation-form";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -23,37 +25,95 @@ export default async function InventoryPage({ params }: Props) {
     );
   }
 
-  const canCreate = permissions === null || permissions.has(PERMISSION_KEYS.inventory_create);
-  const canAdjust = permissions === null || permissions.has(PERMISSION_KEYS.inventory_adjust);
-
-  const [items, lots, locations] = await Promise.all([
-    prisma.inventoryItem.findMany({
+  const [stocks, strains, members] = await Promise.all([
+    prisma.inventoryStock.findMany({
       where: { tenantId: tenant.id },
-      include: { lot: true },
-      orderBy: { code: "asc" },
-      take: 100,
+      include: { strain: true },
     }),
-    prisma.inventoryLot.findMany({
-      where: { tenantId: tenant.id },
-      orderBy: { code: "asc" },
-      select: { id: true, code: true },
-    }),
-    prisma.location.findMany({
+    prisma.plantStrain.findMany({
       where: { tenantId: tenant.id },
       orderBy: { name: "asc" },
-      select: { id: true, name: true },
+    }),
+    prisma.member.findMany({
+      where: { tenantId: tenant.id, status: "active" },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      select: { id: true, firstName: true, lastName: true, memberNumber: true },
     }),
   ]);
 
+  const stockMap = new Map(
+    stocks.map((s) => [`${s.category}-${s.strainId}`, s])
+  );
+
+  const buildRows = (category: "flores" | "extractos") =>
+    strains.map((strain) => {
+      const stock = stockMap.get(`${category}-${strain.id}`);
+      const grams = stock ? Number(stock.availableGrams) : 0;
+      return { strain, grams };
+    });
+
+  const flowerRows = buildRows("flores");
+  const extractRows = buildRows("extractos");
+
   return (
     <div className="space-y-6">
-      <InventoryTable
-        items={items}
-        lots={lots}
-        locations={locations}
-        canCreate={canCreate}
-        canAdjust={canAdjust}
-      />
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Inventario</h1>
+        <p className="text-muted-foreground mt-1">Flores y extractos disponibles para comercializar.</p>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Flores</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {flowerRows.map(({ strain, grams }) => (
+                <div key={strain.id} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{strain.name}</p>
+                    <p className="text-xs text-muted-foreground">{strain.genetics ?? "—"}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={grams > 0 ? "success" : "secondary"}>
+                      {grams > 0 ? "En stock" : "Sin stock"}
+                    </Badge>
+                    <span className="text-sm">{grams.toFixed(2)} g</span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Extractos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {extractRows.map(({ strain, grams }) => (
+                <div key={strain.id} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{strain.name}</p>
+                    <p className="text-xs text-muted-foreground">{strain.genetics ?? "—"}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={grams > 0 ? "success" : "secondary"}>
+                      {grams > 0 ? "En stock" : "Sin stock"}
+                    </Badge>
+                    <span className="text-sm">{grams.toFixed(2)} g</span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+        <div>
+          <DispensationForm
+            strains={strains.map((s) => ({ id: s.id, label: s.name }))}
+            members={members.map((m) => ({ id: m.id, label: `${m.memberNumber} · ${m.firstName} ${m.lastName}` }))}
+            onSuccess={() => {}}
+          />
+        </div>
+      </div>
     </div>
   );
 }

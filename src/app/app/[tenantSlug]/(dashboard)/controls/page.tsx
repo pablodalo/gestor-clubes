@@ -4,6 +4,7 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
+import { ControlForm } from "@/features/cultivation/control-form";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -44,7 +45,14 @@ export default async function ControlsPage({ params }: Props) {
         <h1 className="text-2xl font-bold tracking-tight">Controles</h1>
         <p className="text-muted-foreground mt-1">Registros de ambiente y sanidad.</p>
       </div>
-      <DataTable columns={columns} data={controls} keyExtractor={(c) => c.id} emptyMessage="No hay controles." />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <DataTable columns={columns} data={controls} keyExtractor={(c) => c.id} emptyMessage="No hay controles." />
+        </div>
+        <div>
+          <ControlForm onSuccess={() => {}} />
+        </div>
+      </div>
     </div>
   );
 }

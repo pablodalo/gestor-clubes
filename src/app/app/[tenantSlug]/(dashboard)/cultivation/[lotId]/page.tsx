@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CultivationEventForm } from "@/features/cultivation/cultivation-event-form";
 import { CultivationScheduleForm } from "@/features/cultivation/cultivation-schedule-form";
+import { TransferToInventoryForm } from "@/features/cultivation/transfer-to-inventory-form";
+import { CultivationTaskForm } from "@/features/cultivation/cultivation-task-form";
 
 type Props = { params: Promise<{ tenantSlug: string; lotId: string }> };
 
@@ -14,7 +16,11 @@ export default async function CultivationLotPage({ params }: Props) {
 
   const lot = await prisma.cultivationLot.findFirst({
     where: { id: lotId, tenantId: tenant.id },
-    include: { events: { orderBy: { happenedAt: "desc" } } },
+    include: {
+      events: { orderBy: { happenedAt: "desc" } },
+      strains: { include: { strain: true } },
+      tasks: { orderBy: { dueAt: "asc" } },
+    },
   });
   if (!lot) return notFound();
 
@@ -58,6 +64,25 @@ export default async function CultivationLotPage({ params }: Props) {
         </Card>
         <Card>
           <CardHeader>
+            <CardTitle>Cepas y plantas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {lot.strains.length === 0 ? (
+              <p className="text-muted-foreground">Sin cepas registradas.</p>
+            ) : (
+              lot.strains.map((s) => (
+                <div key={s.id} className="flex items-center justify-between">
+                  <span>{s.strain.name}</span>
+                  <span className="text-muted-foreground">
+                    {s.plantsCount ?? "—"} plantas · {s.estimatedYieldGrams?.toString?.() ?? "—"} g
+                  </span>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
             <CardTitle>Actualizar calendario</CardTitle>
           </CardHeader>
           <CardContent>
@@ -65,6 +90,18 @@ export default async function CultivationLotPage({ params }: Props) {
               lotId={lot.id}
               defaultWatering={lot.nextWateringAt}
               defaultFeeding={lot.nextFeedingAt}
+              onSuccess={() => {}}
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Pasar a inventario</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TransferToInventoryForm
+              lotId={lot.id}
+              strains={lot.strains.map((s) => ({ id: s.strain.id, name: s.strain.name }))}
               onSuccess={() => {}}
             />
           </CardContent>
@@ -92,6 +129,28 @@ export default async function CultivationLotPage({ params }: Props) {
                 {lot.estimatedHarvestAt ? new Date(lot.estimatedHarvestAt).toLocaleDateString("es-AR") : "—"}
               </span>
             </div>
+            <div className="border-t pt-2">
+              {lot.tasks.length === 0 ? (
+                <p className="text-muted-foreground">Sin hitos definidos.</p>
+              ) : (
+                lot.tasks.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between">
+                    <span className="capitalize">{t.type}</span>
+                    <span className="text-muted-foreground">
+                      {new Date(t.dueAt).toLocaleDateString("es-AR")}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Agregar hito</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CultivationTaskForm lotId={lot.id} onSuccess={() => {}} />
           </CardContent>
         </Card>
       </div>

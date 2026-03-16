@@ -4,6 +4,7 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
+import { PlantForm } from "@/features/cultivation/plant-form";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -23,11 +24,18 @@ export default async function PlantsPage({ params }: Props) {
     );
   }
 
-  const plants = await prisma.plant.findMany({
+  const [plants, strains] = await Promise.all([
+    prisma.plant.findMany({
     where: { tenantId: tenant.id },
     include: { strain: true },
     orderBy: { code: "asc" },
-  });
+    }),
+    prisma.plantStrain.findMany({
+      where: { tenantId: tenant.id },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   const columns: DataTableColumn<typeof plants[number]>[] = [
     { key: "code", header: "Código", render: (p) => <span className="font-medium">{p.code}</span> },
@@ -42,7 +50,14 @@ export default async function PlantsPage({ params }: Props) {
         <h1 className="text-2xl font-bold tracking-tight">Plantas</h1>
         <p className="text-muted-foreground mt-1">Inventario de plantas activas.</p>
       </div>
-      <DataTable columns={columns} data={plants} keyExtractor={(p) => p.id} emptyMessage="No hay plantas." />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <DataTable columns={columns} data={plants} keyExtractor={(p) => p.id} emptyMessage="No hay plantas." />
+        </div>
+        <div>
+          <PlantForm strains={strains} onSuccess={() => {}} />
+        </div>
+      </div>
     </div>
   );
 }

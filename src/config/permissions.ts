@@ -64,6 +64,8 @@ export const PERMISSION_KEYS = {
   plants_manage: "plants.manage",
   controls_read: "controls.read",
   controls_manage: "controls.manage",
+  dispensations_read: "dispensations.read",
+  dispensations_manage: "dispensations.manage",
 } as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[keyof typeof PERMISSION_KEYS];

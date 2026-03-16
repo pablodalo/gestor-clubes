@@ -60,7 +60,6 @@ function buildNavGroups(slug: string, locale: string | undefined): { label: stri
         { href: `/app/${slug}/inventory`, label: t.inventory, permission: "inventory.read", icon: Package },
         { href: `/app/${slug}/suppliers`, label: t.suppliers, permission: "suppliers.read", icon: Building2 },
         { href: `/app/${slug}/supplies`, label: t.supplies, permission: "supplies.read", icon: Boxes },
-        { href: `/app/${slug}/stock`, label: t.stock, permission: "stock.read", icon: ClipboardList },
         { href: `/app/${slug}/products`, label: t.products, permission: "products.read", icon: ShoppingBag },
       ],
     },
@@ -89,6 +88,7 @@ function buildNavGroups(slug: string, locale: string | undefined): { label: stri
     {
       label: t.control,
       items: [
+        { href: `/app/${slug}/dispensations`, label: t.dispensations, permission: "dispensations.read", icon: Package },
         { href: `/app/${slug}/payments`, label: t.payments, permission: "payments.read", icon: CreditCard },
         { href: `/app/${slug}/tickets`, label: t.tickets, permission: "tickets.read", icon: Ticket },
         { href: `/app/${slug}/compliance`, label: t.compliance, permission: "compliance.read", icon: ShieldCheck },
