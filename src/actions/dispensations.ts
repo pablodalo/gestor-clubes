@@ -13,7 +13,7 @@ const createDispensationSchema = z.object({
   strainId: z.string().min(1),
   category: z.enum(["flores", "extractos"]),
   grams: z.string().min(1),
-  memberId: z.string().optional(),
+  memberId: z.string().min(1),
   notes: z.string().optional(),
 });
 
@@ -69,11 +69,11 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
     prisma.dispensation.create({
       data: {
         tenantId: ctx.tenantId,
-        memberId: data.memberId || null,
+        memberId: data.memberId,
         strainId: data.strainId,
         category: data.category,
         grams,
-        notes: data.notes || null,
+        note: data.notes || null,
       },
     }),
   ]);

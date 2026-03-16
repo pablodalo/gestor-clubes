@@ -84,8 +84,9 @@ export function DispensationForm({ strains, members, onSuccess }: Props) {
                 id="memberId"
                 name="memberId"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                required
               >
-                <option value="">Sin socio</option>
+                <option value="">Seleccionar</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>{m.label}</option>
                 ))}
