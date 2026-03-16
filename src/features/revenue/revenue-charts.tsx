@@ -35,7 +35,7 @@ export function RevenueCharts({ currency, yearAnnual, currentYear }: Props) {
   const hasAnnual = yearAnnual.some((d) => d.cobrado > 0 || d.proyectado > 0);
 
   return (
-    <Card className="w-full max-w-none overflow-hidden border-primary/20 bg-card shadow-sm">
+    <Card className="w-full min-w-0 overflow-hidden border-primary/20 bg-card shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold tracking-tight">Vista anual {currentYear}</CardTitle>
         <p className="text-sm text-muted-foreground">

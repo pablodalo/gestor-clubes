@@ -177,12 +177,7 @@ export default async function RevenuePage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* Gráfico anual a ancho completo */}
-      <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen max-w-none overflow-hidden">
-        <div className="mx-auto w-full min-w-0 px-4 sm:px-6">
-          <RevenueCharts currency={currency} yearAnnual={yearAnnual} currentYear={currentYear} />
-        </div>
-      </div>
+      <RevenueCharts currency={currency} yearAnnual={yearAnnual} currentYear={currentYear} />
     </div>
   );
 }
