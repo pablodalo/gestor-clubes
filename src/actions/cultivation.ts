@@ -8,7 +8,6 @@ import { Prisma } from "@prisma/client";
 import { requirePermission } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 
 const createEventSchema = z.object({
   lotId: z.string().min(1),
@@ -38,13 +37,6 @@ const transferSchema = z.object({
       grams: z.string().min(1),
     })
   ),
-});
-
-const transferInventorySchema = z.object({
-  lotId: z.string().min(1),
-  strainId: z.string().min(1),
-  category: z.enum(["flores", "extractos"]),
-  grams: z.string().min(1),
 });
 
 const createStrainSchema = z.object({
@@ -228,13 +220,12 @@ export async function transferCultivationToInventory(input: z.infer<typeof trans
             strainId: item.strainId,
           },
         },
-        update: { availableGrams: newQty, status: newQty.greaterThan(0) ? "in_stock" : "out_of_stock" },
+        update: { availableGrams: newQty },
         create: {
           tenantId: ctx.tenantId,
           category: item.category,
           strainId: item.strainId,
           availableGrams: newQty,
-          status: "in_stock",
         },
       });
 
@@ -263,78 +254,6 @@ export async function transferCultivationToInventory(input: z.infer<typeof trans
   revalidatePath(`/app/${ctx.tenantSlug}/cultivation`);
   revalidatePath(`/app/${ctx.tenantSlug}/cultivation/${lot.id}`);
   revalidatePath(`/app/${ctx.tenantSlug}/inventory`);
-  return { ok: true };
-}
-
-export async function transferCultivationToInventory(input: z.infer<typeof transferInventorySchema>) {
-  try {
-    await requirePermission(PERMISSION_KEYS.cultivation_manage);
-  } catch {
-    return { error: "No tenés permiso para transferir a inventario" };
-  }
-
-  const ctx = await getTenantContext();
-  if (!ctx) return { error: "No autorizado" };
-
-  const parsed = transferInventorySchema.safeParse(input);
-  if (!parsed.success) return { error: "Datos inválidos" };
-
-  const data = parsed.data;
-  const grams = new Prisma.Decimal(data.grams);
-
-  const lot = await prisma.cultivationLot.findFirst({
-    where: { id: data.lotId, tenantId: ctx.tenantId },
-  });
-  if (!lot) return { error: "Lote no encontrado" };
-
-  const strainLink = await prisma.cultivationLotStrain.findFirst({
-    where: { cultivationLotId: lot.id, strainId: data.strainId },
-  });
-  if (!strainLink) return { error: "Cepa no asociada al lote" };
-
-  await prisma.$transaction(async (tx) => {
-    const stock = await tx.inventoryStock.upsert({
-      where: {
-        tenantId_category_strainId: {
-          tenantId: ctx.tenantId,
-          category: data.category,
-          strainId: data.strainId,
-        },
-      },
-      update: { availableGrams: { increment: grams } },
-      create: {
-        tenantId: ctx.tenantId,
-        category: data.category,
-        strainId: data.strainId,
-        availableGrams: grams,
-      },
-    });
-
-    await tx.inventoryStockMovement.create({
-      data: {
-        tenantId: ctx.tenantId,
-        stockId: stock.id,
-        type: "in",
-        grams,
-        note: `Transferencia desde lote ${lot.code}`,
-      },
-    });
-
-    await tx.cultivationLotStrain.update({
-      where: { id: strainLink.id },
-      data: {
-        harvestedGrams: new Prisma.Decimal(strainLink.harvestedGrams ?? 0).add(grams),
-      },
-    });
-
-    await tx.cultivationLot.update({
-      where: { id: lot.id },
-      data: { readyAt: lot.readyAt ?? new Date() },
-    });
-  });
-
-  revalidatePath(`/app/${ctx.tenantSlug}/inventory`);
-  revalidatePath(`/app/${ctx.tenantSlug}/cultivation/${lot.id}`);
   return { ok: true };
 }
 

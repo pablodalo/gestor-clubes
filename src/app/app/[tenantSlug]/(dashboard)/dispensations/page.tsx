@@ -65,10 +65,9 @@ export default async function DispensationsPage({ params }: Props) {
             <DispensationForm
               members={members.map((m) => ({
                 id: m.id,
-                name: `${m.firstName} ${m.lastName}`,
-                memberNumber: m.memberNumber,
+                label: `${m.memberNumber} · ${m.firstName} ${m.lastName}`,
               }))}
-              strains={strains}
+              strains={strains.map((s) => ({ id: s.id, label: s.name }))}
               onSuccess={() => {}}
             />
           </div>
