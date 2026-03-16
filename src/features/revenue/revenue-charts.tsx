@@ -90,7 +90,7 @@ export function RevenueCharts({ currency, yearAnnual, currentYear }: Props) {
                 <Bar
                   dataKey="proyectado"
                   name="proyectado"
-                  fill="hsl(174 35% 52%)"
+                  fill="hsl(var(--accent))"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={44}
                 />

@@ -121,7 +121,10 @@ export function brandingToCssVariables(b: TenantBrandingData): Record<string, st
     "1": "1rem",
   };
   const vars: Record<string, string> = {};
-  if (b.primaryColor) vars["--primary"] = hslString(hexToHslParts(b.primaryColor));
+  if (b.primaryColor) {
+    vars["--primary"] = hslString(hexToHslParts(b.primaryColor));
+    vars["--ring"] = hslString(hexToHslParts(b.primaryColor));
+  }
   if (b.secondaryColor) vars["--secondary"] = hslString(hexToHslParts(b.secondaryColor));
   if (b.accentColor) vars["--accent"] = hslString(hexToHslParts(b.accentColor));
   if (b.backgroundColor) {
