@@ -47,6 +47,8 @@ export default async function TenantDashboardLayout({ children, params }: Props)
         session={session}
         permissions={permissions}
         navigationLayout={branding.navigationLayout}
+        logoUrl={branding.logoUrl}
+        appName={branding.appName}
       >
         {children}
       </AppShell>
