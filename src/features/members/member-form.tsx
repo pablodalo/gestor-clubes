@@ -24,9 +24,11 @@ type Props = {
 };
 
 const statusOptions = [
+  { value: "pending_validation", label: "Pendiente de validación" },
   { value: "active", label: "Activo" },
   { value: "suspended", label: "Suspendido" },
   { value: "inactive", label: "Inactivo" },
+  { value: "rejected", label: "Rechazado" },
 ];
 
 export function MemberFormDialog({ tenantSlug, open, onOpenChange, onSuccess, edit }: Props) {
@@ -62,6 +64,14 @@ export function MemberFormDialog({ tenantSlug, open, onOpenChange, onSuccess, ed
       documentType: (formData.get("documentType") as string).trim() || undefined,
       documentNumber: (formData.get("documentNumber") as string).trim() || undefined,
       status: (formData.get("status") as CreateMemberInput["status"]) || "active",
+      birthDate: (formData.get("birthDate") as string)?.trim() || undefined,
+      address: (formData.get("address") as string)?.trim() || undefined,
+      city: (formData.get("city") as string)?.trim() || undefined,
+      stateOrProvince: (formData.get("stateOrProvince") as string)?.trim() || undefined,
+      country: (formData.get("country") as string)?.trim() || undefined,
+      emergencyContactName: (formData.get("emergencyContactName") as string)?.trim() || undefined,
+      emergencyContactPhone: (formData.get("emergencyContactPhone") as string)?.trim() || undefined,
+      statusReason: (formData.get("statusReason") as string)?.trim() || undefined,
     };
 
     if (edit) {
@@ -309,6 +319,49 @@ export function MemberFormDialog({ tenantSlug, open, onOpenChange, onSuccess, ed
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="birthDate">Fecha de nacimiento</Label>
+              <Input
+                id="birthDate"
+                name="birthDate"
+                type="date"
+                defaultValue={toDateInput(edit?.birthDate)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Dirección</Label>
+              <Input id="address" name="address" defaultValue={edit?.address ?? ""} placeholder="Calle 123" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">Ciudad</Label>
+                <Input id="city" name="city" defaultValue={edit?.city ?? ""} placeholder="CABA" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stateOrProvince">Provincia / Estado</Label>
+                <Input id="stateOrProvince" name="stateOrProvince" defaultValue={edit?.stateOrProvince ?? ""} placeholder="CABA" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="country">País</Label>
+              <Input id="country" name="country" defaultValue={edit?.country ?? ""} placeholder="Argentina" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="emergencyContactName">Contacto de emergencia (nombre)</Label>
+                <Input id="emergencyContactName" name="emergencyContactName" defaultValue={edit?.emergencyContactName ?? ""} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="emergencyContactPhone">Contacto de emergencia (tel.)</Label>
+                <Input id="emergencyContactPhone" name="emergencyContactPhone" defaultValue={edit?.emergencyContactPhone ?? ""} />
+              </div>
+            </div>
+            {edit && (
+              <div className="space-y-2">
+                <Label htmlFor="statusReason">Motivo del estado (opcional)</Label>
+                <Input id="statusReason" name="statusReason" defaultValue={edit?.statusReason ?? ""} placeholder="Ej. Documentación pendiente" />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

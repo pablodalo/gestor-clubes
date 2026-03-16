@@ -1,0 +1,680 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getStatusLabel, getStatusVariant } from "@/lib/status-badges";
+import { cn } from "@/lib/utils";
+import {
+  createMemberAccount,
+  setMemberAccountStatus,
+  resetMemberPassword,
+} from "@/actions/member-account";
+import { createMemberNotification } from "@/actions/member-notifications";
+import { adjustMemberBalance } from "@/actions/member-balance";
+import { updateMember } from "@/actions/members";
+import {
+  User,
+  CreditCard,
+  Settings,
+  History,
+  Wallet,
+  Bell,
+  KeyRound,
+  Pencil,
+} from "lucide-react";
+
+type MemberData = {
+  id: string;
+  memberNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  documentType: string | null;
+  documentNumber: string | null;
+  birthDate: Date | null;
+  address: string | null;
+  city: string | null;
+  stateOrProvince: string | null;
+  country: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  status: string;
+  statusReason: string | null;
+  avatarUrl: string | null;
+  reprocannNumber: string | null;
+  reprocannAffiliateNumber: string | null;
+  reprocannStartDate: Date | null;
+  reprocannEndDate: Date | null;
+  reprocannActive: boolean;
+  membershipPlan: string | null;
+  membershipType: string | null;
+  membershipStatus: string | null;
+  membershipStartDate: Date | null;
+  membershipEndDate: Date | null;
+  membershipRenewalDate: Date | null;
+  membershipNotes: string | null;
+  membershipRecurring: boolean;
+  membershipRecurrenceDay: number | null;
+  membershipLastPaidAt: Date | null;
+  membershipLastAmount: { toString: () => string } | null;
+  membershipCurrency: string | null;
+  memberTier: string | null;
+  monthlyLimit: { toString: () => string } | null;
+  dailyLimit: { toString: () => string } | null;
+  remainingBalance: { toString: () => string } | null;
+  consumedThisPeriod: { toString: () => string } | null;
+  canReserveProducts: boolean;
+  canPreorder: boolean;
+  canAccessEvents: boolean;
+  canInviteGuest: boolean;
+  internalNotes: string | null;
+  createdAt: Date;
+};
+
+type PaymentRow = { id: string; paidAt: Date; amount: { toString: () => string }; currency: string; method: string | null };
+type NotifRow = { id: string; title: string; body: string | null; type: string | null; read: boolean; createdAt: Date };
+type AdjustRow = { id: string; amount: { toString: () => string }; type: string; note: string | null; createdAt: Date };
+type AuditRow = { id: string; action: string; actorName: string | null; createdAt: Date; afterJson: string | null };
+
+const formatDate = (value?: Date | null) => (value ? new Date(value).toLocaleDateString("es-AR") : "—");
+
+type TabId = "datos" | "membresia" | "operativa" | "historial" | "saldo" | "notificaciones" | "cuenta";
+
+type Props = {
+  tenantSlug: string;
+  member: MemberData;
+  payments: PaymentRow[];
+  account: { id: string; email: string; status: string } | null;
+  notifications: NotifRow[];
+  balanceAdjustments: AdjustRow[];
+  auditLogs: AuditRow[];
+};
+
+export function MemberDetailTabs({
+  tenantSlug,
+  member,
+  payments,
+  account,
+  notifications,
+  balanceAdjustments,
+  auditLogs,
+}: Props) {
+  const [tab, setTab] = useState<TabId>("datos");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [accountEmail, setAccountEmail] = useState(member.email ?? "");
+  const [accountPassword, setAccountPassword] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifBody, setNotifBody] = useState("");
+  const [adjustAmount, setAdjustAmount] = useState("");
+  const [adjustNote, setAdjustNote] = useState("");
+
+  const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
+    { id: "datos", label: "Datos", icon: <User className="h-4 w-4" /> },
+    { id: "membresia", label: "Membresía", icon: <CreditCard className="h-4 w-4" /> },
+    { id: "operativa", label: "Config operativa", icon: <Settings className="h-4 w-4" /> },
+    { id: "historial", label: "Historial", icon: <History className="h-4 w-4" /> },
+    { id: "saldo", label: "Saldo / cupo", icon: <Wallet className="h-4 w-4" /> },
+    { id: "notificaciones", label: "Notificaciones", icon: <Bell className="h-4 w-4" /> },
+    { id: "cuenta", label: "Cuenta de acceso", icon: <KeyRound className="h-4 w-4" /> },
+  ];
+
+  async function handleCreateAccount(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const res = await createMemberAccount({
+      memberId: member.id,
+      email: accountEmail,
+      password: accountPassword,
+    });
+    setLoading(false);
+    if (res.error) setError(res.error);
+    else window.location.reload();
+  }
+
+  async function handleSetAccountStatus(status: "active" | "inactive") {
+    setError("");
+    setLoading(true);
+    const res = await setMemberAccountStatus({ memberId: member.id, status });
+    setLoading(false);
+    if (res.error) setError(res.error);
+    else window.location.reload();
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (resetPassword.length < 6) {
+      setError("Mínimo 6 caracteres");
+      return;
+    }
+    setLoading(true);
+    const res = await resetMemberPassword({ memberId: member.id, newPassword: resetPassword });
+    setLoading(false);
+    if (res.error) setError(res.error);
+    else {
+      setResetPassword("");
+      window.location.reload();
+    }
+  }
+
+  async function handleCreateNotification(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const res = await createMemberNotification({
+      memberId: member.id,
+      title: notifTitle,
+      body: notifBody || undefined,
+    });
+    setLoading(false);
+    if (res.error) setError(res.error);
+    else {
+      setNotifTitle("");
+      setNotifBody("");
+      window.location.reload();
+    }
+  }
+
+  async function handleAdjustBalance(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    const amount = Number(adjustAmount);
+    if (Number.isNaN(amount) || amount === 0) {
+      setError("Monto inválido");
+      return;
+    }
+    setLoading(true);
+    const res = await adjustMemberBalance({
+      memberId: member.id,
+      amount: String(amount),
+      type: "adjustment",
+      note: adjustNote || undefined,
+    });
+    setLoading(false);
+    if (res.error) setError(res.error);
+    else {
+      setAdjustAmount("");
+      setAdjustNote("");
+      window.location.reload();
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 border-b border-border flex-wrap">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-t-md border-b-2 -mb-px transition-colors",
+              tab === t.id
+                ? "border-primary text-primary bg-primary/5"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {error && (
+        <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
+      )}
+
+      {tab === "datos" && (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Datos personales</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Número de socio</p>
+                <p className="font-medium">{member.memberNumber}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Estado</p>
+                <Badge variant={getStatusVariant(member.status)}>
+                  {getStatusLabel(member.status) ?? member.status}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="font-medium">{member.email ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Teléfono</p>
+                <p className="font-medium">{member.phone ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Documento</p>
+                <p className="font-medium">
+                  {member.documentType ?? "—"} {member.documentNumber ?? ""}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Fecha de nacimiento</p>
+                <p className="font-medium">{formatDate(member.birthDate)}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Dirección</p>
+                <p className="font-medium">
+                  {[member.address, member.city, member.stateOrProvince, member.country]
+                    .filter(Boolean)
+                    .join(", ") || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Contacto de emergencia</p>
+                <p className="font-medium">
+                  {member.emergencyContactName ?? "—"}
+                  {member.emergencyContactPhone ? ` · ${member.emergencyContactPhone}` : ""}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Motivo del estado</p>
+                <p className="font-medium">{member.statusReason ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Fecha de alta</p>
+                <p className="font-medium">{formatDate(member.createdAt)}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Reprocann</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Estado</p>
+                <Badge variant={member.reprocannActive ? "success" : "secondary"}>
+                  {member.reprocannActive ? "Activo" : "Inactivo"}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Nº Reprocann</p>
+                <p className="font-medium">{member.reprocannNumber ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Nº de afiliado</p>
+                <p className="font-medium">{member.reprocannAffiliateNumber ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Inicio</p>
+                <p className="font-medium">{formatDate(member.reprocannStartDate)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Vencimiento</p>
+                <p className="font-medium">{formatDate(member.reprocannEndDate)}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {tab === "membresia" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Membresía</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Tipo / Plan</p>
+              <p className="font-medium">{member.membershipType ?? member.membershipPlan ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Estado membresía</p>
+              <Badge variant={getStatusVariant(member.membershipStatus ?? "")}>
+                {getStatusLabel(member.membershipStatus ?? "") ?? member.membershipStatus ?? "—"}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Inicio</p>
+              <p className="font-medium">{formatDate(member.membershipStartDate)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Vencimiento</p>
+              <p className="font-medium">{formatDate(member.membershipEndDate)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Próxima renovación</p>
+              <p className="font-medium">{formatDate(member.membershipRenewalDate)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Recurrente</p>
+              <Badge variant={member.membershipRecurring ? "success" : "secondary"}>
+                {member.membershipRecurring ? "Sí" : "No"}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Día de cobro</p>
+              <p className="font-medium">{member.membershipRecurrenceDay ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Último pago</p>
+              <p className="font-medium">{formatDate(member.membershipLastPaidAt)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Monto último pago</p>
+              <p className="font-medium">
+                {member.membershipLastAmount?.toString?.() ?? "—"} {member.membershipCurrency ?? ""}
+              </p>
+            </div>
+            {member.membershipNotes && (
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Notas</p>
+                <p className="font-medium">{member.membershipNotes}</p>
+              </div>
+            )}
+          </CardContent>
+          <CardContent className="border-t">
+            <p className="text-sm font-medium mb-2">Historial de pagos</p>
+            {payments.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No hay pagos registrados.</p>
+            ) : (
+              <ul className="space-y-1 text-sm">
+                {payments.map((p) => (
+                  <li key={p.id} className="flex justify-between">
+                    <span>{formatDate(p.paidAt)}</span>
+                    <span>{p.amount.toString()} {p.currency} · {p.method ?? "—"}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "operativa" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuración operativa</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Tier</p>
+              <p className="font-medium">{member.memberTier ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Límite mensual</p>
+              <p className="font-medium">{member.monthlyLimit?.toString() ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Límite diario</p>
+              <p className="font-medium">{member.dailyLimit?.toString() ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Saldo restante</p>
+              <p className="font-medium">{member.remainingBalance?.toString() ?? "0"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Consumido este período</p>
+              <p className="font-medium">{member.consumedThisPeriod?.toString() ?? "0"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Puede reservar productos</p>
+              <Badge variant={member.canReserveProducts ? "success" : "secondary"}>
+                {member.canReserveProducts ? "Sí" : "No"}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Preorden</p>
+              <Badge variant={member.canPreorder ? "success" : "secondary"}>
+                {member.canPreorder ? "Sí" : "No"}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Acceso a eventos</p>
+              <Badge variant={member.canAccessEvents ? "success" : "secondary"}>
+                {member.canAccessEvents ? "Sí" : "No"}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Puede invitar invitados</p>
+              <Badge variant={member.canInviteGuest ? "success" : "secondary"}>
+                {member.canInviteGuest ? "Sí" : "No"}
+              </Badge>
+            </div>
+            {member.internalNotes && (
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Notas internas</p>
+                <p className="font-medium">{member.internalNotes}</p>
+              </div>
+            )}
+          </CardContent>
+          <CardContent className="border-t pt-4">
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/app/${tenantSlug}/members`}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Editar en listado
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "historial" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Historial (auditoría)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {auditLogs.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No hay registros.</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {auditLogs.map((log) => (
+                  <li key={log.id} className="flex flex-wrap gap-2 items-baseline border-b pb-2">
+                    <span className="text-muted-foreground">{formatDate(log.createdAt)}</span>
+                    <span className="font-medium">{log.action}</span>
+                    {log.actorName && <span className="text-muted-foreground">· {log.actorName}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "saldo" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Saldo / cupo</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Límite mensual</p>
+                <p className="text-xl font-semibold">{member.monthlyLimit?.toString() ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Saldo restante</p>
+                <p className="text-xl font-semibold">{member.remainingBalance?.toString() ?? "0"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Consumido este período</p>
+                <p className="text-xl font-semibold">{member.consumedThisPeriod?.toString() ?? "0"}</p>
+              </div>
+            </div>
+            <form onSubmit={handleAdjustBalance} className="flex flex-wrap gap-4 items-end border-t pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="adjustAmount">Ajuste de saldo (+ o -)</Label>
+                <Input
+                  id="adjustAmount"
+                  type="number"
+                  step="0.01"
+                  value={adjustAmount}
+                  onChange={(e) => setAdjustAmount(e.target.value)}
+                  placeholder="Ej. 10 o -5"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adjustNote">Nota (opcional)</Label>
+                <Input
+                  id="adjustNote"
+                  value={adjustNote}
+                  onChange={(e) => setAdjustNote(e.target.value)}
+                  placeholder="Motivo del ajuste"
+                />
+              </div>
+              <Button type="submit" disabled={loading}>Aplicar ajuste</Button>
+            </form>
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium mb-2">Últimos movimientos</p>
+              {balanceAdjustments.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No hay movimientos.</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {balanceAdjustments.map((a) => (
+                    <li key={a.id} className="flex justify-between">
+                      <span>{formatDate(a.createdAt)} · {a.type}</span>
+                      <span>{a.amount.toString()} {a.note ? `· ${a.note}` : ""}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "notificaciones" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Notificaciones del socio</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handleCreateNotification} className="flex flex-col gap-3 border-b pb-4">
+              <div className="space-y-2">
+                <Label htmlFor="notifTitle">Nueva notificación · Título</Label>
+                <Input
+                  id="notifTitle"
+                  value={notifTitle}
+                  onChange={(e) => setNotifTitle(e.target.value)}
+                  placeholder="Título"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notifBody">Mensaje (opcional)</Label>
+                <Input
+                  id="notifBody"
+                  value={notifBody}
+                  onChange={(e) => setNotifBody(e.target.value)}
+                  placeholder="Cuerpo del mensaje"
+                />
+              </div>
+              <Button type="submit" disabled={loading}>Enviar notificación</Button>
+            </form>
+            <ul className="space-y-2 text-sm">
+              {notifications.length === 0 ? (
+                <p className="text-muted-foreground">No hay notificaciones.</p>
+              ) : (
+                notifications.map((n) => (
+                  <li key={n.id} className="flex justify-between items-start border-b pb-2">
+                    <div>
+                      <p className="font-medium">{n.title}</p>
+                      {n.body && <p className="text-muted-foreground">{n.body}</p>}
+                      <p className="text-xs text-muted-foreground">{formatDate(n.createdAt)} {n.read ? "· Leída" : ""}</p>
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "cuenta" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Cuenta de acceso al portal</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {account ? (
+              <>
+                <div>
+                  <p className="text-xs text-muted-foreground">Email de la cuenta</p>
+                  <p className="font-medium">{account.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Estado</p>
+                  <Badge variant={account.status === "active" ? "success" : "secondary"}>
+                    {account.status === "active" ? "Activa" : "Inactiva"}
+                  </Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSetAccountStatus(account.status === "active" ? "inactive" : "active")}
+                    disabled={loading}
+                  >
+                    {account.status === "active" ? "Desactivar cuenta" : "Activar cuenta"}
+                  </Button>
+                </div>
+                <form onSubmit={handleResetPassword} className="border-t pt-4 space-y-3">
+                  <Label htmlFor="resetPassword">Nueva contraseña (mín. 6 caracteres)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="resetPassword"
+                      type="password"
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      placeholder="Nueva contraseña"
+                      minLength={6}
+                    />
+                    <Button type="submit" disabled={loading || resetPassword.length < 6}>
+                      Resetear contraseña
+                    </Button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <form onSubmit={handleCreateAccount} className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  El socio aún no tiene cuenta para entrar al portal. Creá una con email y contraseña.
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="accountEmail">Email</Label>
+                  <Input
+                    id="accountEmail"
+                    type="email"
+                    value={accountEmail}
+                    onChange={(e) => setAccountEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accountPassword">Contraseña (mín. 6 caracteres)</Label>
+                  <Input
+                    id="accountPassword"
+                    type="password"
+                    value={accountPassword}
+                    onChange={(e) => setAccountPassword(e.target.value)}
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <Button type="submit" disabled={loading}>Crear cuenta</Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

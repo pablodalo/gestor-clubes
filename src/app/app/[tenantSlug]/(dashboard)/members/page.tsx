@@ -4,11 +4,16 @@ import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
 import { MembersTable } from "@/features/members/members-table";
 import { NoPermissionMessage } from "@/components/no-permission";
+import { MemberSearchForm } from "@/features/members/member-search-form";
 
-type Props = { params: Promise<{ tenantSlug: string }> };
+type Props = {
+  params: Promise<{ tenantSlug: string }>;
+  searchParams: Promise<{ q?: string; status?: string }>;
+};
 
-export default async function MembersPage({ params }: Props) {
+export default async function MembersPage({ params, searchParams }: Props) {
   const { tenantSlug } = await params;
+  const { q, status } = await searchParams;
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) return null;
 
@@ -27,14 +32,30 @@ export default async function MembersPage({ params }: Props) {
   const canUpdate = permissions === null || permissions.has(PERMISSION_KEYS.members_update);
   const canDelete = permissions === null || permissions.has(PERMISSION_KEYS.members_delete);
 
+  const where: { tenantId: string; status?: string; OR?: Array<Record<string, unknown>> } = {
+    tenantId: tenant.id,
+  };
+  if (status) where.status = status;
+  if (q && q.trim()) {
+    const term = q.trim();
+    where.OR = [
+      { firstName: { contains: term, mode: "insensitive" } },
+      { lastName: { contains: term, mode: "insensitive" } },
+      { memberNumber: { contains: term, mode: "insensitive" } },
+      { email: { contains: term, mode: "insensitive" } },
+      { documentNumber: { contains: term, mode: "insensitive" } },
+    ];
+  }
+
   const members = await prisma.member.findMany({
-    where: { tenantId: tenant.id },
+    where,
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    take: 100,
+    take: 200,
   });
 
   return (
     <div className="space-y-6">
+      <MemberSearchForm tenantSlug={tenantSlug} initialQ={q} initialStatus={status} />
       <MembersTable
         tenantSlug={tenantSlug}
         members={members}

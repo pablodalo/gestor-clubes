@@ -9,6 +9,12 @@ const STATUS_MAP: Record<string, { variant: BadgeVariant; label?: string }> = {
   active: { variant: "success", label: "Activo" },
   inactive: { variant: "secondary", label: "Inactivo" },
   suspended: { variant: "warning", label: "Suspendido" },
+  pending_validation: { variant: "warning", label: "Pendiente de validación" },
+  rejected: { variant: "destructive", label: "Rechazado" },
+  // Membresía
+  pending: { variant: "secondary", label: "Pendiente" },
+  expired: { variant: "destructive", label: "Vencida" },
+  cancelled: { variant: "secondary", label: "Cancelada" },
   open: { variant: "default", label: "Abierto" },
   closed: { variant: "secondary", label: "Cerrado" },
   resolved: { variant: "success", label: "Resuelto" },

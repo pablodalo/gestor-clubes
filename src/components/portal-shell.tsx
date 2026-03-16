@@ -10,7 +10,11 @@ import type { TenantContext } from "@/lib/tenant";
 const nav = (slug: string) => [
   { href: `/portal/socios/${slug}`, label: "Inicio" },
   { href: `/portal/socios/${slug}/profile`, label: "Mi perfil" },
-  { href: `/portal/socios/${slug}/movements`, label: "Mis movimientos" },
+  { href: `/portal/socios/${slug}/membership`, label: "Mi membresía" },
+  { href: `/portal/socios/${slug}/balance`, label: "Mi saldo" },
+  { href: `/portal/socios/${slug}/history`, label: "Mi historial" },
+  { href: `/portal/socios/${slug}/notifications`, label: "Notificaciones" },
+  { href: `/portal/socios/${slug}/movements`, label: "Movimientos" },
   { href: `/portal/socios/${slug}/tickets`, label: "Tickets" },
 ];
 
