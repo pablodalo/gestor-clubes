@@ -68,13 +68,18 @@ export function UserFormDialog({ open, onOpenChange, onSuccess, edit, roles }: P
     const status = (formData.get("status") as "active" | "suspended" | "inactive") || "active";
 
     if (edit) {
-      const result = await updateTenantUser(edit.id, {
-        name,
-        email,
-        password: password === "" ? undefined : password,
-        roleId: roleId || undefined,
-        status,
-      });
+      const updatePayload: {
+        name?: string;
+        password?: string;
+        roleId?: string;
+        status?: "active" | "suspended" | "inactive";
+      } = {};
+      if (name) updatePayload.name = name;
+      if (password) updatePayload.password = password;
+      if (roleId) updatePayload.roleId = roleId;
+      updatePayload.status = status;
+
+      const result = await updateTenantUser(edit.id, updatePayload);
       setLoading(false);
       if (result.error) {
         setError(result.error);
