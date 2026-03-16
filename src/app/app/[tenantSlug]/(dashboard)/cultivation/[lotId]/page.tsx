@@ -96,7 +96,7 @@ export default async function CultivationLotPage({ params }: Props) {
               </div>
             ))}
             <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-              Cuando el lote llegue a "Listo para comercializar", usá "Pasar a inventario" para sumar los gramos por cepa en flores o extractos.
+              Cuando el lote llegue a &quot;Listo para comercializar&quot;, usá &quot;Pasar a inventario&quot; para sumar los gramos por cepa en flores o extractos.
             </div>
           </CardContent>
         </Card>

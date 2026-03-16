@@ -677,11 +677,11 @@ async function main() {
       await prisma.plant.upsert({
         where: { tenantId_code: { tenantId: tenant.id, code: "TDC-PL-001" } },
         update: {
-          cultivationLotId: cultivationLot.id,
+          cultivationLot: { connect: { id: cultivationLot.id } },
         },
         create: {
           tenantId: tenant.id,
-          cultivationLotId: cultivationLot.id,
+          cultivationLot: { connect: { id: cultivationLot.id } },
           strainId: strain.id,
           code: "TDC-PL-001",
           stage: "floracion",
@@ -721,7 +721,7 @@ async function main() {
       await prisma.cultivationControl.create({
         data: {
           tenantId: tenant.id,
-          cultivationLotId: cultivationLot.id,
+          cultivationLot: { connect: { id: cultivationLot.id } },
           controlDate: new Date("2024-12-06"),
           temperature: 24.5,
           humidity: 55,
