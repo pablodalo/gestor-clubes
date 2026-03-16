@@ -35,21 +35,21 @@ export function RevenueCharts({ currency, yearAnnual, currentYear }: Props) {
   const hasAnnual = yearAnnual.some((d) => d.cobrado > 0 || d.proyectado > 0);
 
   return (
-    <Card className="w-full overflow-hidden border-primary/20 bg-card shadow-sm">
+    <Card className="w-full max-w-none overflow-hidden border-primary/20 bg-card shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold tracking-tight">Vista anual {currentYear}</CardTitle>
         <p className="text-sm text-muted-foreground">
           Cobrado (real) y Proyectado (recurrencias) por mes. Meses pasados: ambos cuando hay datos; meses futuros: solo proyección.
         </p>
       </CardHeader>
-      <CardContent className="w-full px-0 sm:px-6">
+      <CardContent className="w-full px-0">
         {hasAnnual ? (
-          <div className="h-[320px] w-full min-w-0" style={{ width: "100%" }}>
+          <div className="h-[320px] w-full min-w-0 overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={yearAnnual}
-                margin={{ top: 16, right: 20, left: 12, bottom: 12 }}
-                barCategoryGap="14%"
+                margin={{ top: 16, right: 24, left: 8, bottom: 12 }}
+                barCategoryGap="8%"
                 barGap={6}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted/60" vertical={false} />

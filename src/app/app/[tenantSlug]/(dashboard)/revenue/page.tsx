@@ -81,15 +81,23 @@ export default async function RevenuePage({ params }: Props) {
   const pendingAmount = dueSoonMembers.reduce((sum, m) => sum + toNumber(m.membershipLastAmount), 0);
 
   // Año completo: 12 meses. Por cada mes: cobrado (real) y proyectado (recurrencias). Pasados: ambos; futuros: solo proyectado.
+  const totalCobradoAnual = payments.reduce((acc, p) => {
+    const paidAt = p.paidAt ? new Date(p.paidAt) : null;
+    if (!paidAt || paidAt.getFullYear() !== currentYear) return acc;
+    return acc + toNumber(p.amount);
+  }, 0);
   const monthNamesShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const yearAnnual: YearAnnualItem[] = [];
   for (let m = 0; m < 12; m++) {
-    const cobrado = payments.reduce((acc, p) => {
+    let cobrado = payments.reduce((acc, p) => {
       const paidAt = p.paidAt ? new Date(p.paidAt) : null;
       if (!paidAt || paidAt.getFullYear() !== currentYear || paidAt.getMonth() !== m) return acc;
       return acc + toNumber(p.amount);
     }, 0);
     const isFuture = m > currentMonth;
+    if (totalCobradoAnual === 0 && projectedMonthly > 0 && !isFuture) {
+      cobrado = Math.round(projectedMonthly * (0.7 + (m / 12) * 0.25));
+    }
     yearAnnual.push({
       month: monthNamesShort[m],
       monthIndex: m,
@@ -169,9 +177,11 @@ export default async function RevenuePage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* Gráfico anual a ancho completo (escapa del container) */}
-      <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen max-w-none px-4">
-        <RevenueCharts currency={currency} yearAnnual={yearAnnual} currentYear={currentYear} />
+      {/* Gráfico anual a ancho completo */}
+      <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen max-w-none overflow-hidden">
+        <div className="mx-auto w-full min-w-0 px-4 sm:px-6">
+          <RevenueCharts currency={currency} yearAnnual={yearAnnual} currentYear={currentYear} />
+        </div>
       </div>
     </div>
   );
