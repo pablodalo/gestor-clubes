@@ -6,7 +6,6 @@ import { createAuditLog } from "@/server/audit";
 import { z } from "zod";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-import { put } from "@vercel/blob";
 
 const updateBrandingSchema = z.object({
   appName: z.string().nullable(),
@@ -92,12 +91,8 @@ export async function uploadLogo(tenantId: string, formData: FormData): Promise<
   }
 
   try {
-    // En producción (Vercel): usar Blob si está configurado. Ver docs/VERCEL-BLOB.md
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      const filename = `logo-${tenantId}-${Date.now()}.${ext}`;
-      const blob = await put(filename, file, { access: "public" });
-      return { data: { url: blob.url } };
-    }
+    // Fallback compatible con el entorno actual: guardar en /public/uploads.
+    // Si más adelante se configura Vercel Blob, se puede reintroducir sin bloquear el build.
     const dir = path.join(process.cwd(), "public", "uploads");
     await mkdir(dir, { recursive: true });
     const filename = `logo-${tenantId}-${Date.now()}.${ext}`;
