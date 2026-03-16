@@ -32,7 +32,6 @@ import {
   MapPin,
   Menu,
   Package,
-  Sprout,
   CreditCard,
   ShoppingBag,
   Wallet,
