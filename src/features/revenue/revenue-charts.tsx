@@ -203,7 +203,9 @@ export function RevenueCharts({ currency, summaryData, monthlyTrend, yearAnnual,
                       formatMoney(value, currency),
                       name === "cobrado" ? "Cobrado" : "Proyectado",
                     ]}
-                    labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ""}
+                    labelFormatter={(_, payload) =>
+                      (payload as Array<{ payload?: { label?: string } }>)?.[0]?.payload?.label ?? ""
+                    }
                   />
                   <Legend
                     wrapperStyle={{ fontSize: 12 }}
