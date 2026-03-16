@@ -53,6 +53,12 @@ export function MemberFormDialog({ tenantSlug, open, onOpenChange, onSuccess, ed
       reprocannStartDate: (formData.get("reprocannStartDate") as string).trim() || undefined,
       reprocannEndDate: (formData.get("reprocannEndDate") as string).trim() || undefined,
       reprocannActive: (formData.get("reprocannActive") as string) === "active",
+      membershipPlan: (formData.get("membershipPlan") as string).trim() || undefined,
+      membershipRecurring: (formData.get("membershipRecurring") as string) === "true",
+      membershipRecurrenceDay: Number(formData.get("membershipRecurrenceDay") as string) || undefined,
+      membershipLastPaidAt: (formData.get("membershipLastPaidAt") as string).trim() || undefined,
+      membershipLastAmount: (formData.get("membershipLastAmount") as string).trim() || undefined,
+      membershipCurrency: (formData.get("membershipCurrency") as string).trim() || undefined,
       documentType: (formData.get("documentType") as string).trim() || undefined,
       documentNumber: (formData.get("documentNumber") as string).trim() || undefined,
       status: (formData.get("status") as CreateMemberInput["status"]) || "active",
@@ -174,6 +180,77 @@ export function MemberFormDialog({ tenantSlug, open, onOpenChange, onSuccess, ed
                   <option value="active">Activo</option>
                   <option value="inactive">Inactivo</option>
                 </select>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <p className="text-sm font-medium text-foreground">Membresía</p>
+              <div className="mt-3 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="membershipPlan">Plan</Label>
+                  <Input
+                    id="membershipPlan"
+                    name="membershipPlan"
+                    defaultValue={edit?.membershipPlan ?? ""}
+                    placeholder="Flores + Extractos"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="membershipCurrency">Moneda</Label>
+                  <Input
+                    id="membershipCurrency"
+                    name="membershipCurrency"
+                    defaultValue={edit?.membershipCurrency ?? "ARS"}
+                    placeholder="ARS"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="membershipRecurring">Recurrente</Label>
+                  <select
+                    id="membershipRecurring"
+                    name="membershipRecurring"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    defaultValue={edit?.membershipRecurring ? "true" : "false"}
+                  >
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="membershipRecurrenceDay">Día de cobro</Label>
+                  <Input
+                    id="membershipRecurrenceDay"
+                    name="membershipRecurrenceDay"
+                    type="number"
+                    min={1}
+                    max={28}
+                    defaultValue={edit?.membershipRecurrenceDay ?? ""}
+                    placeholder="10"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="membershipLastPaidAt">Último pago</Label>
+                  <Input
+                    id="membershipLastPaidAt"
+                    name="membershipLastPaidAt"
+                    type="date"
+                    defaultValue={toDateInput(edit?.membershipLastPaidAt)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="membershipLastAmount">Monto último pago</Label>
+                  <Input
+                    id="membershipLastAmount"
+                    name="membershipLastAmount"
+                    type="number"
+                    step="0.01"
+                    defaultValue={edit?.membershipLastAmount?.toString?.() ?? ""}
+                    placeholder="25000"
+                  />
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

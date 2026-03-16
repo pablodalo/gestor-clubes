@@ -39,9 +39,19 @@ export const PERMISSION_KEYS = {
   devices_manage: "devices.manage",
   // Reports & tickets
   reports_read: "reports.read",
+  revenue_read: "revenue.read",
+  payments_read: "payments.read",
+  payments_create: "payments.create",
   tickets_read: "tickets.read",
   tickets_manage: "tickets.manage",
   audit_read: "audit.read",
+  cultivation_read: "cultivation.read",
+  cultivation_manage: "cultivation.manage",
+  products_read: "products.read",
+  products_manage: "products.manage",
+  sales_read: "sales.read",
+  sales_manage: "sales.manage",
+  compliance_read: "compliance.read",
 } as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[keyof typeof PERMISSION_KEYS];

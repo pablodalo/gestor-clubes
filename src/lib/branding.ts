@@ -83,9 +83,9 @@ export async function getTenantBranding(
  * Convierte branding a CSS variables (--primary, --radius, etc.) para inyectar en :root o data-tenant.
  */
 export function brandingToCssVariables(b: TenantBrandingData): Record<string, string> {
-  const hexToHsl = (hex: string): string => {
+  const hexToHslParts = (hex: string): { h: number; s: number; l: number } => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result) return "0 0% 0%";
+    if (!result) return { h: 0, s: 0, l: 0 };
     let r = parseInt(result[1], 16) / 255;
     let g = parseInt(result[2], 16) / 255;
     let b = parseInt(result[3], 16) / 255;
@@ -103,8 +103,15 @@ export function brandingToCssVariables(b: TenantBrandingData): Record<string, st
         default: h = ((r - g) / d + 4) / 6;
       }
     }
-    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
   };
+  const hslString = (parts: { h: number; s: number; l: number }) =>
+    `${parts.h} ${parts.s}% ${parts.l}%`;
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+  const adjustLightness = (parts: { h: number; s: number; l: number }, delta: number) => ({
+    ...parts,
+    l: clamp(parts.l + delta, 0, 100),
+  });
   const radiusMap: Record<string, string> = {
     "0": "0px",
     "0.25": "0.25rem",
@@ -113,10 +120,19 @@ export function brandingToCssVariables(b: TenantBrandingData): Record<string, st
     "1": "1rem",
   };
   const vars: Record<string, string> = {};
-  if (b.primaryColor) vars["--primary"] = hexToHsl(b.primaryColor);
-  if (b.secondaryColor) vars["--secondary"] = hexToHsl(b.secondaryColor);
-  if (b.accentColor) vars["--accent"] = hexToHsl(b.accentColor);
-  if (b.backgroundColor) vars["--background"] = hexToHsl(b.backgroundColor);
+  if (b.primaryColor) vars["--primary"] = hslString(hexToHslParts(b.primaryColor));
+  if (b.secondaryColor) vars["--secondary"] = hslString(hexToHslParts(b.secondaryColor));
+  if (b.accentColor) vars["--accent"] = hslString(hexToHslParts(b.accentColor));
+  if (b.backgroundColor) {
+    const base = hexToHslParts(b.backgroundColor);
+    vars["--background"] = hslString(base);
+    vars["--card"] = hslString(adjustLightness(base, 6));
+    vars["--popover"] = hslString(adjustLightness(base, 8));
+    vars["--muted"] = hslString(adjustLightness(base, 10));
+    vars["--accent"] = hslString(adjustLightness(base, 12));
+    vars["--border"] = hslString(adjustLightness(base, 16));
+    vars["--input"] = hslString(adjustLightness(base, 16));
+  }
   if (b.radiusScale) vars["--radius"] = radiusMap[b.radiusScale] ?? "0.5rem";
   if (b.fontFamily) vars["--font-sans"] = b.fontFamily;
   return vars;

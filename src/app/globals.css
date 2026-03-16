@@ -49,6 +49,30 @@
   }
 }
 
+/* The Dab Club: contraste premium sobre fondo oscuro */
+[data-tenant="tdc"].dark {
+  --foreground: 40 28% 92%;
+  --card-foreground: 40 28% 92%;
+  --popover-foreground: 40 28% 92%;
+  --secondary-foreground: 40 28% 92%;
+  --muted-foreground: 40 12% 70%;
+  --border: 40 28% 20%;
+}
+
+[data-tenant="tdc"] .tdc-sidebar {
+  background: linear-gradient(180deg, hsl(0 0% 6%) 0%, hsl(0 0% 8%) 100%);
+  border-color: hsl(40 28% 20%);
+}
+
+[data-tenant="tdc"] .tdc-sidebar a {
+  color: hsl(40 18% 78%);
+}
+
+[data-tenant="tdc"] .tdc-sidebar a:hover {
+  background: hsl(40 30% 14%);
+  color: hsl(40 28% 92%);
+}
+
 @layer base {
   * {
     @apply border-border;

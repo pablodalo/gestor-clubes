@@ -32,6 +32,11 @@ import {
   MapPin,
   Menu,
   Package,
+  Sprout,
+  CreditCard,
+  ShoppingBag,
+  Wallet,
+  ShieldCheck,
   Ticket,
   User,
   UserCircle,
@@ -48,9 +53,11 @@ function buildNavGroups(slug: string, locale: string | undefined): { label: stri
     {
       label: t.operations,
       items: [
+        { href: `/app/${slug}/cultivation`, label: t.cultivation, permission: "cultivation.read", icon: Sprout },
         { href: `/app/${slug}/locations`, label: t.locations, permission: "inventory.read", icon: MapPin },
         { href: `/app/${slug}/lots`, label: t.lots, permission: "lots.read", icon: Layers },
         { href: `/app/${slug}/inventory`, label: t.inventory, permission: "inventory.read", icon: Package },
+        { href: `/app/${slug}/products`, label: t.products, permission: "products.read", icon: ShoppingBag },
       ],
     },
     {
@@ -67,7 +74,10 @@ function buildNavGroups(slug: string, locale: string | undefined): { label: stri
     {
       label: t.control,
       items: [
+        { href: `/app/${slug}/payments`, label: t.payments, permission: "payments.read", icon: CreditCard },
         { href: `/app/${slug}/tickets`, label: t.tickets, permission: "tickets.read", icon: Ticket },
+        { href: `/app/${slug}/compliance`, label: t.compliance, permission: "compliance.read", icon: ShieldCheck },
+        { href: `/app/${slug}/revenue`, label: t.revenue, permission: "revenue.read", icon: Wallet },
         { href: `/app/${slug}/reports`, label: t.reports, permission: "reports.read", icon: BarChart2 },
       ],
     },
@@ -359,7 +369,7 @@ export function AppShell({
       <div className={cn("flex flex-1 min-w-0", navigationLayout === "horizontal" && "flex-col")}>
         {/* Desktop vertical: sidebar */}
         {navigationLayout === "vertical" && (
-          <aside className="hidden md:flex md:flex-col md:w-56 md:fixed md:inset-y-0 md:border-r md:bg-card/50 z-20">
+          <aside className="hidden md:flex md:flex-col md:w-56 md:fixed md:inset-y-0 md:border-r md:bg-card/50 z-20 tdc-sidebar">
             <div className="flex flex-col gap-2 px-3 py-4 overflow-y-auto flex-1">
               <NavContent slug={tenant.slug} pathname={pathname} groups={groups} variant="sidebar" />
             </div>

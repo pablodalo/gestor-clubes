@@ -3,7 +3,7 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import Link from "next/link";
-import { Users, Package, Layers, Ticket } from "lucide-react";
+import { Users, Package, Layers, Ticket, Wallet } from "lucide-react";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -51,6 +51,13 @@ export default async function ReportsPage({ params }: Props) {
       href: `/app/${tenantSlug}/tickets`,
       icon: Ticket,
       permission: PERMISSION_KEYS.tickets_read,
+    },
+    {
+      title: "Ingresos",
+      description: "Proyección mensual/anual y estado de membresías.",
+      href: `/app/${tenantSlug}/revenue`,
+      icon: Wallet,
+      permission: PERMISSION_KEYS.revenue_read,
     },
   ].filter((c) => !c.permission || permissions === null || permissions.has(c.permission));
 

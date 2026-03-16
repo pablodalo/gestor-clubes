@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { createAuditLog } from "@/server/audit";
 import { requirePermission } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
@@ -20,6 +21,12 @@ const createMemberSchema = z.object({
   reprocannStartDate: z.string().optional(),
   reprocannEndDate: z.string().optional(),
   reprocannActive: z.boolean().optional(),
+  membershipPlan: z.string().optional(),
+  membershipRecurring: z.boolean().optional(),
+  membershipRecurrenceDay: z.coerce.number().int().min(1).max(28).optional(),
+  membershipLastPaidAt: z.string().optional(),
+  membershipLastAmount: z.string().optional(),
+  membershipCurrency: z.string().optional(),
   documentType: z.string().optional(),
   documentNumber: z.string().optional(),
   status: z.enum(["active", "suspended", "inactive"]).default("active"),
@@ -66,6 +73,10 @@ export async function createMember(input: CreateMemberInput) {
   const email = data.email?.trim() || null;
   const reprocannStartDate = data.reprocannStartDate ? new Date(data.reprocannStartDate) : null;
   const reprocannEndDate = data.reprocannEndDate ? new Date(data.reprocannEndDate) : null;
+  const membershipLastPaidAt = data.membershipLastPaidAt ? new Date(data.membershipLastPaidAt) : null;
+  const membershipLastAmount = data.membershipLastAmount
+    ? new Prisma.Decimal(data.membershipLastAmount)
+    : null;
 
   const existing = await prisma.member.findUnique({
     where: { tenantId_memberNumber: { tenantId: ctx.tenantId, memberNumber: data.memberNumber } },
@@ -85,6 +96,12 @@ export async function createMember(input: CreateMemberInput) {
       reprocannStartDate,
       reprocannEndDate,
       reprocannActive: data.reprocannActive ?? false,
+      membershipPlan: data.membershipPlan || null,
+      membershipRecurring: data.membershipRecurring ?? false,
+      membershipRecurrenceDay: data.membershipRecurrenceDay ?? null,
+      membershipLastPaidAt,
+      membershipLastAmount,
+      membershipCurrency: data.membershipCurrency || "ARS",
       documentType: data.documentType || null,
       documentNumber: data.documentNumber || null,
       status: data.status,
@@ -127,6 +144,10 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
   const data = parsed.data as Record<string, unknown>;
   const reprocannStartDate = data.reprocannStartDate ? new Date(String(data.reprocannStartDate)) : null;
   const reprocannEndDate = data.reprocannEndDate ? new Date(String(data.reprocannEndDate)) : null;
+  const membershipLastPaidAt = data.membershipLastPaidAt ? new Date(String(data.membershipLastPaidAt)) : null;
+  const membershipLastAmount = data.membershipLastAmount
+    ? new Prisma.Decimal(String(data.membershipLastAmount))
+    : null;
   const member = await prisma.member.update({
     where: { id: memberId },
     data: {
@@ -138,6 +159,15 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
         data.reprocannAffiliateNumber === "" ? null : (data.reprocannAffiliateNumber as string | null),
       reprocannStartDate: data.reprocannStartDate ? reprocannStartDate : undefined,
       reprocannEndDate: data.reprocannEndDate ? reprocannEndDate : undefined,
+      membershipPlan: data.membershipPlan === "" ? null : (data.membershipPlan as string | null),
+      membershipRecurring:
+        typeof data.membershipRecurring === "boolean" ? (data.membershipRecurring as boolean) : undefined,
+      membershipRecurrenceDay:
+        data.membershipRecurrenceDay === "" ? null : (data.membershipRecurrenceDay as number | null),
+      membershipLastPaidAt: data.membershipLastPaidAt ? membershipLastPaidAt : undefined,
+      membershipLastAmount: data.membershipLastAmount ? membershipLastAmount : undefined,
+      membershipCurrency:
+        data.membershipCurrency === "" ? null : (data.membershipCurrency as string | null),
     },
   });
 

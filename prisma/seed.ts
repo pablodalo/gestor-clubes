@@ -12,6 +12,11 @@ const PERMISSION_KEYS = [
   "lots.read", "lots.create", "qr.generate", "qr.resolve",
   "weighings.read", "weighings.create", "scales.manage",
   "devices.read", "devices.manage", "reports.read",
+  "revenue.read", "payments.read", "payments.create",
+  "cultivation.read", "cultivation.manage",
+  "products.read", "products.manage",
+  "sales.read", "sales.manage",
+  "compliance.read",
   "tickets.read", "tickets.manage", "audit.read",
 ];
 
@@ -129,7 +134,12 @@ async function main() {
     "inventory.read", "inventory.create", "inventory.move", "inventory.adjust",
     "lots.read", "lots.create", "qr.generate", "qr.resolve",
     "weighings.read", "weighings.create", "scales.manage",
-    "devices.read", "devices.manage", "reports.read",
+    "devices.read", "devices.manage", "reports.read", "revenue.read",
+    "payments.read", "payments.create",
+    "cultivation.read", "cultivation.manage",
+    "products.read", "products.manage",
+    "sales.read", "sales.manage",
+    "compliance.read",
     "tickets.read", "tickets.manage",
   ];
   const CULTIVADOR_PERMISSION_KEYS = [
@@ -178,6 +188,19 @@ async function main() {
 
     const permIds = permissions.map((p) => p.id);
     for (const permId of permIds) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: { roleId: roleAdmin.id, permissionId: permId },
+        },
+        update: {},
+        create: { roleId: roleAdmin.id, permissionId: permId },
+      });
+    }
+
+    const paymentPerms = permissions
+      .filter((p) => p.key === "payments.read" || p.key === "payments.create")
+      .map((p) => p.id);
+    for (const permId of paymentPerms) {
       await prisma.rolePermission.upsert({
         where: {
           roleId_permissionId: { roleId: roleAdmin.id, permissionId: permId },
@@ -257,6 +280,12 @@ async function main() {
         reprocannStartDate: new Date("2024-01-15"),
         reprocannEndDate: new Date("2025-01-15"),
         reprocannActive: true,
+        membershipPlan: "Flores + Extractos",
+        membershipRecurring: true,
+        membershipRecurrenceDay: 10,
+        membershipLastPaidAt: new Date("2024-12-01"),
+        membershipLastAmount: 35000,
+        membershipCurrency: "ARS",
       },
       create: {
         tenantId: tenant.id,
@@ -272,6 +301,12 @@ async function main() {
         reprocannStartDate: new Date("2024-01-15"),
         reprocannEndDate: new Date("2025-01-15"),
         reprocannActive: true,
+        membershipPlan: "Flores + Extractos",
+        membershipRecurring: true,
+        membershipRecurrenceDay: 10,
+        membershipLastPaidAt: new Date("2024-12-01"),
+        membershipLastAmount: 35000,
+        membershipCurrency: "ARS",
       },
     });
 
@@ -301,6 +336,12 @@ async function main() {
           reprocannStartDate: new Date("2023-06-01"),
           reprocannEndDate: new Date("2024-06-01"),
           reprocannActive: false,
+          membershipPlan: "Flores",
+          membershipRecurring: false,
+          membershipRecurrenceDay: null,
+          membershipLastPaidAt: new Date("2024-11-20"),
+          membershipLastAmount: 18000,
+          membershipCurrency: "ARS",
         },
         {
           memberNumber: "TDC-003",
@@ -314,6 +355,12 @@ async function main() {
           reprocannStartDate: new Date("2024-02-10"),
           reprocannEndDate: new Date("2025-02-10"),
           reprocannActive: true,
+          membershipPlan: "Extractos premium",
+          membershipRecurring: true,
+          membershipRecurrenceDay: 5,
+          membershipLastPaidAt: new Date("2024-12-05"),
+          membershipLastAmount: 52000,
+          membershipCurrency: "ARS",
         },
         {
           memberNumber: "TDC-004",
@@ -327,6 +374,12 @@ async function main() {
           reprocannStartDate: new Date("2022-09-20"),
           reprocannEndDate: new Date("2023-09-20"),
           reprocannActive: false,
+          membershipPlan: "Flores + Extractos",
+          membershipRecurring: true,
+          membershipRecurrenceDay: 18,
+          membershipLastPaidAt: new Date("2024-12-18"),
+          membershipLastAmount: 42000,
+          membershipCurrency: "ARS",
         },
       ];
 
@@ -345,6 +398,12 @@ async function main() {
             reprocannStartDate: m.reprocannStartDate,
             reprocannEndDate: m.reprocannEndDate,
             reprocannActive: m.reprocannActive,
+            membershipPlan: m.membershipPlan,
+            membershipRecurring: m.membershipRecurring,
+            membershipRecurrenceDay: m.membershipRecurrenceDay,
+            membershipLastPaidAt: m.membershipLastPaidAt,
+            membershipLastAmount: m.membershipLastAmount,
+            membershipCurrency: m.membershipCurrency,
           },
           create: {
             tenantId: tenant.id,
@@ -360,6 +419,12 @@ async function main() {
             reprocannStartDate: m.reprocannStartDate,
             reprocannEndDate: m.reprocannEndDate,
             reprocannActive: m.reprocannActive,
+            membershipPlan: m.membershipPlan,
+            membershipRecurring: m.membershipRecurring,
+            membershipRecurrenceDay: m.membershipRecurrenceDay,
+            membershipLastPaidAt: m.membershipLastPaidAt,
+            membershipLastAmount: m.membershipLastAmount,
+            membershipCurrency: m.membershipCurrency,
           },
         });
 
@@ -373,8 +438,148 @@ async function main() {
             status: "active",
           },
         });
+
+        await prisma.membershipPayment.create({
+          data: {
+            tenantId: tenant.id,
+            memberId: member.id,
+            amount: m.membershipLastAmount ?? 0,
+            currency: m.membershipCurrency ?? "ARS",
+            paidAt: m.membershipLastPaidAt ?? new Date(),
+            method: "transferencia",
+            reference: `TDC-${member.memberNumber}`,
+            notes: "Pago seed",
+          },
+        });
       }
       console.log("Extra members for The Dab Club: TDC-002, TDC-003, TDC-004");
+
+      const cultivationLot = await prisma.cultivationLot.upsert({
+        where: { tenantId_code: { tenantId: tenant.id, code: "TDC-LOT-01" } },
+        update: {
+          strain: "Gelato 41",
+          stage: "floracion",
+          plantsCount: 24,
+          estimatedYieldGrams: 1200,
+          startedAt: new Date("2024-09-15"),
+          estimatedHarvestAt: new Date("2024-12-20"),
+          nextWateringAt: new Date("2024-12-08"),
+          nextFeedingAt: new Date("2024-12-10"),
+        },
+        create: {
+          tenantId: tenant.id,
+          code: "TDC-LOT-01",
+          strain: "Gelato 41",
+          stage: "floracion",
+          plantsCount: 24,
+          estimatedYieldGrams: 1200,
+          startedAt: new Date("2024-09-15"),
+          estimatedHarvestAt: new Date("2024-12-20"),
+          nextWateringAt: new Date("2024-12-08"),
+          nextFeedingAt: new Date("2024-12-10"),
+        },
+      });
+
+      const cultivationEvents = [
+        { type: "riego", happenedAt: new Date("2024-11-28"), note: "Riego 12L por planta" },
+        { type: "fertilizacion", happenedAt: new Date("2024-12-02"), note: "NPK 2-1-3" },
+        { type: "observacion", happenedAt: new Date("2024-12-05"), note: "Tricomas 70% lechosos" },
+      ];
+
+      for (const ev of cultivationEvents) {
+        await prisma.cultivationEvent.create({
+      data: {
+            tenantId: tenant.id,
+            cultivationLotId: cultivationLot.id,
+            type: ev.type,
+            happenedAt: ev.happenedAt,
+            note: ev.note,
+          },
+        });
+      }
+
+      const productsData = [
+        {
+          name: "Flores Gelato 41",
+          category: "flores",
+          unit: "g",
+          price: 4500,
+          currency: "ARS",
+          notes: "Indoor premium",
+        },
+        {
+          name: "Rosin Full Spectrum",
+          category: "extractos",
+          unit: "g",
+          price: 12000,
+          currency: "ARS",
+          notes: "Extracción en frío",
+        },
+        {
+          name: "Kit Dab Básico",
+          category: "accesorios",
+          unit: "u",
+          price: 35000,
+          currency: "ARS",
+          notes: "Kit de inicio para socios",
+        },
+      ];
+
+      const createdProducts = [];
+      for (const p of productsData) {
+        const existing = await prisma.product.findFirst({
+          where: { tenantId: tenant.id, name: p.name },
+        });
+        const product = existing
+          ? await prisma.product.update({
+              where: { id: existing.id },
+              data: {
+                category: p.category,
+                unit: p.unit,
+                price: p.price,
+                currency: p.currency,
+                status: "active",
+                notes: p.notes,
+              },
+            })
+          : await prisma.product.create({
+              data: {
+                tenantId: tenant.id,
+                name: p.name,
+                category: p.category,
+                unit: p.unit,
+                price: p.price,
+                currency: p.currency,
+                status: "active",
+                notes: p.notes,
+              },
+            });
+        createdProducts.push(product);
+      }
+
+      if (createdProducts.length > 0) {
+        const product = createdProducts[0];
+        const quantity = 2;
+        const total = product.price.mul(quantity);
+        await prisma.salesOrder.create({
+          data: {
+            tenantId: tenant.id,
+            memberId: member1.id,
+            status: "paid",
+            totalAmount: total,
+            currency: product.currency,
+            paidAt: new Date("2024-12-12"),
+            items: {
+              create: {
+                productId: product.id,
+                quantity,
+                unitPrice: product.price,
+                total,
+              },
+            },
+          },
+        });
+      }
     }
 
     const lotCode = `LOT-${tenant.slug.slice(0, 2).toUpperCase()}-001`;

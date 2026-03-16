@@ -163,6 +163,12 @@ model Member {
   reprocannStartDate DateTime?
   reprocannEndDate DateTime?
   reprocannActive Boolean  @default(false)
+  membershipPlan String?
+  membershipRecurring Boolean @default(false)
+  membershipRecurrenceDay Int?
+  membershipLastPaidAt DateTime?
+  membershipLastAmount Decimal? @db.Decimal(12, 2)
+  membershipCurrency String? @default("ARS")
   documentType   String?
   documentNumber String?
   birthDate      DateTime?
@@ -192,6 +198,120 @@ model MemberAccount {
   lastLoginAt  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model MembershipPayment {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount     Decimal  @db.Decimal(12, 2)
+  currency   String   @default("ARS")
+  paidAt     DateTime @default(now())
+  method     String?
+  reference  String?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, paidAt])
+}
+
+model CultivationLot {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code                String
+  strain              String?
+  stage               String? // propagacion | vegetativo | floracion | curado
+  status              String   @default("active")
+  plantsCount         Int?
+  startedAt           DateTime?
+  estimatedHarvestAt  DateTime?
+  estimatedYieldGrams Decimal? @db.Decimal(12, 2)
+  nextWateringAt      DateTime?
+  nextFeedingAt       DateTime?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  events CultivationEvent[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model CultivationEvent {
+  id               String   @id @default(cuid())
+  tenantId         String
+  cultivationLotId String
+  cultivationLot   CultivationLot @relation(fields: [cultivationLotId], references: [id], onDelete: Cascade)
+  type             String // riego | fertilizacion | poda | plaga | cosecha | observacion
+  happenedAt       DateTime @default(now())
+  note             String?
+  metadataJson     String?  @map("metadata_json")
+  createdAt        DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([cultivationLotId])
+  @@index([tenantId, happenedAt])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  category    String   // flores | extractos | accesorios
+  sku         String?
+  unit        String?  // g | u
+  price       Decimal  @db.Decimal(12, 2)
+  currency    String   @default("ARS")
+  status      String   @default("active")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems SalesOrderItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+}
+
+model SalesOrder {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  status      String   @default("paid") // pending | paid | fulfilled | cancelled
+  totalAmount Decimal  @db.Decimal(12, 2)
+  currency    String   @default("ARS")
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  items SalesOrderItem[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, paidAt])
+}
+
+model SalesOrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Decimal  @db.Decimal(12, 2)
+  unitPrice Decimal  @db.Decimal(12, 2)
+  total     Decimal  @db.Decimal(12, 2)
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model Location {

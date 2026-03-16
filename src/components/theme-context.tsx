@@ -49,9 +49,11 @@ export function ThemeProvider({ children, branding, defaultDark = false }: Theme
   const vars = branding ? brandingToCssVariables(branding) : {};
   const styleObj = Object.keys(vars).length ? (vars as unknown as React.CSSProperties) : undefined;
 
+  const tenantKey = branding?.shortName?.toLowerCase();
+
   return (
     <ThemeContext.Provider value={{ theme: resolved, setTheme }}>
-      <div className={rootClass} style={styleObj}>
+      <div className={rootClass} style={styleObj} data-tenant={tenantKey}>
         {children}
       </div>
     </ThemeContext.Provider>
