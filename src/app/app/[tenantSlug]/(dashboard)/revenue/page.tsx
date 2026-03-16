@@ -4,7 +4,7 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RevenueCharts, type SummaryBarItem, type MonthlyTrendItem, type YearAnnualItem } from "@/features/revenue/revenue-charts";
+import { RevenueCharts, type YearAnnualItem } from "@/features/revenue/revenue-charts";
 import { TrendingUp, Users, Calendar, Wallet, Banknote } from "lucide-react";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
@@ -80,35 +80,8 @@ export default async function RevenuePage({ params }: Props) {
   const dueSoonCount = dueSoonMembers.length;
   const pendingAmount = dueSoonMembers.reduce((sum, m) => sum + toNumber(m.membershipLastAmount), 0);
 
-  // Últimos 6 meses: total cobrado por mes
+  // Año completo: 12 meses. Por cada mes: cobrado (real) y proyectado (recurrencias). Pasados: ambos; futuros: solo proyectado.
   const monthNamesShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const monthlyTrend: MonthlyTrendItem[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(currentYear, currentMonth - i, 1);
-    const y = d.getFullYear();
-    const m = d.getMonth();
-    const total = payments.reduce((acc, p) => {
-      const paidAt = p.paidAt ? new Date(p.paidAt) : null;
-      if (!paidAt || paidAt.getFullYear() !== y || paidAt.getMonth() !== m) return acc;
-      return acc + toNumber(p.amount);
-    }, 0);
-    monthlyTrend.push({
-      month: monthNamesShort[m],
-      cobrado: total,
-      label: `${monthNamesShort[m]} ${y}`,
-    });
-  }
-
-  const summaryData: SummaryBarItem[] = [
-    {
-      name: "Este mes",
-      cobrado: monthlyCollected,
-      pendiente: pendingAmount,
-      proyectado: projectedMonthly,
-    },
-  ];
-
-  // Año completo: 12 meses con cobrado (real) y proyectado (recurrencias)
   const yearAnnual: YearAnnualItem[] = [];
   for (let m = 0; m < 12; m++) {
     const cobrado = payments.reduce((acc, p) => {
@@ -196,13 +169,10 @@ export default async function RevenuePage({ params }: Props) {
         </CardContent>
       </Card>
 
-      <RevenueCharts
-        currency={currency}
-        summaryData={summaryData}
-        monthlyTrend={monthlyTrend}
-        yearAnnual={yearAnnual}
-        currentYear={currentYear}
-      />
+      {/* Gráfico anual a ancho completo (escapa del container) */}
+      <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen max-w-none px-4">
+        <RevenueCharts currency={currency} yearAnnual={yearAnnual} currentYear={currentYear} />
+      </div>
     </div>
   );
 }
