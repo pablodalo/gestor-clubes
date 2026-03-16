@@ -4,7 +4,7 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RevenueCharts, type SummaryBarItem, type MonthlyTrendItem } from "@/features/revenue/revenue-charts";
+import { RevenueCharts, type SummaryBarItem, type MonthlyTrendItem, type YearAnnualItem } from "@/features/revenue/revenue-charts";
 import { TrendingUp, Users, Calendar, Wallet, Banknote } from "lucide-react";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
@@ -81,7 +81,7 @@ export default async function RevenuePage({ params }: Props) {
   const pendingAmount = dueSoonMembers.reduce((sum, m) => sum + toNumber(m.membershipLastAmount), 0);
 
   // Últimos 6 meses: total cobrado por mes
-  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const monthNamesShort = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const monthlyTrend: MonthlyTrendItem[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(currentYear, currentMonth - i, 1);
@@ -93,9 +93,9 @@ export default async function RevenuePage({ params }: Props) {
       return acc + toNumber(p.amount);
     }, 0);
     monthlyTrend.push({
-      month: monthNames[m],
+      month: monthNamesShort[m],
       cobrado: total,
-      label: `${monthNames[m]} ${y}`,
+      label: `${monthNamesShort[m]} ${y}`,
     });
   }
 
@@ -107,6 +107,25 @@ export default async function RevenuePage({ params }: Props) {
       proyectado: projectedMonthly,
     },
   ];
+
+  // Año completo: 12 meses con cobrado (real) y proyectado (recurrencias)
+  const yearAnnual: YearAnnualItem[] = [];
+  for (let m = 0; m < 12; m++) {
+    const cobrado = payments.reduce((acc, p) => {
+      const paidAt = p.paidAt ? new Date(p.paidAt) : null;
+      if (!paidAt || paidAt.getFullYear() !== currentYear || paidAt.getMonth() !== m) return acc;
+      return acc + toNumber(p.amount);
+    }, 0);
+    const isFuture = m > currentMonth;
+    yearAnnual.push({
+      month: monthNamesShort[m],
+      monthIndex: m,
+      cobrado,
+      proyectado: projectedMonthly,
+      label: `${monthNamesShort[m]} ${currentYear}`,
+      isFuture,
+    });
+  }
 
   return (
     <div className="space-y-8">
@@ -177,7 +196,13 @@ export default async function RevenuePage({ params }: Props) {
         </CardContent>
       </Card>
 
-      <RevenueCharts currency={currency} summaryData={summaryData} monthlyTrend={monthlyTrend} />
+      <RevenueCharts
+        currency={currency}
+        summaryData={summaryData}
+        monthlyTrend={monthlyTrend}
+        yearAnnual={yearAnnual}
+        currentYear={currentYear}
+      />
     </div>
   );
 }
