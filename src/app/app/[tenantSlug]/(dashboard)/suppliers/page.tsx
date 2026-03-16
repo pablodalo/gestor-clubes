@@ -27,8 +27,18 @@ export default async function SuppliersPage({ params }: Props) {
 
   const suppliers = await prisma.supplier.findMany({
     where: { tenantId: tenant.id },
+    include: {
+      supplies: {
+        select: { id: true },
+      },
+    },
     orderBy: { name: "asc" },
   });
+
+  const rows = suppliers.map((supplier) => ({
+    ...supplier,
+    suppliesCount: supplier.supplies.length,
+  }));
 
   return (
     <div className="space-y-6">
@@ -38,7 +48,7 @@ export default async function SuppliersPage({ params }: Props) {
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <SuppliersTable suppliers={suppliers} />
+          <SuppliersTable suppliers={rows} />
         </div>
         {canManage && (
           <div>

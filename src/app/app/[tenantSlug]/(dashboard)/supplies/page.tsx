@@ -41,6 +41,8 @@ export default async function SuppliesPage({ params }: Props) {
   const rows = supplies.map((s) => ({
     ...s,
     supplierName: s.supplier?.name ?? null,
+    supplierPhone: s.supplier?.phone ?? null,
+    supplierEmail: s.supplier?.email ?? null,
   }));
 
   return (

@@ -262,6 +262,8 @@ model CultivationLot {
   events CultivationEvent[]
   strains CultivationLotStrain[]
   tasks CultivationTask[]
+  plants Plant[]
+  controls CultivationControl[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -461,6 +463,8 @@ model Plant {
   id        String   @id @default(cuid())
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cultivationLotId String?
+  cultivationLot   CultivationLot? @relation(fields: [cultivationLotId], references: [id], onDelete: SetNull)
   strainId  String
   strain    PlantStrain @relation(fields: [strainId], references: [id], onDelete: Cascade)
   code      String
@@ -473,6 +477,7 @@ model Plant {
 
   @@unique([tenantId, code])
   @@index([tenantId])
+  @@index([cultivationLotId])
   @@index([strainId])
 }
 
@@ -480,6 +485,8 @@ model CultivationControl {
   id          String   @id @default(cuid())
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cultivationLotId String?
+  cultivationLot   CultivationLot? @relation(fields: [cultivationLotId], references: [id], onDelete: SetNull)
   controlDate DateTime @default(now())
   temperature Decimal? @db.Decimal(5, 2)
   humidity    Decimal? @db.Decimal(5, 2)

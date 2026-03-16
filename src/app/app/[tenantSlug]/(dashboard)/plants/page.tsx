@@ -26,9 +26,9 @@ export default async function PlantsPage({ params }: Props) {
 
   const [plants, strains] = await Promise.all([
     prisma.plant.findMany({
-    where: { tenantId: tenant.id },
-    include: { strain: true },
-    orderBy: { code: "asc" },
+      where: { tenantId: tenant.id },
+      include: { strain: true, cultivationLot: true },
+      orderBy: { code: "asc" },
     }),
     prisma.plantStrain.findMany({
       where: { tenantId: tenant.id },
@@ -40,9 +40,16 @@ export default async function PlantsPage({ params }: Props) {
   const columns: DataTableColumn<typeof plants[number]>[] = [
     { key: "code", header: "Código", render: (p) => <span className="font-medium">{p.code}</span> },
     { key: "strain", header: "Cepa", render: (p) => p.strain?.name ?? "—" },
+    { key: "lot", header: "Lote", render: (p) => p.cultivationLot?.code ?? "—" },
     { key: "stage", header: "Etapa", render: (p) => p.stage },
     { key: "status", header: "Estado", render: (p) => p.status },
   ];
+
+  const lots = await prisma.cultivationLot.findMany({
+    where: { tenantId: tenant.id },
+    select: { id: true, code: true },
+    orderBy: { code: "asc" },
+  });
 
   return (
     <div className="space-y-6">
@@ -55,7 +62,7 @@ export default async function PlantsPage({ params }: Props) {
           <DataTable columns={columns} data={plants} keyExtractor={(p) => p.id} emptyMessage="No hay plantas." />
         </div>
         <div>
-          <PlantForm strains={strains} onSuccess={() => {}} />
+          <PlantForm strains={strains} lots={lots} onSuccess={() => {}} />
         </div>
       </div>
     </div>

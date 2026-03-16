@@ -13,6 +13,13 @@ const createSupplierSchema = z.object({
   name: z.string().min(1),
   email: z.string().optional(),
   phone: z.string().optional(),
+  address: z.string().optional(),
+  notes: z.string().optional(),
+  suppliesProvided: z.string().optional(),
+  paymentStatus: z.enum(["ok", "pending"]).optional(),
+  pendingPayment: z.boolean().optional(),
+  pendingDelivery: z.boolean().optional(),
+  nextDeliveryAt: z.string().optional(),
 });
 
 const createSupplySchema = z.object({
@@ -21,6 +28,8 @@ const createSupplySchema = z.object({
   unit: z.string().optional(),
   minQty: z.string().optional(),
   supplierId: z.string().optional(),
+  renewalAt: z.string().optional(),
+  isMissing: z.boolean().optional(),
 });
 
 const createStockMovementSchema = z.object({
@@ -59,6 +68,13 @@ export async function createSupplier(input: z.infer<typeof createSupplierSchema>
       name: parsed.data.name,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
+      address: parsed.data.address || null,
+      notes: parsed.data.notes || null,
+      suppliesProvided: parsed.data.suppliesProvided || null,
+      paymentStatus: parsed.data.paymentStatus || "ok",
+      pendingPayment: parsed.data.pendingPayment ?? false,
+      pendingDelivery: parsed.data.pendingDelivery ?? false,
+      nextDeliveryAt: parsed.data.nextDeliveryAt ? new Date(parsed.data.nextDeliveryAt) : null,
     },
   });
 
@@ -89,6 +105,8 @@ export async function createSupplyItem(input: z.infer<typeof createSupplySchema>
       category: parsed.data.category || null,
       unit: parsed.data.unit || null,
       minQty,
+      renewalAt: parsed.data.renewalAt ? new Date(parsed.data.renewalAt) : null,
+      isMissing: parsed.data.isMissing ?? false,
     },
   });
 

@@ -112,6 +112,7 @@ export function brandingToCssVariables(b: TenantBrandingData): Record<string, st
     ...parts,
     l: clamp(parts.l + delta, 0, 100),
   });
+  const isLight = (parts: { h: number; s: number; l: number }) => parts.l >= 70;
   const radiusMap: Record<string, string> = {
     "0": "0px",
     "0.25": "0.25rem",
@@ -125,13 +126,20 @@ export function brandingToCssVariables(b: TenantBrandingData): Record<string, st
   if (b.accentColor) vars["--accent"] = hslString(hexToHslParts(b.accentColor));
   if (b.backgroundColor) {
     const base = hexToHslParts(b.backgroundColor);
+    const lightBackground = isLight(base);
     vars["--background"] = hslString(base);
-    vars["--card"] = hslString(adjustLightness(base, 6));
-    vars["--popover"] = hslString(adjustLightness(base, 8));
-    vars["--muted"] = hslString(adjustLightness(base, 10));
-    vars["--accent"] = hslString(adjustLightness(base, 12));
-    vars["--border"] = hslString(adjustLightness(base, 16));
-    vars["--input"] = hslString(adjustLightness(base, 16));
+    vars["--foreground"] = lightBackground ? "220 18% 14%" : "40 26% 92%";
+    vars["--card-foreground"] = vars["--foreground"];
+    vars["--popover-foreground"] = vars["--foreground"];
+    vars["--secondary-foreground"] = vars["--foreground"];
+    vars["--accent-foreground"] = vars["--foreground"];
+    vars["--muted-foreground"] = lightBackground ? "30 10% 40%" : "40 12% 72%";
+    vars["--card"] = hslString(adjustLightness(base, lightBackground ? 3 : 6));
+    vars["--popover"] = hslString(adjustLightness(base, lightBackground ? 5 : 8));
+    vars["--muted"] = hslString(adjustLightness(base, lightBackground ? -3 : 10));
+    if (!b.accentColor) vars["--accent"] = hslString(adjustLightness(base, lightBackground ? -6 : 12));
+    vars["--border"] = hslString(adjustLightness(base, lightBackground ? -12 : 16));
+    vars["--input"] = hslString(adjustLightness(base, lightBackground ? -12 : 16));
   }
   if (b.radiusScale) vars["--radius"] = radiusMap[b.radiusScale] ?? "0.5rem";
   if (b.fontFamily) vars["--font-sans"] = b.fontFamily;

@@ -49,6 +49,7 @@ const createStrainSchema = z.object({
 
 const createPlantSchema = z.object({
   code: z.string().min(1),
+  lotId: z.string().optional(),
   strainId: z.string().min(1),
   stage: z.string().optional(),
   status: z.string().optional(),
@@ -56,6 +57,7 @@ const createPlantSchema = z.object({
 });
 
 const createControlSchema = z.object({
+  lotId: z.string().optional(),
   controlDate: z.string().optional(),
   temperature: z.string().optional(),
   humidity: z.string().optional(),
@@ -293,9 +295,20 @@ export async function createPlant(input: z.infer<typeof createPlantSchema>) {
   const parsed = createPlantSchema.safeParse(input);
   if (!parsed.success) return { error: "Datos inválidos" };
 
+  let lotId: string | null = null;
+  if (parsed.data.lotId) {
+    const lot = await prisma.cultivationLot.findFirst({
+      where: { id: parsed.data.lotId, tenantId: ctx.tenantId },
+      select: { id: true },
+    });
+    if (!lot) return { error: "Lote no encontrado" };
+    lotId = lot.id;
+  }
+
   await prisma.plant.create({
     data: {
       tenantId: ctx.tenantId,
+      cultivationLotId: lotId,
       strainId: parsed.data.strainId,
       code: parsed.data.code,
       stage: parsed.data.stage || "vegetativo",
@@ -304,6 +317,8 @@ export async function createPlant(input: z.infer<typeof createPlantSchema>) {
     },
   });
   revalidatePath(`/app/${ctx.tenantSlug}/plants`);
+  revalidatePath(`/app/${ctx.tenantSlug}/cultivation`);
+  if (lotId) revalidatePath(`/app/${ctx.tenantSlug}/cultivation/${lotId}`);
   return { ok: true };
 }
 
@@ -318,9 +333,20 @@ export async function createControl(input: z.infer<typeof createControlSchema>) 
   const parsed = createControlSchema.safeParse(input);
   if (!parsed.success) return { error: "Datos inválidos" };
 
+  let lotId: string | null = null;
+  if (parsed.data.lotId) {
+    const lot = await prisma.cultivationLot.findFirst({
+      where: { id: parsed.data.lotId, tenantId: ctx.tenantId },
+      select: { id: true },
+    });
+    if (!lot) return { error: "Lote no encontrado" };
+    lotId = lot.id;
+  }
+
   await prisma.cultivationControl.create({
     data: {
       tenantId: ctx.tenantId,
+      cultivationLotId: lotId,
       controlDate: parsed.data.controlDate ? new Date(parsed.data.controlDate) : new Date(),
       temperature: parsed.data.temperature ? new Prisma.Decimal(parsed.data.temperature) : null,
       humidity: parsed.data.humidity ? new Prisma.Decimal(parsed.data.humidity) : null,
@@ -331,6 +357,8 @@ export async function createControl(input: z.infer<typeof createControlSchema>) 
     },
   });
   revalidatePath(`/app/${ctx.tenantSlug}/controls`);
+  revalidatePath(`/app/${ctx.tenantSlug}/cultivation`);
+  if (lotId) revalidatePath(`/app/${ctx.tenantSlug}/cultivation/${lotId}`);
   return { ok: true };
 }
 

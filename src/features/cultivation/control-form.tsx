@@ -7,7 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function ControlForm({ onSuccess }: { onSuccess: () => void }) {
+type LotOption = { id: string; code: string };
+
+export function ControlForm({
+  lots = [],
+  defaultLotId,
+  onSuccess,
+}: {
+  lots?: LotOption[];
+  defaultLotId?: string;
+  onSuccess: () => void;
+}) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,6 +27,7 @@ export function ControlForm({ onSuccess }: { onSuccess: () => void }) {
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     const result = await createControl({
+      lotId: String(formData.get("lotId") || ""),
       controlDate: String(formData.get("controlDate") || ""),
       temperature: String(formData.get("temperature") || ""),
       humidity: String(formData.get("humidity") || ""),
@@ -42,6 +53,22 @@ export function ControlForm({ onSuccess }: { onSuccess: () => void }) {
       <CardContent>
         <form onSubmit={handleSubmit} className="grid gap-4">
           {error && <p className="text-sm text-destructive">{error}</p>}
+          {lots.length > 0 && (
+            <div className="grid gap-2">
+              <Label htmlFor="lotId">Lote</Label>
+              <select
+                id="lotId"
+                name="lotId"
+                defaultValue={defaultLotId ?? ""}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {!defaultLotId && <option value="">Sin asociar</option>}
+                {lots.map((lot) => (
+                  <option key={lot.id} value={lot.id}>{lot.code}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="controlDate">Fecha</Label>
             <Input id="controlDate" name="controlDate" type="date" />

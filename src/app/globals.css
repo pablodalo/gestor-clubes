@@ -49,28 +49,51 @@
   }
 }
 
-/* The Dab Club: contraste premium sobre fondo oscuro */
-[data-tenant="tdc"].dark {
-  --foreground: 40 28% 92%;
-  --card-foreground: 40 28% 92%;
-  --popover-foreground: 40 28% 92%;
-  --secondary-foreground: 40 28% 92%;
-  --muted-foreground: 40 12% 70%;
-  --border: 40 28% 20%;
+/* The Dab Club: estética clara, editorial y premium */
+[data-tenant="tdc"] {
+  background:
+    radial-gradient(circle at top left, hsl(42 60% 96% / 0.9) 0%, transparent 32%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(42 40% 97%) 100%);
 }
 
 [data-tenant="tdc"] .tdc-sidebar {
-  background: linear-gradient(180deg, hsl(0 0% 6%) 0%, hsl(0 0% 8%) 100%);
-  border-color: hsl(40 28% 20%);
+  background: linear-gradient(180deg, hsl(42 45% 96%) 0%, hsl(36 38% 93%) 100%);
+  border-color: hsl(36 22% 82%);
+  box-shadow: inset -1px 0 0 hsl(36 22% 82%);
 }
 
 [data-tenant="tdc"] .tdc-sidebar a {
-  color: hsl(40 18% 78%);
+  color: hsl(28 18% 22%);
 }
 
 [data-tenant="tdc"] .tdc-sidebar a:hover {
-  background: hsl(40 30% 14%);
-  color: hsl(40 28% 92%);
+  background: hsl(38 35% 88%);
+  color: hsl(24 24% 12%);
+}
+
+[data-tenant="tdc"] .tdc-sidebar a.bg-primary\/10,
+[data-tenant="tdc"] .tdc-sidebar a.text-primary {
+  background: hsl(38 42% 84%);
+  color: hsl(24 24% 12%);
+}
+
+[data-tenant="tdc"] .bg-card,
+[data-tenant="tdc"] [class*="bg-card/"] {
+  backdrop-filter: blur(10px);
+}
+
+[data-tenant="tdc"] h1,
+[data-tenant="tdc"] h2,
+[data-tenant="tdc"] h3,
+[data-tenant="tdc"] .font-semibold,
+[data-tenant="tdc"] .font-bold {
+  letter-spacing: -0.02em;
+}
+
+[data-tenant="tdc"] .login-page-bg {
+  background:
+    radial-gradient(circle at top left, hsl(41 58% 92%) 0%, transparent 28%),
+    linear-gradient(155deg, hsl(42 45% 95%) 0%, hsl(34 35% 91%) 100%);
 }
 
 @layer base {

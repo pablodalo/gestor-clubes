@@ -24,14 +24,23 @@ export default async function ControlsPage({ params }: Props) {
     );
   }
 
-  const controls = await prisma.cultivationControl.findMany({
-    where: { tenantId: tenant.id },
-    orderBy: { controlDate: "desc" },
-    take: 100,
-  });
+  const [controls, lots] = await Promise.all([
+    prisma.cultivationControl.findMany({
+      where: { tenantId: tenant.id },
+      include: { cultivationLot: true },
+      orderBy: { controlDate: "desc" },
+      take: 100,
+    }),
+    prisma.cultivationLot.findMany({
+      where: { tenantId: tenant.id },
+      select: { id: true, code: true },
+      orderBy: { code: "asc" },
+    }),
+  ]);
 
   const columns: DataTableColumn<typeof controls[number]>[] = [
     { key: "controlDate", header: "Fecha", render: (c) => new Date(c.controlDate).toLocaleDateString("es-AR") },
+    { key: "cultivationLot", header: "Lote", render: (c) => c.cultivationLot?.code ?? "—" },
     { key: "temperature", header: "Temp", render: (c) => c.temperature?.toString?.() ?? "—" },
     { key: "humidity", header: "Humedad", render: (c) => c.humidity?.toString?.() ?? "—" },
     { key: "ph", header: "pH", render: (c) => c.ph?.toString?.() ?? "—" },
@@ -50,7 +59,7 @@ export default async function ControlsPage({ params }: Props) {
           <DataTable columns={columns} data={controls} keyExtractor={(c) => c.id} emptyMessage="No hay controles." />
         </div>
         <div>
-          <ControlForm onSuccess={() => {}} />
+          <ControlForm lots={lots} onSuccess={() => {}} />
         </div>
       </div>
     </div>

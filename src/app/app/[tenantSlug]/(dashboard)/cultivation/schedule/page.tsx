@@ -36,16 +36,38 @@ export default async function CultivationSchedulePage({ params }: Props) {
       strain: true,
       nextWateringAt: true,
       nextFeedingAt: true,
+      tasks: {
+        where: {
+          dueAt: {
+            lte: in14Days,
+          },
+        },
+        orderBy: { dueAt: "asc" },
+        select: {
+          id: true,
+          type: true,
+          dueAt: true,
+          done: true,
+        },
+      },
     },
   });
 
   const tasks = lots.flatMap((lot) => {
-    const items = [];
+    const items: { type: string; date: Date; lot: typeof lot; done?: boolean }[] = [];
     if (lot.nextWateringAt && lot.nextWateringAt <= in14Days) {
       items.push({ type: "Riego", date: lot.nextWateringAt, lot });
     }
     if (lot.nextFeedingAt && lot.nextFeedingAt <= in14Days) {
       items.push({ type: "Fertilización", date: lot.nextFeedingAt, lot });
+    }
+    for (const task of lot.tasks) {
+      items.push({
+        type: task.type === "secado" ? "Secado" : task.type === "curado" ? "Curado" : "Listo para comercializar",
+        date: task.dueAt,
+        lot,
+        done: task.done,
+      });
     }
     return items;
   }).sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -65,11 +87,18 @@ export default async function CultivationSchedulePage({ params }: Props) {
             <p className="text-sm text-muted-foreground">No hay tareas próximas.</p>
           ) : (
             tasks.map((t, idx) => (
-              <div key={`${t.lot.id}-${t.type}-${idx}`} className="flex items-center justify-between text-sm">
-                <Link href={`/app/${tenantSlug}/cultivation/${t.lot.id}`} className="hover:underline">
-                  {t.type} · {t.lot.code} {t.lot.strain ? `(${t.lot.strain})` : ""}
-                </Link>
-                <span className="text-muted-foreground">
+              <div key={`${t.lot.id}-${t.type}-${idx}`} className="flex items-center justify-between gap-4 rounded-lg border p-3 text-sm">
+                <div>
+                  <Link href={`/app/${tenantSlug}/cultivation/${t.lot.id}`} className="font-medium hover:underline">
+                    {t.type} · {t.lot.code} {t.lot.strain ? `(${t.lot.strain})` : ""}
+                  </Link>
+                  {typeof t.done === "boolean" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t.done ? "Hito completado" : "Hito pendiente"}
+                    </p>
+                  )}
+                </div>
+                <span className="text-muted-foreground whitespace-nowrap">
                   {new Date(t.date).toLocaleDateString("es-AR")}
                 </span>
               </div>

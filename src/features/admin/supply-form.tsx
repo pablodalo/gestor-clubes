@@ -24,6 +24,8 @@ export function SupplyForm({ suppliers, onSuccess }: { suppliers: SupplierOption
       unit: String(formData.get("unit") || ""),
       minQty: String(formData.get("minQty") || ""),
       supplierId: String(formData.get("supplierId") || ""),
+      renewalAt: String(formData.get("renewalAt") || ""),
+      isMissing: formData.get("isMissing") === "on",
     });
     setLoading(false);
     if (result?.error) {
@@ -73,6 +75,14 @@ export function SupplyForm({ suppliers, onSuccess }: { suppliers: SupplierOption
               ))}
             </select>
           </div>
+          <div className="grid gap-2">
+            <Label htmlFor="renewalAt">Fecha de renovación</Label>
+            <Input id="renewalAt" name="renewalAt" type="date" />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="isMissing" className="h-4 w-4 rounded border-input" />
+            Marcar como faltante
+          </label>
           <Button type="submit" disabled={loading}>
             {loading ? "Guardando..." : "Crear"}
           </Button>

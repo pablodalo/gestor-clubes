@@ -57,19 +57,15 @@ function buildNavGroups(slug: string, locale: string | undefined): { label: stri
     {
       label: t.admin,
       items: [
-        { href: `/app/${slug}/inventory`, label: t.inventory, permission: "inventory.read", icon: Package },
+        { href: `/app/${slug}/inventory`, label: "Inventario / Productos", permission: "inventory.read", icon: Package },
         { href: `/app/${slug}/suppliers`, label: t.suppliers, permission: "suppliers.read", icon: Building2 },
         { href: `/app/${slug}/supplies`, label: t.supplies, permission: "supplies.read", icon: Boxes },
-        { href: `/app/${slug}/products`, label: t.products, permission: "products.read", icon: ShoppingBag },
       ],
     },
     {
       label: t.operations,
       items: [
         { href: `/app/${slug}/cultivation`, label: t.cultivation, permission: "cultivation.read", icon: Sprout },
-        { href: `/app/${slug}/strains`, label: t.strains, permission: "strains.read", icon: Leaf },
-        { href: `/app/${slug}/plants`, label: t.plants, permission: "plants.read", icon: Sprout },
-        { href: `/app/${slug}/controls`, label: t.controls, permission: "controls.read", icon: ClipboardList },
         { href: `/app/${slug}/locations`, label: t.locations, permission: "inventory.read", icon: MapPin },
         { href: `/app/${slug}/lots`, label: t.lots, permission: "lots.read", icon: Layers },
       ],

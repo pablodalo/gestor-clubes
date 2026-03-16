@@ -8,8 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type StrainOption = { id: string; name: string };
+type LotOption = { id: string; code: string };
 
-export function PlantForm({ strains, onSuccess }: { strains: StrainOption[]; onSuccess: () => void }) {
+export function PlantForm({
+  strains,
+  lots = [],
+  defaultLotId,
+  onSuccess,
+}: {
+  strains: StrainOption[];
+  lots?: LotOption[];
+  defaultLotId?: string;
+  onSuccess: () => void;
+}) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,6 +31,7 @@ export function PlantForm({ strains, onSuccess }: { strains: StrainOption[]; onS
     const formData = new FormData(e.currentTarget);
     const result = await createPlant({
       code: String(formData.get("code")),
+      lotId: String(formData.get("lotId") || ""),
       strainId: String(formData.get("strainId")),
       stage: String(formData.get("stage") || ""),
       status: String(formData.get("status") || ""),
@@ -60,6 +72,22 @@ export function PlantForm({ strains, onSuccess }: { strains: StrainOption[]; onS
               ))}
             </select>
           </div>
+          {lots.length > 0 && (
+            <div className="grid gap-2">
+              <Label htmlFor="lotId">Lote</Label>
+              <select
+                id="lotId"
+                name="lotId"
+                defaultValue={defaultLotId ?? ""}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {!defaultLotId && <option value="">Sin asociar</option>}
+                {lots.map((lot) => (
+                  <option key={lot.id} value={lot.id}>{lot.code}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="stage">Etapa</Label>

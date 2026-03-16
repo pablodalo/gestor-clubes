@@ -29,20 +29,23 @@ type ThemeProviderProps = {
 
 export function ThemeProvider({ children, branding, defaultDark = false }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState<Theme | null>(null);
+  const storageKey = branding?.shortName
+    ? `${STORAGE_KEY}-${branding.shortName.toLowerCase()}`
+    : STORAGE_KEY;
 
   React.useEffect(() => {
-    const stored = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY)) as Theme | null;
+    const stored = (typeof window !== "undefined" && localStorage.getItem(storageKey)) as Theme | null;
     if (stored === "light" || stored === "dark") {
       setThemeState(stored);
     } else {
       setThemeState(defaultDark ? "dark" : "light");
     }
-  }, [defaultDark]);
+  }, [defaultDark, storageKey]);
 
   const setTheme = React.useCallback((value: Theme) => {
     setThemeState(value);
-    if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, value);
-  }, []);
+    if (typeof window !== "undefined") localStorage.setItem(storageKey, value);
+  }, [storageKey]);
 
   const resolved = theme ?? (defaultDark ? "dark" : "light");
   const rootClass = resolved === "dark" ? "dark" : "";
