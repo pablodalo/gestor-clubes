@@ -287,6 +287,7 @@ model Supplier {
 
   supplies SupplyItem[]
 
+  @@unique([tenantId, name])
   @@index([tenantId])
   @@index([tenantId, status])
 }
@@ -308,6 +309,7 @@ model SupplyItem {
 
   movements SupplyStockMovement[]
 
+  @@unique([tenantId, name])
   @@index([tenantId])
   @@index([tenantId, status])
 }
@@ -343,6 +345,7 @@ model PlantStrain {
 
   plants Plant[]
 
+  @@unique([tenantId, name])
   @@index([tenantId])
 }
 
@@ -360,6 +363,7 @@ model Plant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([tenantId, code])
   @@index([tenantId])
   @@index([strainId])
 }
