@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
-import { createTicket } from "@/actions/tickets";
+import { createTicket, updateTicketStatus } from "@/actions/tickets";
 import type { Ticket } from "@prisma/client";
 import { MessageSquarePlus, TicketIcon } from "lucide-react";
 
@@ -32,6 +32,8 @@ type Props = {
 export function TicketsTable({ tenantSlug, tickets, canCreate, canUpdateStatus }: Props) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selected, setSelected] = useState<Ticket | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -57,8 +59,34 @@ export function TicketsTable({ tenantSlug, tickets, canCreate, canUpdateStatus }
     refresh();
   }
 
+  async function handleStatusChange(nextStatus: Ticket["status"]) {
+    if (!selected) return;
+    setLoading(true);
+    const result = await updateTicketStatus(selected.id, nextStatus);
+    setLoading(false);
+    if ((result as { error?: string }).error) {
+      setError((result as { error?: string }).error ?? "Error al actualizar el ticket");
+      return;
+    }
+    setDetailOpen(false);
+    setSelected(null);
+    refresh();
+  }
+
   const columns: DataTableColumn<Ticket>[] = [
-    { key: "subject", header: "Asunto", render: (t) => <span className="font-medium text-foreground">{t.subject}</span> },
+    {
+      key: "subject",
+      header: "Asunto",
+      render: (t) => (
+        <button
+          type="button"
+          onClick={() => { setSelected(t); setDetailOpen(true); setError(""); }}
+          className="font-medium text-foreground hover:underline text-left w-full"
+        >
+          {t.subject}
+        </button>
+      ),
+    },
     { key: "priority", header: "Prioridad", render: (t) => <Badge variant={getStatusVariant(t.priority)}>{getStatusLabel(t.priority) ?? t.priority}</Badge> },
     { key: "status", header: "Estado", render: (t) => <Badge variant={getStatusVariant(t.status)}>{getStatusLabel(t.status) ?? t.status}</Badge> },
     { key: "createdAt", header: "Fecha", render: (t) => <span className="text-muted-foreground">{new Date(t.createdAt).toLocaleDateString("es-AR")}</span> },
@@ -141,6 +169,90 @@ export function TicketsTable({ tenantSlug, tickets, canCreate, canUpdateStatus }
           </form>
         </DialogContent>
       </Dialog>
+
+      {selected && (
+        <Dialog open={detailOpen} onOpenChange={(open) => { setDetailOpen(open); if (!open) setSelected(null); }}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Detalle del ticket</DialogTitle>
+              <DialogDescription>Revisá el contenido y actualizá el estado.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              {error && (
+                <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                  {error}
+                </p>
+              )}
+              <div className="space-y-1">
+                <Label>Asunto</Label>
+                <p className="text-sm font-medium text-foreground">{selected.subject}</p>
+              </div>
+              <div className="space-y-1">
+                <Label>Descripción</Label>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {selected.description || "—"}
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-1">
+                  <Label>Prioridad</Label>
+                  <Badge variant={getStatusVariant(selected.priority)}>
+                    {getStatusLabel(selected.priority) ?? selected.priority}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <Label>Estado</Label>
+                  <Badge variant={getStatusVariant(selected.status)}>
+                    {getStatusLabel(selected.status) ?? selected.status}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <Label>Creado</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(selected.createdAt).toLocaleString("es-AR")}
+                  </p>
+                </div>
+              </div>
+            </div>
+            {canUpdateStatus && (
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant={selected.status === "open" ? "default" : "outline"}
+                  disabled={loading || selected.status === "open"}
+                  onClick={() => handleStatusChange("open")}
+                >
+                  Abrir
+                </Button>
+                <Button
+                  type="button"
+                  variant={selected.status === "in_progress" ? "default" : "outline"}
+                  disabled={loading || selected.status === "in_progress"}
+                  onClick={() => handleStatusChange("in_progress")}
+                >
+                  En progreso
+                </Button>
+                <Button
+                  type="button"
+                  variant={selected.status === "resolved" ? "default" : "outline"}
+                  disabled={loading || selected.status === "resolved"}
+                  onClick={() => handleStatusChange("resolved")}
+                >
+                  Resuelto
+                </Button>
+                <Button
+                  type="button"
+                  variant={selected.status === "closed" ? "default" : "outline"}
+                  disabled={loading || selected.status === "closed"}
+                  onClick={() => handleStatusChange("closed")}
+                >
+                  Cerrado
+                </Button>
+              </DialogFooter>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

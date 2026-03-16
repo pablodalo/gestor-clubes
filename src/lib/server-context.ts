@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { headers } from "next/headers";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -36,27 +37,71 @@ export async function getPlatformSession(): Promise<PlatformSession | null> {
   };
 }
 
+function getTenantSlugFromHeaders(): string | null {
+  try {
+    const h = headers();
+    const referer = h.get("referer") ?? "";
+    const match = referer.match(/\/app\/([^\/\?]+)/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Obtiene la sesión actual. Si no hay sesión o no es tenant, retorna null.
- * Usar en Server Actions del panel tenant: el tenantId/tenantSlug vienen de sesión, nunca del cliente.
+ * Obtiene la sesión actual en contexto tenant.
+ * Para usuarios del panel (ctx === "tenant") toma tenantId/slug de la sesión.
+ * Para superadmin (ctx === "platform") intenta inferir el tenant a partir de la URL (/app/[slug])
+ * para permitir operar como "viewer" del tenant sin romper la seguridad.
  */
 export async function getTenantSession(): Promise<TenantSession | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
   const ctx = (session as unknown as { context?: string }).context;
-  if (ctx !== "tenant") return null;
-  const userId = (session as unknown as { userId?: string }).userId;
-  const tenantId = (session as unknown as { tenantId?: string }).tenantId;
-  const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
-  if (!userId || !tenantId || !tenantSlug) return null;
-  return {
-    context: "tenant",
-    userId,
-    tenantId,
-    tenantSlug,
+
+  const base = {
     email: session.user.email ?? "",
     name: session.user.name ?? "",
   };
+
+  if (ctx === "tenant") {
+    const userId = (session as unknown as { userId?: string }).userId;
+    const tenantId = (session as unknown as { tenantId?: string }).tenantId;
+    const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
+    if (!userId || !tenantId || !tenantSlug) return null;
+    return {
+      context: "tenant",
+      userId,
+      tenantId,
+      tenantSlug,
+      ...base,
+    };
+  }
+
+  // Vista superadmin sobre un tenant (/app/[tenantSlug]) — se arma un contexto tenant sintético.
+  if (ctx === "platform") {
+    const userId = (session as unknown as { userId?: string }).userId;
+    if (!userId) return null;
+    let tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
+    if (!tenantSlug) {
+      tenantSlug = getTenantSlugFromHeaders() ?? undefined;
+    }
+    if (!tenantSlug) return null;
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug: tenantSlug },
+      select: { id: true },
+    });
+    if (!tenant) return null;
+    return {
+      context: "tenant",
+      userId,
+      tenantId: tenant.id,
+      tenantSlug,
+      ...base,
+    };
+  }
+
+  return null;
 }
 
 /**

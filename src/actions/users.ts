@@ -1,14 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/server/audit";
 import { requirePermission } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { hash } from "bcryptjs";
 import { z } from "zod";
+import { getTenantSession } from "@/lib/server-context";
 
 const createUserSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
@@ -32,15 +31,15 @@ async function getTenantContext(): Promise<{
   userId: string;
   actorName: string | null;
 } | null> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  const ctx = (session as unknown as { context?: string }).context;
-  const tenantId = (session as unknown as { tenantId?: string }).tenantId;
-  const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
-  const userId = (session as unknown as { userId?: string }).userId;
-  if (ctx !== "tenant" || !tenantId || !tenantSlug || !userId) return null;
-  const actorName = (session as unknown as { user?: { name?: string | null } }).user?.name ?? null;
-  return { tenantId, tenantSlug, userId, actorName };
+  const session = await getTenantSession();
+  if (!session) return null;
+  const actorName = session.name ?? null;
+  return {
+    tenantId: session.tenantId,
+    tenantSlug: session.tenantSlug,
+    userId: session.userId,
+    actorName,
+  };
 }
 
 export async function createTenantUser(input: z.infer<typeof createUserSchema>) {
