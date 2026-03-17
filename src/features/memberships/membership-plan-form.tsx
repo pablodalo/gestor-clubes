@@ -49,9 +49,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         : undefined,
       monthlyLimit: (formData.get("monthlyLimit") as string).trim() || undefined,
       dailyLimit: (formData.get("dailyLimit") as string).trim() || undefined,
-      validityType: ((formData.get("validityType") as string) || "recurrent") as
-        | "recurrent"
-        | "fixed_end",
+      validityType: ((formData.get("validityType") as string) || "recurrent") as "recurrent" | "fixed_end",
       validUntil: (formData.get("validUntil") as string)?.trim() || undefined,
       requiresRenewal: !!formData.get("requiresRenewal"),
       renewalEveryDays: (formData.get("renewalEveryDays") as string).trim() || undefined,
