@@ -123,7 +123,16 @@ export async function createMember(input: CreateMemberInput) {
     data.membershipPlanId && data.membershipPlanId.trim()
       ? await prisma.membershipPlan.findFirst({
           where: { id: data.membershipPlanId.trim(), tenantId: ctx.tenantId },
-          select: { id: true, name: true, currency: true, recurrenceDay: true, monthlyLimit: true, dailyLimit: true },
+          select: {
+            id: true,
+            name: true,
+            currency: true,
+            recurrenceDay: true,
+            monthlyLimit: true,
+            dailyLimit: true,
+            validityType: true,
+            validUntil: true,
+          },
         })
       : null;
 
@@ -167,8 +176,10 @@ export async function createMember(input: CreateMemberInput) {
       membershipPlan: plan?.name ?? null,
       membershipType: data.membershipType || null,
       membershipStatus: data.membershipStatus || null,
-      membershipStartDate,
-      membershipEndDate,
+      membershipStartDate: membershipStartDate ?? (plan ? new Date() : null),
+      membershipEndDate:
+        membershipEndDate ??
+        (plan && plan.validityType === "fixed_end" && plan.validUntil ? plan.validUntil : null),
       membershipRenewalDate,
       membershipNotes: data.membershipNotes?.trim() || null,
       membershipRecurring: data.membershipRecurring ?? false,
@@ -292,10 +303,19 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
     const planId = updateData.membershipPlanId as string | null;
     if (!planId) {
       updateData.membershipPlan = null;
+      updateData.membershipEndDate = null;
     } else {
       const plan = await prisma.membershipPlan.findFirst({
         where: { id: planId, tenantId: ctx.tenantId },
-        select: { name: true, currency: true, recurrenceDay: true, monthlyLimit: true, dailyLimit: true },
+        select: {
+          name: true,
+          currency: true,
+          recurrenceDay: true,
+          monthlyLimit: true,
+          dailyLimit: true,
+          validityType: true,
+          validUntil: true,
+        },
       });
       if (plan) {
         updateData.membershipPlan = plan.name;
@@ -306,6 +326,15 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
         // Límites salen del plan por defecto (source-of-truth)
         if (plan.monthlyLimit != null) updateData.monthlyLimit = plan.monthlyLimit;
         if (plan.dailyLimit != null) updateData.dailyLimit = plan.dailyLimit;
+        // Si cambia de plan, reiniciamos inicio y vigencia según el plan
+        if (existing.membershipPlanId !== planId) {
+          updateData.membershipStartDate = new Date();
+          if (plan.validityType === "fixed_end" && plan.validUntil) {
+            updateData.membershipEndDate = plan.validUntil;
+          } else {
+            updateData.membershipEndDate = null;
+          }
+        }
       }
     }
   }

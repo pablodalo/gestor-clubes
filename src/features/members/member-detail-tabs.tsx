@@ -91,6 +91,8 @@ type Props = {
   membershipPlan?: {
     name: string;
     tier: string | null;
+    price?: { toString: () => string } | null;
+    currency?: string;
     monthlyLimit?: { toString: () => string } | null;
     dailyLimit?: { toString: () => string } | null;
   } | null;
@@ -449,13 +451,9 @@ export function MemberDetailTabs({
               <p className="font-medium">{member.membershipRecurrenceDay ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Último pago</p>
-              <p className="font-medium">{formatDate(member.membershipLastPaidAt)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Monto último pago</p>
+              <p className="text-xs text-muted-foreground">Monto membresía</p>
               <p className="font-medium">
-                {member.membershipLastAmount?.toString?.() ?? "—"} {member.membershipCurrency ?? ""}
+                {membershipPlan?.price?.toString?.() ?? "—"} {membershipPlan?.currency ?? ""}
               </p>
             </div>
             {member.membershipNotes && (
