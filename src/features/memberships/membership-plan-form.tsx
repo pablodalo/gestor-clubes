@@ -49,6 +49,12 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         : undefined,
       monthlyLimit: (formData.get("monthlyLimit") as string).trim() || undefined,
       dailyLimit: (formData.get("dailyLimit") as string).trim() || undefined,
+      validityType: ((formData.get("validityType") as string) || "recurrent") as
+        | "recurrent"
+        | "fixed_end",
+      validUntil: (formData.get("validUntil") as string)?.trim() || undefined,
+      requiresRenewal: !!formData.get("requiresRenewal"),
+      renewalEveryDays: (formData.get("renewalEveryDays") as string).trim() || undefined,
       status: (formData.get("status") as "active" | "inactive") || "active",
     };
 
@@ -184,6 +190,58 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   step="0.01"
                   defaultValue={(edit as unknown as { dailyLimit?: unknown })?.dailyLimit != null ? String((edit as any).dailyLimit) : ""}
                   placeholder="1"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="validityType">Vigencia</Label>
+                <select
+                  id="validityType"
+                  name="validityType"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  defaultValue={(edit as unknown as { validityType?: string })?.validityType ?? "recurrent"}
+                >
+                  <option value="recurrent">Recurrente (sin fecha de fin)</option>
+                  <option value="fixed_end">Con fecha de caducidad</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="validUntil">Fecha de caducidad (opcional)</Label>
+                <Input
+                  id="validUntil"
+                  name="validUntil"
+                  type="date"
+                  defaultValue={
+                    (edit as unknown as { validUntil?: Date | null })?.validUntil
+                      ? new Date((edit as any).validUntil).toISOString().slice(0, 10)
+                      : ""
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-[auto_1fr] items-center gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="requiresRenewal">Requiere renovación</Label>
+                <input
+                  id="requiresRenewal"
+                  name="requiresRenewal"
+                  type="checkbox"
+                  className="h-4 w-4"
+                  defaultChecked={(edit as unknown as { requiresRenewal?: boolean })?.requiresRenewal ?? false}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="renewalEveryDays">Cada cuántos días (opcional)</Label>
+                <Input
+                  id="renewalEveryDays"
+                  name="renewalEveryDays"
+                  type="number"
+                  min={1}
+                  defaultValue={
+                    (edit as unknown as { renewalEveryDays?: number | null })?.renewalEveryDays ?? ""
+                  }
+                  placeholder="30"
                 />
               </div>
             </div>

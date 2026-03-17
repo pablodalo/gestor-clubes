@@ -82,6 +82,15 @@ async function membershipPlanValidityExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function membershipPlanRenewalExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'membershipplan' AND column_name = 'requires_renewal'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function run() {
   if (!process.env.DATABASE_URL) {
     console.log("DATABASE_URL no definida, se omite run-member-migration");
@@ -129,7 +138,21 @@ async function run() {
     } else {
       console.log("MembershipPlan.valid_until ya existe, migración vigencia omitida.");
     }
+
+    if (!(await membershipPlanRenewalExists())) {
+      const statements = runSqlFile(path.join(migrationsDir, "20260317133000_add_membership_plan_renewal", "migration.sql"));
+      await executeStatements(statements, "[membresías-renovación]");
+      console.log("Migración renovación de membresías aplicada correctamente.");
+    } else {
+      console.log("MembershipPlan.requires_renewal ya existe, migración renovación omitida.");
+    }
   } catch (err) {
+    // Si no se puede conectar a la base (build sin DB disponible), no rompemos el build:
+    // Prisma lanza PrismaClientInitializationError con mensaje "Can't reach database server".
+    if (err && (err.code === "P1001" || String(err.message || "").includes("Can't reach database server"))) {
+      console.warn("run-member-migration: no se pudo conectar a la base, se omiten migraciones en este build.");
+      process.exit(0);
+    }
     console.error("Error en run-member-migration:", err);
     process.exit(1);
   } finally {
