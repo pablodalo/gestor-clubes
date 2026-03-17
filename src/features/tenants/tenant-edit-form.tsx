@@ -28,6 +28,7 @@ export function TenantEditForm({ tenant }: Props) {
     const formData = new FormData(form);
     const result = await updateTenant(tenant.id, {
       name: (formData.get("name") as string).trim(),
+      slug: (formData.get("slug") as string).trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || undefined,
       status: (formData.get("status") as "active" | "suspended" | "trial") || undefined,
       timezone: (formData.get("timezone") as string) || undefined,
       locale: (formData.get("locale") as string) || undefined,
@@ -53,6 +54,18 @@ export function TenantEditForm({ tenant }: Props) {
         <div className="space-y-2">
           <Label htmlFor="name">Nombre</Label>
           <Input id="name" name="name" required defaultValue={tenant.name} placeholder="Nombre del club" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="slug">Slug (único en toda la plataforma)</Label>
+          <Input
+            id="slug"
+            name="slug"
+            required
+            defaultValue={tenant.slug}
+            placeholder="mi-club"
+            className="font-mono text-sm"
+          />
+          <p className="text-xs text-muted-foreground">Solo minúsculas, números y guiones. Cambiarlo puede afectar enlaces.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="status">Estado</Label>

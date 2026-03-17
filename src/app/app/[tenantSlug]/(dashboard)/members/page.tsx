@@ -47,11 +47,18 @@ export default async function MembersPage({ params, searchParams }: Props) {
     ];
   }
 
-  const members = await prisma.member.findMany({
-    where,
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    take: 200,
-  });
+  const [members, membershipPlans] = await Promise.all([
+    prisma.member.findMany({
+      where,
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      take: 200,
+    }),
+    prisma.membershipPlan.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -59,6 +66,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
       <MembersTable
         tenantSlug={tenantSlug}
         members={members}
+        membershipPlans={membershipPlans}
         canCreate={canCreate}
         canUpdate={canUpdate}
         canDelete={canDelete}

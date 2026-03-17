@@ -79,6 +79,7 @@ function buildNavGroups(slug: string, locale: string | undefined): { label: stri
       items: [
         { href: `/app/${slug}/users`, label: t.users, permission: "users.read", icon: Users },
         { href: `/app/${slug}/members`, label: t.members, permission: "members.read", icon: UserCircle },
+        { href: `/app/${slug}/memberships`, label: "Membresías", permission: "members.read", icon: CreditCard },
         { href: `/portal/socios/${slug}/login`, label: "Portal del socio", permission: "members.read", icon: User },
       ],
     },

@@ -31,6 +31,7 @@ const createMemberSchema = z.object({
   reprocannStartDate: z.string().optional(),
   reprocannEndDate: z.string().optional(),
   reprocannActive: z.boolean().optional(),
+  membershipPlanId: z.string().optional().nullable(),
   membershipPlan: z.string().optional(),
   membershipType: z.string().optional(),
   membershipStatus: z.enum(["active", "suspended", "expired", "cancelled", "pending"]).optional(),
@@ -155,6 +156,7 @@ export async function createMember(input: CreateMemberInput) {
       reprocannStartDate,
       reprocannEndDate,
       reprocannActive: data.reprocannActive ?? false,
+      membershipPlanId: data.membershipPlanId && data.membershipPlanId.trim() ? data.membershipPlanId : null,
       membershipPlan: data.membershipPlan || null,
       membershipType: data.membershipType || null,
       membershipStatus: data.membershipStatus || null,
@@ -255,6 +257,7 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
   if (data.reprocannStartDate !== undefined) updateData.reprocannStartDate = toDate(data.reprocannStartDate);
   if (data.reprocannEndDate !== undefined) updateData.reprocannEndDate = toDate(data.reprocannEndDate);
   if (data.reprocannActive !== undefined) updateData.reprocannActive = data.reprocannActive;
+  if (data.membershipPlanId !== undefined) updateData.membershipPlanId = toStr(data.membershipPlanId) || null;
   if (data.membershipPlan !== undefined) updateData.membershipPlan = toStr(data.membershipPlan);
   if (data.membershipType !== undefined) updateData.membershipType = toStr(data.membershipType);
   if (data.membershipStatus !== undefined) updateData.membershipStatus = data.membershipStatus;

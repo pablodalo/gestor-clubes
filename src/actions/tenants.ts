@@ -132,8 +132,10 @@ export async function createTenant(input: CreateTenantInput) {
   return { data: tenant };
 }
 
+const slugRegex = /^[a-z0-9-]+$/;
 const updateTenantSchema = z.object({
   name: z.string().min(1).optional(),
+  slug: z.string().min(1, "Slug requerido").regex(slugRegex, "Solo minúsculas, números y guiones").optional(),
   status: z.enum(["active", "suspended", "trial"]).optional(),
   timezone: z.string().optional(),
   locale: z.string().optional(),
@@ -147,15 +149,26 @@ export async function updateTenant(tenantId: string, input: z.infer<typeof updat
   if (ctx !== "platform") return { error: "Solo superadmin puede editar tenants" };
 
   const parsed = updateTenantSchema.safeParse(input);
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) {
+    const msg = parsed.error.flatten().fieldErrors?.slug?.[0] ?? "Datos inválidos";
+    return { error: msg };
+  }
 
   const before = await prisma.tenant.findUnique({ where: { id: tenantId } });
   if (!before) return { error: "Tenant no encontrado" };
 
+  const data = { ...parsed.data };
+  if (data.slug !== undefined && data.slug !== before.slug) {
+    const existing = await prisma.tenant.findFirst({
+      where: { slug: data.slug, id: { not: tenantId } },
+    });
+    if (existing) return { error: "Ya existe otro tenant con ese slug. El slug debe ser único." };
+  }
+
   try {
     const tenant = await prisma.tenant.update({
       where: { id: tenantId },
-      data: parsed.data,
+      data,
     });
 
     await createAuditLog({
@@ -166,8 +179,8 @@ export async function updateTenant(tenantId: string, input: z.infer<typeof updat
       action: "tenant.update",
       entityName: "Tenant",
       entityId: tenant.id,
-      beforeJson: JSON.stringify({ name: before.name, status: before.status }),
-      afterJson: JSON.stringify({ name: tenant.name, status: tenant.status }),
+      beforeJson: JSON.stringify({ name: before.name, status: before.status, slug: before.slug }),
+      afterJson: JSON.stringify({ name: tenant.name, status: tenant.status, slug: tenant.slug }),
     });
 
     revalidatePath("/platform");
