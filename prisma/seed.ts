@@ -106,7 +106,7 @@ async function main() {
   });
 
   const tenant2 = await prisma.tenant.upsert({
-    where: { slug: "club-ejemplo" },
+    where: { slug: "the-dab-club" },
     update: {
       name: "The Dab Club",
       status: "active",
@@ -116,7 +116,7 @@ async function main() {
     },
     create: {
       name: "The Dab Club",
-      slug: "club-ejemplo",
+      slug: "the-dab-club",
       status: "active",
       timezone: "America/Argentina/Buenos_Aires",
       locale: "es-AR",
@@ -157,7 +157,7 @@ async function main() {
     },
   });
 
-  console.log("Tenants: demo-club (LeWyd), club-ejemplo (The Dab Club)");
+  console.log("Tenants: demo-club (LeWyd), the-dab-club (The Dab Club)");
 
   const membershipPlansDemo = [
     { name: "Básico", description: "30 g flores / mes", price: 25000, recurrenceDay: 10 },
