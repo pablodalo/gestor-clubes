@@ -36,16 +36,11 @@ export default async function SupplierDetailPage({ params }: Props) {
   });
   if (!supplier) return notFound();
 
-  const [orders, payments, sums] = await Promise.all([
+  const [orders, sums] = await Promise.all([
     prisma.supplierOrder.findMany({
       where: { tenantId: tenant.id, supplierId: supplier.id },
       orderBy: { date: "desc" },
       include: { items: true },
-      take: 50,
-    }),
-    prisma.supplierPayment.findMany({
-      where: { tenantId: tenant.id, supplierId: supplier.id },
-      orderBy: { date: "desc" },
       take: 50,
     }),
     Promise.all([
@@ -81,7 +76,6 @@ export default async function SupplierDetailPage({ params }: Props) {
         currency={tenant.currency ?? "ARS"}
         supplier={supplier}
         orders={orders}
-        payments={payments}
         balance={balance}
       />
     </div>

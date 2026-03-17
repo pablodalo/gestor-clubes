@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,10 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Supplier, SupplierOrder, SupplierOrderItem, SupplierPayment } from "@prisma/client";
+import type { Supplier, SupplierOrder, SupplierOrderItem } from "@prisma/client";
 import { createSupplierOrder, deleteSupplierOrder, updateSupplierOrderStatus } from "@/actions/supplier-orders";
-import { createSupplierPayment } from "@/actions/supplier-payments";
-import { Copy, CreditCard, Plus, RefreshCcw } from "lucide-react";
+import { Copy, Plus, RefreshCcw } from "lucide-react";
 
 type OrderWithItems = SupplierOrder & { items: SupplierOrderItem[] };
 
@@ -26,7 +24,6 @@ type Props = {
   currency: string;
   supplier: Supplier;
   orders: OrderWithItems[];
-  payments: SupplierPayment[];
   balance: number;
 };
 
@@ -36,11 +33,6 @@ function formatMoney(value: number, currency: string) {
   return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
 }
 
-function toDateInput(value?: Date | string | null) {
-  if (!value) return "";
-  return new Date(value).toISOString().slice(0, 10);
-}
-
 function buildMessage(items: { name: string; quantity: number }[]) {
   const lines = items
     .filter((i) => i.quantity > 0)
@@ -48,7 +40,7 @@ function buildMessage(items: { name: string; quantity: number }[]) {
   return `Hola! Te paso pedido:\n\n${lines.join("\n")}\n\nGracias!`;
 }
 
-export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, payments, balance }: Props) {
+export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, balance }: Props) {
   const router = useRouter();
   const lastOrder = orders[0] ?? null;
   const activeOrder = orders.find((o) => o.status !== "delivered") ?? null;
@@ -128,32 +120,6 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, p
     router.refresh();
   }
 
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [paymentDate, setPaymentDate] = useState<string>(toDateInput(new Date()));
-  const [paymentError, setPaymentError] = useState("");
-  const [paymentSaving, setPaymentSaving] = useState(false);
-
-  async function submitPayment(e: React.FormEvent) {
-    e.preventDefault();
-    setPaymentError("");
-    setPaymentSaving(true);
-    const res = await createSupplierPayment({
-      supplierId: supplier.id,
-      amount: paymentAmount,
-      date: paymentDate,
-    });
-    setPaymentSaving(false);
-    if ((res as { error?: string }).error) {
-      setPaymentError((res as { error: string }).error);
-      return;
-    }
-    setPaymentOpen(false);
-    setPaymentAmount(0);
-    setPaymentDate(toDateInput(new Date()));
-    router.refresh();
-  }
-
   const headerState = activeOrder ? "Pedido en proceso" : "Sin pedidos activos";
   const eta = supplier.nextDeliveryAt ? new Date(supplier.nextDeliveryAt).toLocaleDateString("es-AR") : null;
 
@@ -183,8 +149,7 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, p
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6 min-w-0">
+      <div className="space-y-6">
           {/* BLOQUE 2: Pedido activo */}
           {activeOrder && (
             <Card>
@@ -360,68 +325,6 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, p
             </CardContent>
           </Card>
         </div>
-
-        {/* BLOQUE 5: Pagos (sin protagonismo) */}
-        <aside className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Pagos</CardTitle>
-              <Button type="button" size="sm" variant="outline" onClick={() => setPaymentOpen(true)}>
-                <CreditCard className="h-4 w-4 mr-2" />
-                Registrar
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {payments.length === 0 ? (
-                <p className="text-muted-foreground">No hay pagos registrados.</p>
-              ) : (
-                payments.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{new Date(p.date).toLocaleDateString("es-AR")}</span>
-                    <span className="font-medium tabular-nums">{formatMoney(Number(p.amount ?? 0), currency)}</span>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar pago</DialogTitle>
-                <DialogDescription>Guardá un pago asociado a este proveedor.</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={submitPayment} className="grid gap-4">
-                {paymentError && <p className="text-sm text-destructive">{paymentError}</p>}
-                <div className="grid gap-2">
-                  <Label htmlFor="amount">Monto</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="date">Fecha</Label>
-                  <Input id="date" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setPaymentOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={paymentSaving}>
-                    {paymentSaving ? "Guardando..." : "Guardar"}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </aside>
-      </div>
 
       <Dialog open={!!viewing} onOpenChange={(open) => !open && setViewing(null)}>
         <DialogContent>
