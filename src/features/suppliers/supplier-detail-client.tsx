@@ -287,9 +287,7 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
                       const subject = `Pedido - ${supplier.name}`;
                       const to = (supplier.email ?? "").trim();
                       const href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                      // En algunos browsers `location.href` no dispara el cliente de mail; probamos ambos.
-                      const opened = window.open(href, "_self");
-                      if (!opened) window.location.assign(href);
+                      window.location.href = href;
                     }}
                   >
                     <Mail className="h-4 w-4 mr-2" />

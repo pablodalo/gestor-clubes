@@ -53,6 +53,8 @@ export default async function InventoryPage({ params }: Props) {
 
     const flowerRows = buildRows("flores");
     const extractRows = buildRows("extractos");
+    const flowerPreview = flowerRows.slice(0, 4);
+    const extractPreview = extractRows.slice(0, 4);
 
     return (
       <div className="space-y-6">
@@ -65,22 +67,10 @@ export default async function InventoryPage({ params }: Props) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle>
-                  <Link href={`/app/${tenantSlug}/inventory/flores`} className="hover:underline underline-offset-4">
-                    Flores
-                  </Link>
-                </CardTitle>
-                <Link
-                  href={`/app/${tenantSlug}/inventory/flores`}
-                  className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
-                >
-                  Ver detalle
-                </Link>
-              </div>
+              <CardTitle>Flores</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {flowerRows.map(({ strain, grams }) => (
+              {flowerPreview.map(({ strain, grams }) => (
                 <div key={strain.id} className="flex items-center justify-between rounded-lg border border-border/60 p-3">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{strain.name}</p>
@@ -94,27 +84,25 @@ export default async function InventoryPage({ params }: Props) {
                   </div>
                 </div>
               ))}
+              {flowerRows.length > flowerPreview.length && (
+                <div className="flex justify-end">
+                  <Link
+                    href={`/app/${tenantSlug}/inventory/flores`}
+                    className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
+                  >
+                    Ver más
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle>
-                  <Link href={`/app/${tenantSlug}/inventory/extractos`} className="hover:underline underline-offset-4">
-                    Extractos
-                  </Link>
-                </CardTitle>
-                <Link
-                  href={`/app/${tenantSlug}/inventory/extractos`}
-                  className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
-                >
-                  Ver detalle
-                </Link>
-              </div>
+              <CardTitle>Extractos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {extractRows.map(({ strain, grams }) => (
+              {extractPreview.map(({ strain, grams }) => (
                 <div key={strain.id} className="flex items-center justify-between rounded-lg border border-border/60 p-3">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{strain.name}</p>
@@ -128,6 +116,16 @@ export default async function InventoryPage({ params }: Props) {
                   </div>
                 </div>
               ))}
+              {extractRows.length > extractPreview.length && (
+                <div className="flex justify-end">
+                  <Link
+                    href={`/app/${tenantSlug}/inventory/extractos`}
+                    className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
+                  >
+                    Ver más
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
