@@ -64,6 +64,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const [sort, setSort] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const [page, setPage] = useState(1);
+  const [pageSizeState, setPageSizeState] = useState<number>(pageSize);
 
   const sortedData = useMemo(() => {
     if (!sort) return data;
@@ -93,10 +94,10 @@ export function DataTable<T>({
 
   const colCount = columns.length + (rowActions ? 1 : 0);
   const totalItems = sortedData.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSizeState));
   const currentPage = Math.min(page, totalPages);
-  const start = (currentPage - 1) * pageSize;
-  const end = start + pageSize;
+  const start = (currentPage - 1) * pageSizeState;
+  const end = start + pageSizeState;
   const viewData = paginate ? sortedData.slice(start, end) : sortedData;
   const emptyContent = emptyState ? (
     <EmptyState
@@ -201,7 +202,24 @@ export function DataTable<T>({
             </span>{" "}
             de <span className="font-medium">{totalItems}</span>
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Mostrar</span>
+              <select
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs sm:text-sm"
+                value={pageSizeState}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  setPage(1);
+                  setPageSizeState(next);
+                }}
+              >
+                {[10, 20, 50, 100].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+              <span className="text-muted-foreground">por página</span>
+            </div>
             <Button
               type="button"
               variant="outline"

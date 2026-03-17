@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,9 @@ export function TicketsTable({ tenantSlug, tickets, canCreate, canUpdateStatus }
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [priorityFilter, setPriorityFilter] = useState<string>("");
 
   const refresh = () => router.refresh();
 
@@ -92,7 +95,18 @@ export function TicketsTable({ tenantSlug, tickets, canCreate, canUpdateStatus }
     { key: "createdAt", header: "Fecha", render: (t) => <span className="text-muted-foreground">{new Date(t.createdAt).toLocaleDateString("es-AR")}</span> },
   ];
 
-  const exportData = tickets.map((t) => ({
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return tickets.filter((t) => {
+      if (statusFilter && t.status !== statusFilter) return false;
+      if (priorityFilter && t.priority !== priorityFilter) return false;
+      if (!term) return true;
+      const hay = [t.subject, t.description ?? "", t.status, t.priority].join(" ").toLowerCase();
+      return hay.includes(term);
+    });
+  }, [tickets, q, statusFilter, priorityFilter]);
+
+  const exportData = filtered.map((t) => ({
     id: t.id,
     subject: t.subject,
     priority: t.priority,
@@ -119,9 +133,47 @@ export function TicketsTable({ tenantSlug, tickets, canCreate, canUpdateStatus }
       >
         <DataTable
           columns={columns}
-          data={tickets}
+          data={filtered}
           keyExtractor={(t) => t.id}
           emptyState={{ icon: TicketIcon, title: "Sin tickets", description: "Creá uno desde «Nuevo ticket»." }}
+          toolbar={
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por asunto o descripción…"
+                  className="sm:max-w-sm"
+                />
+                <div className="flex gap-2">
+                  <select
+                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">Estado (todos)</option>
+                    <option value="open">Abierto</option>
+                    <option value="in_progress">En progreso</option>
+                    <option value="resolved">Resuelto</option>
+                    <option value="closed">Cerrado</option>
+                  </select>
+                  <select
+                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={priorityFilter}
+                    onChange={(e) => setPriorityFilter(e.target.value)}
+                  >
+                    <option value="">Prioridad (todas)</option>
+                    <option value="low">Baja</option>
+                    <option value="medium">Media</option>
+                    <option value="high">Alta</option>
+                  </select>
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} resultado(s)
+              </span>
+            </div>
+          }
         />
       </ListPageLayout>
 
