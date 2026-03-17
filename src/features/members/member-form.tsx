@@ -54,37 +54,47 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const membershipPlanIdRaw = (formData.get("membershipPlanId") as string)?.trim() || undefined;
+    const getStr = (name: string) => {
+      const v = formData.get(name);
+      return v == null ? "" : String(v);
+    };
+    const getTrim = (name: string) => getStr(name).trim();
+    const getOptTrim = (name: string) => {
+      const v = getTrim(name);
+      return v ? v : undefined;
+    };
+
+    const membershipPlanIdRaw = getTrim("membershipPlanId") || undefined;
 
     const payload: CreateMemberInput = {
-      memberNumber: (formData.get("memberNumber") as string).trim(),
-      firstName: (formData.get("firstName") as string).trim(),
-      lastName: (formData.get("lastName") as string).trim(),
-      email: (formData.get("email") as string).trim() || undefined,
-      phone: (formData.get("phone") as string).trim() || undefined,
-      documentType: (formData.get("documentType") as string).trim() || undefined,
-      documentNumber: (formData.get("documentNumber") as string).trim() || undefined,
-      status: (formData.get("status") as CreateMemberInput["status"]) || "active",
-      birthDate: (formData.get("birthDate") as string)?.trim() || undefined,
-      address: (formData.get("address") as string)?.trim() || undefined,
-      city: (formData.get("city") as string)?.trim() || undefined,
-      stateOrProvince: (formData.get("stateOrProvince") as string)?.trim() || undefined,
-      country: (formData.get("country") as string)?.trim() || undefined,
-      emergencyContactName: (formData.get("emergencyContactName") as string)?.trim() || undefined,
-      emergencyContactPhone: (formData.get("emergencyContactPhone") as string)?.trim() || undefined,
-      statusReason: (formData.get("statusReason") as string)?.trim() || undefined,
-      reprocannNumber: (formData.get("reprocannNumber") as string).trim() || undefined,
-      reprocannAffiliateNumber: (formData.get("reprocannAffiliateNumber") as string).trim() || undefined,
-      reprocannStartDate: (formData.get("reprocannStartDate") as string).trim() || undefined,
-      reprocannEndDate: (formData.get("reprocannEndDate") as string).trim() || undefined,
-      reprocannActive: (formData.get("reprocannActive") as string) === "active",
+      memberNumber: getTrim("memberNumber"),
+      firstName: getTrim("firstName"),
+      lastName: getTrim("lastName"),
+      email: getOptTrim("email"),
+      phone: getOptTrim("phone"),
+      documentType: getOptTrim("documentType"),
+      documentNumber: getOptTrim("documentNumber"),
+      status: (getStr("status") as CreateMemberInput["status"]) || "active",
+      birthDate: getOptTrim("birthDate"),
+      address: getOptTrim("address"),
+      city: getOptTrim("city"),
+      stateOrProvince: getOptTrim("stateOrProvince"),
+      country: getOptTrim("country"),
+      emergencyContactName: getOptTrim("emergencyContactName"),
+      emergencyContactPhone: getOptTrim("emergencyContactPhone"),
+      statusReason: getOptTrim("statusReason"),
+      reprocannNumber: getOptTrim("reprocannNumber"),
+      reprocannAffiliateNumber: getOptTrim("reprocannAffiliateNumber"),
+      reprocannStartDate: getOptTrim("reprocannStartDate"),
+      reprocannEndDate: getOptTrim("reprocannEndDate"),
+      reprocannActive: getStr("reprocannActive") === "active",
       membershipPlanId: membershipPlanIdRaw || null,
-      membershipPlan: (formData.get("membershipPlan") as string)?.trim() || undefined,
-      membershipRecurring: (formData.get("membershipRecurring") as string) === "true",
-      membershipRecurrenceDay: Number(formData.get("membershipRecurrenceDay") as string) || undefined,
-      membershipLastPaidAt: (formData.get("membershipLastPaidAt") as string).trim() || undefined,
-      membershipLastAmount: (formData.get("membershipLastAmount") as string).trim() || undefined,
-      membershipCurrency: (formData.get("membershipCurrency") as string).trim() || undefined,
+      membershipPlan: getOptTrim("membershipPlan"),
+      membershipRecurring: getStr("membershipRecurring") === "true",
+      membershipRecurrenceDay: Number(getTrim("membershipRecurrenceDay")) || undefined,
+      membershipLastPaidAt: getOptTrim("membershipLastPaidAt"),
+      membershipLastAmount: getOptTrim("membershipLastAmount"),
+      membershipCurrency: getOptTrim("membershipCurrency"),
     };
 
     if (edit) {
