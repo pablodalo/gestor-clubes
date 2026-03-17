@@ -18,6 +18,13 @@ const createPlanSchema = z.object({
   recurrenceDay: z.coerce.number().int().min(1).max(28).optional().nullable(),
   monthlyLimit: z.string().optional(),
   dailyLimit: z.string().optional(),
+  validityType: z.enum(["recurrent", "fixed_end"]).default("recurrent"),
+  validUntil: z.string().optional(),
+  requiresRenewal: z
+    .enum(["on", "off"])
+    .optional()
+    .transform((v) => v === "on"),
+  renewalEveryDays: z.string().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
 });
 
@@ -77,6 +84,15 @@ export async function createMembershipPlan(input: CreateMembershipPlanInput) {
     data.monthlyLimit != null && data.monthlyLimit !== "" ? new Prisma.Decimal(String(data.monthlyLimit)) : null;
   const dailyLimit =
     data.dailyLimit != null && data.dailyLimit !== "" ? new Prisma.Decimal(String(data.dailyLimit)) : null;
+  const validUntil =
+    data.validityType === "fixed_end" && data.validUntil && data.validUntil.trim()
+      ? new Date(data.validUntil)
+      : null;
+  const requiresRenewal = !!data.requiresRenewal;
+  const renewalEveryDays =
+    requiresRenewal && data.renewalEveryDays != null && data.renewalEveryDays !== ""
+      ? Number(data.renewalEveryDays)
+      : null;
 
   const existing = await prisma.membershipPlan.findUnique({
     where: { tenantId_name: { tenantId: ctx.tenantId, name: data.name } },
@@ -94,6 +110,10 @@ export async function createMembershipPlan(input: CreateMembershipPlanInput) {
       recurrenceDay: data.recurrenceDay ?? null,
       monthlyLimit,
       dailyLimit,
+      validityType: data.validityType ?? "recurrent",
+      validUntil,
+      requiresRenewal,
+      renewalEveryDays,
       status: data.status,
     },
   });
@@ -150,6 +170,28 @@ export async function updateMembershipPlan(planId: string, input: UpdateMembersh
   if (data.dailyLimit !== undefined) {
     updateData.dailyLimit =
       data.dailyLimit != null && data.dailyLimit !== "" ? new Prisma.Decimal(String(data.dailyLimit)) : null;
+  }
+  if (data.validityType !== undefined) {
+    updateData.validityType = data.validityType ?? "recurrent";
+    if (data.validityType === "fixed_end" && data.validUntil && data.validUntil.trim()) {
+      updateData.validUntil = new Date(data.validUntil);
+    } else {
+      updateData.validUntil = null;
+    }
+  } else if (data.validUntil !== undefined) {
+    updateData.validUntil = data.validUntil && data.validUntil.trim() ? new Date(data.validUntil) : null;
+  }
+  if (data.requiresRenewal !== undefined) {
+    const requiresRenewal = !!data.requiresRenewal;
+    updateData.requiresRenewal = requiresRenewal;
+    if (!requiresRenewal) {
+      updateData.renewalEveryDays = null;
+    } else if (data.renewalEveryDays != null && data.renewalEveryDays !== "") {
+      updateData.renewalEveryDays = Number(data.renewalEveryDays);
+    }
+  } else if (data.renewalEveryDays !== undefined) {
+    updateData.renewalEveryDays =
+      data.renewalEveryDays != null && data.renewalEveryDays !== "" ? Number(data.renewalEveryDays) : null;
   }
 
   if (data.name && data.name !== existing.name) {

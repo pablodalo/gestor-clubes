@@ -182,8 +182,10 @@ model MembershipPlan {
   recurrenceDay Int?   @map("recurrence_day") // día del mes para cobro recurrente (1-28)
   monthlyLimit Decimal? @map("monthly_limit") @db.Decimal(12, 2)
   dailyLimit   Decimal? @map("daily_limit") @db.Decimal(12, 2)
-  validityType String   @default("unlimited") // unlimited | fixed_end
+  validityType String   @default("recurrent") // recurrent | fixed_end
   validUntil   DateTime? @map("valid_until")
+  requiresRenewal Boolean @default(false) @map("requires_renewal")
+  renewalEveryDays Int?   @map("renewal_every_days")
   status      String   @default("active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
