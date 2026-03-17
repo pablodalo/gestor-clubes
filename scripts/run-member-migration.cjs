@@ -122,7 +122,7 @@ async function run() {
       console.log("MembershipPlan.monthly_limit ya existe, migración límites omitida.");
     }
 
-    if (!(await membershipPlanValidityExists()))) {
+    if (!(await membershipPlanValidityExists())) {
       const statements = runSqlFile(path.join(migrationsDir, "20260317130000_add_membership_plan_validity", "migration.sql"));
       await executeStatements(statements, "[membresías-vigencia]");
       console.log("Migración vigencia de membresías aplicada correctamente.");
