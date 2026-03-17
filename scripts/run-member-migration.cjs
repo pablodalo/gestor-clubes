@@ -55,6 +55,15 @@ async function membershipPlanIdExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function membershipPlanTierExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'membershipplan' AND column_name = 'tier'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function run() {
   if (!process.env.DATABASE_URL) {
     console.log("DATABASE_URL no definida, se omite run-member-migration");
@@ -77,6 +86,14 @@ async function run() {
       console.log("Migración membresías aplicada correctamente.");
     } else {
       console.log("Member.membership_plan_id ya existe, migración membresías omitida.");
+    }
+
+    if (!(await membershipPlanTierExists())) {
+      const statements = runSqlFile(path.join(migrationsDir, "20260318010000_add_membership_plan_tier", "migration.sql"));
+      await executeStatements(statements, "[membresías-tier]");
+      console.log("Migración tier de membresías aplicada correctamente.");
+    } else {
+      console.log("MembershipPlan.tier ya existe, migración tier omitida.");
     }
   } catch (err) {
     console.error("Error en run-member-migration:", err);
