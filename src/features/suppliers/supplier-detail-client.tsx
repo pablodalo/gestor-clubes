@@ -278,21 +278,23 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!supplier.email?.trim() || (!generated && selectedItems.length === 0)}
-                    onClick={() => {
-                      const body = generated || buildMessage(selectedItems);
-                      const subject = `Pedido - ${supplier.name}`;
-                      const to = (supplier.email ?? "").trim();
-                      const href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                      window.location.href = href;
-                    }}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Mail
-                  </Button>
+                  {supplier.email?.trim() && (
+                    <Button
+                      asChild
+                      type="button"
+                      variant="outline"
+                      disabled={!generated && selectedItems.length === 0}
+                    >
+                      <a
+                        href={`mailto:${(supplier.email ?? "").trim()}?subject=${encodeURIComponent(
+                          `Pedido - ${supplier.name}`
+                        )}&body=${encodeURIComponent(generated || buildMessage(selectedItems))}`}
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Mail
+                      </a>
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
