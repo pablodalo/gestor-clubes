@@ -202,6 +202,8 @@ export async function deleteTenant(tenantId: string) {
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
   if (!tenant) return { error: "Tenant no encontrado" };
 
+  // Borrado ordenado para respetar FKs (User.roleId -> Role.id)
+  await prisma.user.deleteMany({ where: { tenantId } });
   await prisma.rolePermission.deleteMany({ where: { role: { tenantId } } });
   await prisma.role.deleteMany({ where: { tenantId } });
   await prisma.tenant.delete({ where: { id: tenantId } });
