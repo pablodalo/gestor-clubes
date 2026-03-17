@@ -49,9 +49,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         : undefined,
       monthlyLimit: (formData.get("monthlyLimit") as string).trim() || undefined,
       dailyLimit: (formData.get("dailyLimit") as string).trim() || undefined,
-      validityType: ((formData.get("validityType") as string) || "recurrent") as
-        | "recurrent"
-        | "fixed_end",
+      validityType: ((formData.get("validityType") as string) || "recurrent") as "recurrent" | "fixed_end",
       validUntil: (formData.get("validUntil") as string)?.trim() || undefined,
       requiresRenewal: !!formData.get("requiresRenewal"),
       renewalEveryDays: (formData.get("renewalEveryDays") as string).trim() || undefined,
@@ -79,7 +77,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{edit ? "Editar plan" : "Nuevo plan de membresía"}</DialogTitle>
           <DialogDescription>
@@ -92,8 +90,9 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
               {error}
             </p>
           )}
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="space-y-6 py-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="name">Nombre</Label>
               <Input
                 id="name"
@@ -102,26 +101,32 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                 defaultValue={edit?.name}
                 placeholder="Ej. Flores + Extractos"
               />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tier">Tier (opcional)</Label>
+                <Input
+                  id="tier"
+                  name="tier"
+                  defaultValue={(edit as unknown as { tier?: string | null })?.tier ?? ""}
+                  placeholder="Ej. básico / premium"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="description">Descripción (opcional)</Label>
+                <Input
+                  id="description"
+                  name="description"
+                  defaultValue={edit?.description ?? ""}
+                  placeholder="Incluye 30g flores y 10g extractos/mes"
+                />
+              </div>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="tier">Tier (opcional)</Label>
-              <Input
-                id="tier"
-                name="tier"
-                defaultValue={(edit as unknown as { tier?: string | null })?.tier ?? ""}
-                placeholder="Ej. básico / premium"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descripción (opcional)</Label>
-              <Input
-                id="description"
-                name="description"
-                defaultValue={edit?.description ?? ""}
-                placeholder="Incluye 30g flores y 10g extractos/mes"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Precio y cobro
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="price">Precio (opcional)</Label>
                 <Input
@@ -142,34 +147,14 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   placeholder="ARS"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="recurrenceDay">Día de cobro (1-28, opcional)</Label>
-                <Input
-                  id="recurrenceDay"
-                  name="recurrenceDay"
-                  type="number"
-                  min={1}
-                  max={28}
-                  defaultValue={edit?.recurrenceDay ?? ""}
-                  placeholder="10"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Estado</Label>
-                <select
-                  id="status"
-                  name="status"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  defaultValue={edit?.status ?? "active"}
-                >
-                  <option value="active">Activo</option>
-                  <option value="inactive">Inactivo</option>
-                </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Límites de consumo (opcional)
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="monthlyLimit">Límite mensual (opcional)</Label>
                 <Input
@@ -192,8 +177,14 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   placeholder="1"
                 />
               </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Vigencia
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="validityType">Vigencia</Label>
                 <select
@@ -220,29 +211,71 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                 />
               </div>
             </div>
-            <div className="grid grid-cols-[auto_1fr] items-center gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="requiresRenewal">Requiere renovación</Label>
-                <input
-                  id="requiresRenewal"
-                  name="requiresRenewal"
-                  type="checkbox"
-                  className="h-4 w-4"
-                  defaultChecked={(edit as unknown as { requiresRenewal?: boolean })?.requiresRenewal ?? false}
-                />
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Renovación
+              </p>
+              <div className="grid gap-4 sm:grid-cols-[auto,1fr] items-center">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="requiresRenewal"
+                    name="requiresRenewal"
+                    type="checkbox"
+                    className="h-4 w-4"
+                    defaultChecked={
+                      (edit as unknown as { requiresRenewal?: boolean })?.requiresRenewal ?? false
+                    }
+                  />
+                  <Label htmlFor="requiresRenewal" className="text-sm">
+                    Requiere renovación
+                  </Label>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="renewalEveryDays">Cada cuántos días (opcional)</Label>
+                  <Input
+                    id="renewalEveryDays"
+                    name="renewalEveryDays"
+                    type="number"
+                    min={1}
+                    defaultValue={
+                      (edit as unknown as { renewalEveryDays?: number | null })?.renewalEveryDays ?? ""
+                    }
+                    placeholder="30"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="renewalEveryDays">Cada cuántos días (opcional)</Label>
-                <Input
-                  id="renewalEveryDays"
-                  name="renewalEveryDays"
-                  type="number"
-                  min={1}
-                  defaultValue={
-                    (edit as unknown as { renewalEveryDays?: number | null })?.renewalEveryDays ?? ""
-                  }
-                  placeholder="30"
-                />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Estado
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="recurrenceDay">Día de cobro (1-28, opcional)</Label>
+                  <Input
+                    id="recurrenceDay"
+                    name="recurrenceDay"
+                    type="number"
+                    min={1}
+                    max={28}
+                    defaultValue={edit?.recurrenceDay ?? ""}
+                    placeholder="10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Estado</Label>
+                  <select
+                    id="status"
+                    name="status"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    defaultValue={edit?.status ?? "active"}
+                  >
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
