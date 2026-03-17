@@ -68,56 +68,57 @@ export function SuppliersTable({
     return "Sin pedidos";
   };
 
+  const estadoBadgeVariant = (estado: ReturnType<typeof getEstado>) => {
+    if (estado === "En proceso") return "warning" as const;
+    if (estado === "Pendiente") return "destructive" as const;
+    return "secondary" as const;
+  };
+
   const columns: DataTableColumn<Row>[] = [
     {
       key: "name",
       header: "Proveedor",
-      className: "w-[30%]",
-      render: (s) => <span className="font-medium text-foreground">{s.name}</span>,
+      className: "w-[28%]",
+      render: (s) => <span className="font-medium text-foreground truncate block">{s.name}</span>,
     },
     {
       key: "suppliesProvided",
       header: "Categoría",
-      className: "w-[28%] text-muted-foreground",
-      render: (s) => <span className="text-muted-foreground">{s.suppliesProvided ?? "—"}</span>,
+      className: "w-[22%]",
+      render: (s) => <span className="text-muted-foreground truncate block">{s.suppliesProvided ?? "—"}</span>,
     },
     {
       key: "lastOrder",
       header: "Último pedido",
-      className: "w-[16%]",
+      className: "w-[14%]",
       render: (s) =>
         s.lastOrder ? (
-          <div className="text-muted-foreground">
-            <div>{new Date(s.lastOrder.date).toLocaleDateString("es-AR")}</div>
-            <div className="text-xs">{daysAgoLabel(s.lastOrder.date)}</div>
-          </div>
+          <span className="text-muted-foreground">{new Date(s.lastOrder.date).toLocaleDateString("es-AR")}</span>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
     },
     {
+      key: "activity",
+      header: "Actividad",
+      className: "w-[14%]",
+      render: (s) => <span className="text-muted-foreground">{daysAgoLabel(s.lastOrder?.date ?? null)}</span>,
+      sortable: false,
+    },
+    {
       key: "estado",
       header: "Estado",
-      className: "w-[14%]",
+      className: "w-[12%]",
       render: (s) => (
-        <Badge
-          variant={
-            getEstado(s) === "En proceso"
-              ? "warning"
-              : getEstado(s) === "Pendiente"
-                ? "destructive"
-                : "secondary"
-          }
-        >
-          {getEstado(s)}
-        </Badge>
+        <Badge variant={estadoBadgeVariant(getEstado(s))}>{getEstado(s)}</Badge>
       ),
+      sortable: false,
     },
     {
       key: "balance",
       header: "Balance",
       align: "right",
-      className: "w-[12%] tabular-nums",
+      className: "w-[10%] tabular-nums",
       render: (s) => (
         <span className={Number(s.balance ?? 0) > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
           {formatMoney(Number(s.balance ?? 0))}
