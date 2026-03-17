@@ -13,6 +13,10 @@ export default async function PortalMembershipPage({ params }: Props) {
   if (!session) return null;
 
   const m = session.member;
+  const plan = m.membershipPlanRel as
+    | { name: string; price: { toString: () => string } | null; currency: string }
+    | null
+    | undefined;
 
   return (
     <div className="p-6 space-y-6">
@@ -24,7 +28,7 @@ export default async function PortalMembershipPage({ params }: Props) {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div>
             <p className="text-xs text-muted-foreground">Tipo / Plan</p>
-            <p className="font-medium">{m.membershipType ?? m.membershipPlan ?? "—"}</p>
+            <p className="font-medium">{m.membershipType ?? plan?.name ?? m.membershipPlan ?? "—"}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Estado</p>
@@ -49,13 +53,9 @@ export default async function PortalMembershipPage({ params }: Props) {
             <p className="font-medium">{m.membershipRecurring ? "Sí" : "No"}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Último pago</p>
-            <p className="font-medium">{formatDate(m.membershipLastPaidAt)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Monto último pago</p>
+            <p className="text-xs text-muted-foreground">Monto membresía</p>
             <p className="font-medium">
-              {m.membershipLastAmount?.toString?.() ?? "—"} {m.membershipCurrency ?? ""}
+              {plan?.price?.toString?.() ?? "—"} {plan?.currency ?? ""}
             </p>
           </div>
         </CardContent>

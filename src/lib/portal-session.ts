@@ -21,7 +21,7 @@ export async function getMemberAndTenantFromSession(tenantSlug: string) {
     where: { id: accountId, status: "active" },
     include: {
       member: {
-        include: { tenant: true },
+        include: { tenant: true, membershipPlanRel: true },
       },
     },
   });

@@ -83,6 +83,8 @@ export default async function MemberProfilePage({ params }: Props) {
             ? {
                 name: member.membershipPlanRel.name,
                 tier: member.membershipPlanRel.tier ?? null,
+                price: (member.membershipPlanRel as any).price ?? null,
+                currency: member.membershipPlanRel.currency,
                 monthlyLimit: (member.membershipPlanRel as any).monthlyLimit ?? null,
                 dailyLimit: (member.membershipPlanRel as any).dailyLimit ?? null,
               }
