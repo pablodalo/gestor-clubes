@@ -1,7 +1,8 @@
 /**
- * Aplica la migración del módulo de socios (Member.address, etc.) ejecutando
- * el SQL directamente. Se usa en el build cuando la DB no tiene historial de
- * migraciones (P3005). Solo aplica si la columna Member.address no existe.
+ * Aplica migraciones ejecutando SQL directamente. Se usa en el build cuando la DB
+ * no tiene historial de migraciones (P3005).
+ * 1) Módulo socios: Member.address, etc. — solo si Member.address no existe.
+ * 2) Membresías: MembershipPlan + Member.membership_plan_id — solo si la columna no existe.
  *
  * Uso: node scripts/run-member-migration.cjs
  * Requiere: DATABASE_URL en el entorno (ej. en Vercel Build).
@@ -12,10 +13,43 @@ const path = require("path");
 
 const prisma = new PrismaClient();
 
-async function columnExists() {
+function runSqlFile(sqlPath) {
+  const sql = fs.readFileSync(sqlPath, "utf8");
+  return sql
+    .split(";")
+    .map((s) => s.replace(/--[^\n]*/g, "").trim())
+    .filter((s) => s.length > 0);
+}
+
+async function executeStatements(statements, logPrefix) {
+  for (const statement of statements) {
+    const one = statement + ";";
+    try {
+      await prisma.$executeRawUnsafe(one);
+      console.log(logPrefix, "OK:", one.slice(0, 60) + "...");
+    } catch (err) {
+      if (err.code === "42710" || err.message?.includes("already exists")) {
+        console.log(logPrefix, "Skip (ya existe):", one.slice(0, 50) + "...");
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
+async function memberAddressExists() {
   const r = await prisma.$queryRawUnsafe(`
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND LOWER(table_name) = 'member' AND column_name = 'address'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
+async function membershipPlanIdExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'member' AND column_name = 'membership_plan_id'
     LIMIT 1
   `);
   return Array.isArray(r) && r.length > 0;
@@ -27,37 +61,23 @@ async function run() {
     process.exit(0);
   }
   try {
-    if (await columnExists()) {
-      console.log("Member.address ya existe, migración omitida.");
-      process.exit(0);
+    const migrationsDir = path.join(__dirname, "..", "prisma", "migrations");
+
+    if (!(await memberAddressExists())) {
+      const statements = runSqlFile(path.join(migrationsDir, "20260317000000_add_member_socios_module", "migration.sql"));
+      await executeStatements(statements, "[socios]");
+      console.log("Migración socios aplicada correctamente.");
+    } else {
+      console.log("Member.address ya existe, migración socios omitida.");
     }
-    const sqlPath = path.join(
-      __dirname,
-      "..",
-      "prisma",
-      "migrations",
-      "20260317000000_add_member_socios_module",
-      "migration.sql"
-    );
-    const sql = fs.readFileSync(sqlPath, "utf8");
-    const statements = sql
-      .split(";")
-      .map((s) => s.replace(/--[^\n]*/g, "").trim())
-      .filter((s) => s.length > 0);
-    for (const statement of statements) {
-      const one = statement + ";";
-      try {
-        await prisma.$executeRawUnsafe(one);
-        console.log("OK:", one.slice(0, 60) + "...");
-      } catch (err) {
-        if (err.code === "42710" || err.message?.includes("already exists")) {
-          console.log("Skip (ya existe):", one.slice(0, 50) + "...");
-        } else {
-          throw err;
-        }
-      }
+
+    if (!(await membershipPlanIdExists())) {
+      const statements = runSqlFile(path.join(migrationsDir, "20260318000000_add_membership_plans", "migration.sql"));
+      await executeStatements(statements, "[membresías]");
+      console.log("Migración membresías aplicada correctamente.");
+    } else {
+      console.log("Member.membership_plan_id ya existe, migración membresías omitida.");
     }
-    console.log("Migración aplicada correctamente.");
   } catch (err) {
     console.error("Error en run-member-migration:", err);
     process.exit(1);
