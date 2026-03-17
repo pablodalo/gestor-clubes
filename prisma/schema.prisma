@@ -62,6 +62,8 @@ model Tenant {
   products Product[]
   salesOrders SalesOrder[]
   suppliers Supplier[]
+  supplierOrders SupplierOrder[]
+  supplierPayments SupplierPayment[]
   supplyItems SupplyItem[]
   supplyMovements SupplyStockMovement[]
   plantStrains PlantStrain[]
@@ -464,10 +466,57 @@ model Supplier {
   updatedAt DateTime @updatedAt
 
   supplies SupplyItem[]
+  orders   SupplierOrder[]
+  payments SupplierPayment[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
   @@index([tenantId, status])
+}
+
+model SupplierOrder {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplierId      String
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  date            DateTime @default(now())
+  status          String   @default("draft") // draft | sent | in_progress | delivered
+  total           Decimal  @default(0) @db.Decimal(12, 2)
+  messageSnapshot String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  items SupplierOrderItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, supplierId])
+  @@index([tenantId, date])
+  @@index([tenantId, status])
+}
+
+model SupplierOrderItem {
+  id       String        @id @default(cuid())
+  orderId  String
+  order    SupplierOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name     String
+  quantity Decimal       @default(0) @db.Decimal(12, 2)
+
+  @@index([orderId])
+}
+
+model SupplierPayment {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  amount     Decimal  @db.Decimal(12, 2)
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([tenantId, supplierId])
+  @@index([tenantId, date])
 }
 
 model SupplyItem {

@@ -8,6 +8,7 @@ import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -20,9 +21,20 @@ import { Truck, Building2 } from "lucide-react";
 
 type Row = Supplier & {
   suppliesCount?: number;
+  lastOrder?: { date: Date; total: unknown; status: string } | null;
+  activeOrdersCount?: number;
+  balance?: number;
 };
 
-export function SuppliersTable({ suppliers, canCreate }: { suppliers: Row[]; canCreate: boolean }) {
+export function SuppliersTable({
+  tenantSlug,
+  suppliers,
+  canCreate,
+}: {
+  tenantSlug: string;
+  suppliers: Row[];
+  canCreate: boolean;
+}) {
   const [q, setQ] = useState("");
   const [deliveryFilter, setDeliveryFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
@@ -42,10 +54,55 @@ export function SuppliersTable({ suppliers, canCreate }: { suppliers: Row[]; can
     });
   }, [suppliers, q, deliveryFilter, paymentFilter]);
 
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value);
+
   const columns: DataTableColumn<Row>[] = [
-    { key: "name", header: "Proveedor", render: (s) => <span className="font-medium">{s.name}</span> },
+    {
+      key: "name",
+      header: "Proveedor",
+      render: (s) => (
+        <Link
+          href={`/app/${tenantSlug}/suppliers/${s.id}`}
+          className="font-medium text-foreground hover:underline"
+        >
+          {s.name}
+        </Link>
+      ),
+    },
     { key: "suppliesProvided", header: "Suministra", render: (s) => s.suppliesProvided ?? "—" },
     { key: "suppliesCount", header: "Suministros", render: (s) => s.suppliesCount ?? 0, align: "center" },
+    {
+      key: "lastOrder",
+      header: "Último pedido",
+      render: (s) =>
+        s.lastOrder ? (
+          <span className="text-muted-foreground">
+            {new Date(s.lastOrder.date).toLocaleDateString("es-AR")} · {formatMoney(Number(s.lastOrder.total ?? 0))}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      key: "activeOrders",
+      header: "Activos",
+      align: "center",
+      render: (s) => (
+        <Badge variant={(s.activeOrdersCount ?? 0) > 0 ? "secondary" : "success"}>
+          {(s.activeOrdersCount ?? 0) > 0 ? `${s.activeOrdersCount}` : "0"}
+        </Badge>
+      ),
+    },
+    {
+      key: "balance",
+      header: "Balance",
+      render: (s) => (
+        <span className={Number(s.balance ?? 0) > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
+          {formatMoney(Number(s.balance ?? 0))}
+        </span>
+      ),
+    },
     { key: "email", header: "Email", render: (s) => s.email ?? "—" },
     { key: "phone", header: "Teléfono", render: (s) => s.phone ?? "—" },
     {
@@ -73,6 +130,10 @@ export function SuppliersTable({ suppliers, canCreate }: { suppliers: Row[]; can
     name: s.name,
     suppliesProvided: s.suppliesProvided ?? "",
     suppliesCount: s.suppliesCount ?? 0,
+    lastOrderDate: s.lastOrder ? new Date(s.lastOrder.date).toISOString() : "",
+    lastOrderTotal: Number(s.lastOrder?.total ?? 0),
+    activeOrdersCount: s.activeOrdersCount ?? 0,
+    balance: Number(s.balance ?? 0),
     email: s.email ?? "",
     phone: s.phone ?? "",
     pendingDelivery: s.pendingDelivery ? "Sí" : "No",
