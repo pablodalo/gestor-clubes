@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { getStatusLabel, getStatusVariant } from "@/lib/status-badges";
 import { cn } from "@/lib/utils";
 import {
@@ -166,27 +167,31 @@ export function MemberDetailTabs({
 
   const OperativaToggle = ({
     label,
+    helper,
     value,
     onToggle,
     saving,
   }: {
     label: string;
+    helper?: string;
     value: boolean;
     onToggle: (next: boolean) => void;
     saving: boolean;
   }) => (
-    <div className="flex items-center justify-between gap-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <Button
-        type="button"
-        size="sm"
-        variant={value ? "default" : "outline"}
-        disabled={saving}
-        onClick={() => onToggle(!value)}
-        className="min-w-20"
-      >
-        {saving ? "Guardando..." : value ? "Sí" : "No"}
-      </Button>
+    <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
+      <div className="flex-1">
+        <p className="text-xs font-medium text-foreground">{label}</p>
+        {helper && <p className="text-[11px] text-muted-foreground mt-0.5">{helper}</p>}
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">{value ? "Sí" : "No"}</span>
+        <Switch
+          checked={value}
+          disabled={saving}
+          onCheckedChange={(next) => onToggle(next)}
+          aria-label={label}
+        />
+      </div>
     </div>
   );
 
@@ -460,10 +465,6 @@ export function MemberDetailTabs({
               </div>
             )}
           </CardContent>
-          <CardContent className="border-t">
-            <p className="text-sm font-medium mb-2">Historial de pagos</p>
-            <p className="text-muted-foreground text-sm">Próximamente.</p>
-          </CardContent>
         </Card>
       )}
 
@@ -495,24 +496,28 @@ export function MemberDetailTabs({
             </div>
             <OperativaToggle
               label="Puede reservar productos"
+              helper="Permite que el socio reserve productos desde el portal."
               value={canReserveProducts}
               saving={operativaSaving === "reserve"}
               onToggle={(next) => setOperativaField("reserve", next)}
             />
             <OperativaToggle
               label="Preorden"
+              helper="Habilita precompras antes de que el stock esté disponible."
               value={canPreorder}
               saving={operativaSaving === "preorder"}
               onToggle={(next) => setOperativaField("preorder", next)}
             />
             <OperativaToggle
               label="Acceso a eventos"
+              helper="Controla acceso a eventos del club desde su membresía."
               value={canAccessEvents}
               saving={operativaSaving === "events"}
               onToggle={(next) => setOperativaField("events", next)}
             />
             <OperativaToggle
               label="Puede invitar invitados"
+              helper="Permite que el socio registre invitados a las visitas."
               value={canInviteGuest}
               saving={operativaSaving === "invite"}
               onToggle={(next) => setOperativaField("invite", next)}

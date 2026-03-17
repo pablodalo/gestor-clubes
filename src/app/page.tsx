@@ -10,7 +10,9 @@ export default async function HomePage() {
     const tenantSlug = (session as unknown as { tenantSlug?: string }).tenantSlug;
     if (ctx === "platform") redirect("/platform");
     if (ctx === "tenant" && tenantSlug) redirect(`/app/${tenantSlug}`);
-    if (ctx === "member" && tenantSlug) redirect(`/portal/socios/${tenantSlug}`);
+    // Las sesiones de socio ahora se manejan con auth aislado del portal.
+    // Aunque exista una cookie vieja con ctx === "member", no redirigimos desde el home;
+    // dejamos que el usuario elija cómo entrar (platform / tenant / portal).
   }
   return <LoginFormUnified />;
 }
