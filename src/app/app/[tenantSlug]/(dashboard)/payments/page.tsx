@@ -4,7 +4,6 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { PaymentsTable } from "@/features/payments/payments-table";
-import { PaymentForm } from "@/features/payments/payment-form";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -49,27 +48,16 @@ export default async function PaymentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Pagos</h1>
-        <p className="text-muted-foreground mt-1">Registro y control de pagos de membresías.</p>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <PaymentsTable payments={rows} />
-        </div>
-        {canCreate && (
-          <div>
-            <PaymentForm
-              members={members.map((m) => ({
-                id: m.id,
-                name: `${m.firstName} ${m.lastName}`,
-                memberNumber: m.memberNumber,
-              }))}
-              currency={currency}
-            />
-          </div>
-        )}
-      </div>
+      <PaymentsTable
+        payments={rows}
+        canCreate={canCreate}
+        members={members.map((m) => ({
+          id: m.id,
+          name: `${m.firstName} ${m.lastName}`,
+          memberNumber: m.memberNumber,
+        }))}
+        currency={currency}
+      />
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
-import { DispensationForm } from "@/features/inventory/dispensation-form";
 import { DispensationsTable } from "@/features/inventory/dispensations-table";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
@@ -52,26 +51,15 @@ export default async function DispensationsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dispensaciones</h1>
-        <p className="text-muted-foreground mt-1">Registro de entrega a socios.</p>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <DispensationsTable rows={rows} />
-        </div>
-        {canManage && (
-          <div>
-            <DispensationForm
-              members={members.map((m) => ({
-                id: m.id,
-                label: `${m.memberNumber} · ${m.firstName} ${m.lastName}`,
-              }))}
-              strains={strains.map((s) => ({ id: s.id, label: s.name }))}
-            />
-          </div>
-        )}
-      </div>
+      <DispensationsTable
+        rows={rows}
+        canCreate={canManage}
+        members={members.map((m) => ({
+          id: m.id,
+          label: `${m.memberNumber} · ${m.firstName} ${m.lastName}`,
+        }))}
+        strains={strains.map((s) => ({ id: s.id, label: s.name }))}
+      />
     </div>
   );
 }

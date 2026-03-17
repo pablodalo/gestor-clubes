@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -43,6 +44,10 @@ type DataTableProps<T> = {
   /** Contenido de la última celda por fila (menú de acciones discreto) */
   rowActions?: (item: T) => React.ReactNode;
   rowClassName?: string;
+  /** Paginado en cliente (por defecto true) */
+  paginate?: boolean;
+  /** Tamaño de página (por defecto 20) */
+  pageSize?: number;
 };
 
 export function DataTable<T>({
@@ -54,8 +59,11 @@ export function DataTable<T>({
   toolbar,
   rowActions,
   rowClassName,
+  paginate = true,
+  pageSize = 20,
 }: DataTableProps<T>) {
   const [sort, setSort] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+  const [page, setPage] = useState(1);
 
   const sortedData = useMemo(() => {
     if (!sort) return data;
@@ -84,6 +92,12 @@ export function DataTable<T>({
   }, [data, columns, sort]);
 
   const colCount = columns.length + (rowActions ? 1 : 0);
+  const totalItems = sortedData.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const end = start + pageSize;
+  const viewData = paginate ? sortedData.slice(start, end) : sortedData;
   const emptyContent = emptyState ? (
     <EmptyState
       icon={emptyState.icon}
@@ -156,7 +170,7 @@ export function DataTable<T>({
               </TableCell>
             </TableRow>
           ) : (
-            sortedData.map((item) => (
+            viewData.map((item) => (
               <TableRow key={keyExtractor(item)} className={rowClassName}>
                 {columns.map((col) => (
                   <TableCell
@@ -178,6 +192,41 @@ export function DataTable<T>({
           )}
         </TableBody>
       </Table>
+      {paginate && totalPages > 1 && (
+        <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2 text-xs sm:text-sm">
+          <span className="text-muted-foreground">
+            Mostrando{" "}
+            <span className="font-medium">
+              {start + 1}–{Math.min(end, totalItems)}
+            </span>{" "}
+            de <span className="font-medium">{totalItems}</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <span className="text-muted-foreground">
+              Página <span className="font-medium">{currentPage}</span> de{" "}
+              <span className="font-medium">{totalPages}</span>
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
