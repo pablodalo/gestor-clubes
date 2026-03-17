@@ -53,7 +53,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         | "recurrent"
         | "fixed_end",
       validUntil: (formData.get("validUntil") as string)?.trim() || undefined,
-      requiresRenewal: (formData.get("requiresRenewal") as string) === "on" ? "on" : "off",
+      requiresRenewal: !!formData.get("requiresRenewal"),
       renewalEveryDays: (formData.get("renewalEveryDays") as string).trim() || undefined,
       status: (formData.get("status") as "active" | "inactive") || "active",
     };
