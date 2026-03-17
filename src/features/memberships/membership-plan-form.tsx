@@ -40,6 +40,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
 
     const payload: CreateMembershipPlanInput = {
       name: (formData.get("name") as string).trim(),
+      tier: (formData.get("tier") as string).trim() || undefined,
       description: (formData.get("description") as string).trim() || undefined,
       price: (formData.get("price") as string).trim() || undefined,
       currency: (formData.get("currency") as string).trim() || "ARS",
@@ -92,6 +93,15 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                 required
                 defaultValue={edit?.name}
                 placeholder="Ej. Flores + Extractos"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tier">Tier (opcional)</Label>
+              <Input
+                id="tier"
+                name="tier"
+                defaultValue={(edit as unknown as { tier?: string | null })?.tier ?? ""}
+                placeholder="Ej. básico / premium"
               />
             </div>
             <div className="space-y-2">

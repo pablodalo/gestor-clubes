@@ -64,7 +64,6 @@ type MemberData = {
   membershipLastPaidAt: Date | null;
   membershipLastAmount: { toString: () => string } | null;
   membershipCurrency: string | null;
-  memberTier: string | null;
   monthlyLimit: { toString: () => string } | null;
   dailyLimit: { toString: () => string } | null;
   remainingBalance: { toString: () => string } | null;
@@ -89,6 +88,7 @@ type TabId = "datos" | "membresia" | "operativa" | "historial" | "saldo" | "noti
 type Props = {
   tenantSlug: string;
   member: MemberData;
+  membershipPlanTier?: string | null;
   payments: PaymentRow[];
   account: { id: string; email: string; status: string } | null;
   notifications: NotifRow[];
@@ -99,6 +99,7 @@ type Props = {
 export function MemberDetailTabs({
   tenantSlug,
   member,
+  membershipPlanTier,
   payments,
   account,
   notifications,
@@ -409,7 +410,7 @@ export function MemberDetailTabs({
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs text-muted-foreground">Tier</p>
-              <p className="font-medium">{member.memberTier ?? "—"}</p>
+              <p className="font-medium">{membershipPlanTier ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Límite mensual</p>

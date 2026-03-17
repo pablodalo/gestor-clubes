@@ -11,6 +11,7 @@ import { Prisma } from "@prisma/client";
 
 const createPlanSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
+  tier: z.string().optional(),
   description: z.string().optional(),
   price: z.string().optional(),
   currency: z.string().default("ARS"),
@@ -80,6 +81,7 @@ export async function createMembershipPlan(input: CreateMembershipPlanInput) {
     data: {
       tenantId: ctx.tenantId,
       name: data.name,
+      tier: data.tier?.trim() || null,
       description: data.description?.trim() || null,
       price,
       currency: data.currency || "ARS",
@@ -125,6 +127,7 @@ export async function updateMembershipPlan(planId: string, input: UpdateMembersh
   const data = parsed.data;
   const updateData: Record<string, unknown> = {};
   if (data.name !== undefined) updateData.name = data.name;
+  if (data.tier !== undefined) updateData.tier = typeof data.tier === "string" ? data.tier.trim() || null : null;
   if (data.description !== undefined) updateData.description = typeof data.description === "string" ? data.description.trim() || null : null;
   if (data.currency !== undefined) updateData.currency = data.currency;
   if (data.recurrenceDay !== undefined) updateData.recurrenceDay = data.recurrenceDay;

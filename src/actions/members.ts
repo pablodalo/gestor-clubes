@@ -44,7 +44,6 @@ const createMemberSchema = z.object({
   membershipLastPaidAt: z.string().optional(),
   membershipLastAmount: z.string().optional(),
   membershipCurrency: z.string().optional(),
-  memberTier: z.string().optional(),
   monthlyLimit: z.string().optional(),
   dailyLimit: z.string().optional(),
   remainingBalance: z.string().optional(),
@@ -169,7 +168,6 @@ export async function createMember(input: CreateMemberInput) {
       membershipLastPaidAt,
       membershipLastAmount,
       membershipCurrency: data.membershipCurrency || "ARS",
-      memberTier: data.memberTier?.trim() || null,
       monthlyLimit,
       dailyLimit,
       remainingBalance,
@@ -270,7 +268,6 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
   if (data.membershipLastPaidAt !== undefined) updateData.membershipLastPaidAt = toDate(data.membershipLastPaidAt);
   if (data.membershipLastAmount !== undefined) updateData.membershipLastAmount = toDecimal(data.membershipLastAmount);
   if (data.membershipCurrency !== undefined) updateData.membershipCurrency = toStr(data.membershipCurrency);
-  if (data.memberTier !== undefined) updateData.memberTier = toStr(data.memberTier);
   if (data.monthlyLimit !== undefined) updateData.monthlyLimit = toDecimal(data.monthlyLimit);
   if (data.dailyLimit !== undefined) updateData.dailyLimit = toDecimal(data.dailyLimit);
   if (data.remainingBalance !== undefined) updateData.remainingBalance = toDecimal(data.remainingBalance) ?? new Prisma.Decimal(0);

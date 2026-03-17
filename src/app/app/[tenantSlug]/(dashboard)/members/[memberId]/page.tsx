@@ -18,7 +18,7 @@ export default async function MemberProfilePage({ params }: Props) {
 
   const member = await prisma.member.findFirst({
     where: { id: memberId, tenantId: tenant.id },
-    include: { account: true },
+    include: { account: true, membershipPlanRel: true },
   });
   if (!member) return notFound();
 
@@ -78,6 +78,7 @@ export default async function MemberProfilePage({ params }: Props) {
       <MemberDetailTabs
         tenantSlug={tenantSlug}
         member={member}
+        membershipPlanTier={member.membershipPlanRel?.tier ?? null}
         payments={payments}
         account={member.account}
         notifications={notifications}
