@@ -91,9 +91,15 @@ export async function uploadLogo(
     return { error: "Formato no permitido. Usá PNG, JPG, GIF, WebP o SVG." };
   }
 
+  // En Vercel/serverless no hay filesystem escribible; no intentar guardar en public/uploads.
+  if (process.env.VERCEL === "1") {
+    return {
+      error:
+        "En este entorno no se pueden subir archivos. Usá la opción «Pegar URL» más abajo con un enlace a la imagen (ej. desde Imgur o tu hosting).",
+    };
+  }
+
   try {
-    // Fallback compatible con el entorno actual: guardar en /public/uploads.
-    // Si más adelante se configura Vercel Blob, se puede reintroducir sin bloquear el build.
     const dir = path.join(process.cwd(), "public", "uploads");
     await mkdir(dir, { recursive: true });
     const filename = `logo-${tenantId}-${Date.now()}.${ext}`;
@@ -102,6 +108,9 @@ export async function uploadLogo(
     return { data: { url: `/uploads/${filename}` } };
   } catch (err) {
     console.error("uploadLogo", err);
-    return { error: "Error al guardar la imagen" };
+    return {
+      error:
+        "No se pudo guardar la imagen en el servidor. Usá la opción «Pegar URL» con un enlace a la imagen.",
+    };
   }
 }
