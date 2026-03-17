@@ -129,6 +129,13 @@ export function MemberDetailTabs({
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustNote, setAdjustNote] = useState("");
 
+  const monthlyLimitNum = Number(member.monthlyLimit?.toString?.() ?? "0") || 0;
+  const remainingNum = Number(member.remainingBalance?.toString?.() ?? "0") || 0;
+  const consumedNum = Number(member.consumedThisPeriod?.toString?.() ?? "0") || 0;
+  const totalForBar = Math.max(monthlyLimitNum, remainingNum + consumedNum, 0.0001);
+  const remainingPct = Math.min(Math.max((remainingNum / totalForBar) * 100, 0), 100);
+  const consumedPct = Math.min(Math.max((consumedNum / totalForBar) * 100, 0), 100);
+
   const setOperativaField = async (field: "reserve" | "preorder" | "events" | "invite", next: boolean) => {
     setError("");
     setOperativaSaving(field);
@@ -472,13 +479,38 @@ export function MemberDetailTabs({
             <CardTitle>Configuración operativa</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-xs text-muted-foreground">Saldo restante</p>
-              <p className="font-medium">{member.remainingBalance?.toString() ?? "0"}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Consumido este período</p>
-              <p className="font-medium">{member.consumedThisPeriod?.toString() ?? "0"}</p>
+            <div className="space-y-2 sm:col-span-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Uso de cupo
+              </p>
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px] text-muted-foreground">
+                  <span>Consumido este período</span>
+                  <span className="font-medium text-foreground">
+                    {consumedNum.toFixed(2)} / {totalForBar.toFixed(2)}
+                  </span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${consumedPct}%` }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1 pt-2">
+                <div className="flex justify-between text-[11px] text-muted-foreground">
+                  <span>Saldo restante</span>
+                  <span className="font-medium text-foreground">
+                    {remainingNum.toFixed(2)} / {totalForBar.toFixed(2)}
+                  </span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500/80 dark:bg-emerald-400 transition-all"
+                    style={{ width: `${remainingPct}%` }}
+                  />
+                </div>
+              </div>
             </div>
             <OperativaToggle
               label="Puede reservar productos"
