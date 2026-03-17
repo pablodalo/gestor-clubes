@@ -465,10 +465,6 @@ export function MemberDetailTabs({
               </div>
             )}
           </CardContent>
-          <CardContent className="border-t">
-            <p className="text-sm font-medium mb-2">Historial de pagos</p>
-            <p className="text-muted-foreground text-sm">Próximamente.</p>
-          </CardContent>
         </Card>
       )}
 
