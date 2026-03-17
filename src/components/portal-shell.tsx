@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TenantContext } from "@/lib/tenant";
 
-const nav = (slug: string, unreadNotificationsCount: number) => [
+type NavItem = { href: string; label: string; badge?: number };
+
+const nav = (slug: string, unreadNotificationsCount: number): NavItem[] => [
   { href: `/portal/socios/${slug}`, label: "Inicio" },
   { href: `/portal/socios/${slug}/profile`, label: "Mi perfil" },
   { href: `/portal/socios/${slug}/membership`, label: "Mi membresía" },
@@ -56,9 +58,9 @@ export function PortalShell({
                   )}
                 >
                   {item.label}
-                  {"badge" in item && (item as { badge?: number }).badge > 0 && (
+                  {item.badge != null && item.badge > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                      {(item as { badge: number }).badge > 99 ? "99+" : (item as { badge: number }).badge}
+                      {item.badge > 99 ? "99+" : item.badge}
                     </span>
                   )}
                 </Link>
