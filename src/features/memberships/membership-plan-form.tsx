@@ -86,21 +86,22 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           {error && (
-            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md mb-4">
+            <p className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </p>
           )}
           <div className="space-y-6 py-4">
+            {/* Datos básicos */}
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name">Nombre</Label>
-              <Input
-                id="name"
-                name="name"
-                required
-                defaultValue={edit?.name}
-                placeholder="Ej. Flores + Extractos"
-              />
+              <div className="sm:col-span-2 space-y-2">
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  required
+                  defaultValue={edit?.name}
+                  placeholder="Ej. Flores + Extractos"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tier">Tier (opcional)</Label>
@@ -111,7 +112,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   placeholder="Ej. básico / premium"
                 />
               </div>
-              <div className="space-y-2 sm:col-span-2">
+              <div className="sm:col-span-2 space-y-2">
                 <Label htmlFor="description">Descripción (opcional)</Label>
                 <Input
                   id="description"
@@ -122,101 +123,116 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
               </div>
             </div>
 
+            {/* Precio y cobro */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Precio y cobro
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="price">Precio (opcional)</Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  step="0.01"
-                  defaultValue={edit?.price != null ? String(edit.price) : ""}
-                  placeholder="25000"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency">Moneda</Label>
-                <Input
-                  id="currency"
-                  name="currency"
-                  defaultValue={edit?.currency ?? "ARS"}
-                  placeholder="ARS"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price">Precio (opcional)</Label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    defaultValue={edit?.price != null ? String(edit.price) : ""}
+                    placeholder="25000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Moneda</Label>
+                  <Input
+                    id="currency"
+                    name="currency"
+                    defaultValue={edit?.currency ?? "ARS"}
+                    placeholder="ARS"
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Límites */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Límites de consumo (opcional)
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="monthlyLimit">Límite mensual (opcional)</Label>
-                <Input
-                  id="monthlyLimit"
-                  name="monthlyLimit"
-                  type="number"
-                  step="0.01"
-                  defaultValue={(edit as unknown as { monthlyLimit?: unknown })?.monthlyLimit != null ? String((edit as any).monthlyLimit) : ""}
-                  placeholder="30"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dailyLimit">Límite diario (opcional)</Label>
-                <Input
-                  id="dailyLimit"
-                  name="dailyLimit"
-                  type="number"
-                  step="0.01"
-                  defaultValue={(edit as unknown as { dailyLimit?: unknown })?.dailyLimit != null ? String((edit as any).dailyLimit) : ""}
-                  placeholder="1"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyLimit">Límite mensual (opcional)</Label>
+                  <Input
+                    id="monthlyLimit"
+                    name="monthlyLimit"
+                    type="number"
+                    step="0.01"
+                    defaultValue={
+                      (edit as unknown as { monthlyLimit?: unknown })?.monthlyLimit != null
+                        ? String((edit as any).monthlyLimit)
+                        : ""
+                    }
+                    placeholder="30"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dailyLimit">Límite diario (opcional)</Label>
+                  <Input
+                    id="dailyLimit"
+                    name="dailyLimit"
+                    type="number"
+                    step="0.01"
+                    defaultValue={
+                      (edit as unknown as { dailyLimit?: unknown })?.dailyLimit != null
+                        ? String((edit as any).dailyLimit)
+                        : ""
+                    }
+                    placeholder="1"
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Vigencia */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Vigencia
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="validityType">Vigencia</Label>
-                <select
-                  id="validityType"
-                  name="validityType"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  defaultValue={(edit as unknown as { validityType?: string })?.validityType ?? "recurrent"}
-                >
-                  <option value="recurrent">Recurrente (sin fecha de fin)</option>
-                  <option value="fixed_end">Con fecha de caducidad</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="validUntil">Fecha de caducidad (opcional)</Label>
-                <Input
-                  id="validUntil"
-                  name="validUntil"
-                  type="date"
-                  defaultValue={
-                    (edit as unknown as { validUntil?: Date | null })?.validUntil
-                      ? new Date((edit as any).validUntil).toISOString().slice(0, 10)
-                      : ""
-                  }
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="validityType">Vigencia</Label>
+                  <select
+                    id="validityType"
+                    name="validityType"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    defaultValue={
+                      (edit as unknown as { validityType?: string })?.validityType ?? "recurrent"
+                    }
+                  >
+                    <option value="recurrent">Recurrente (sin fecha de fin)</option>
+                    <option value="fixed_end">Con fecha de caducidad</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="validUntil">Fecha de caducidad (opcional)</Label>
+                  <Input
+                    id="validUntil"
+                    name="validUntil"
+                    type="date"
+                    defaultValue={
+                      (edit as unknown as { validUntil?: Date | null })?.validUntil
+                        ? new Date((edit as any).validUntil).toISOString().slice(0, 10)
+                        : ""
+                    }
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Renovación */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Renovación
               </p>
-              <div className="grid gap-4 sm:grid-cols-[auto,1fr] items-center">
+              <div className="grid items-center gap-4 sm:grid-cols-[auto,1fr]">
                 <div className="flex items-center gap-2">
                   <input
                     id="requiresRenewal"
@@ -239,7 +255,8 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                     type="number"
                     min={1}
                     defaultValue={
-                      (edit as unknown as { renewalEveryDays?: number | null })?.renewalEveryDays ?? ""
+                      (edit as unknown as { renewalEveryDays?: number | null })?.renewalEveryDays ??
+                      ""
                     }
                     placeholder="30"
                   />
@@ -247,8 +264,9 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
               </div>
             </div>
 
+            {/* Estado */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Estado
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
