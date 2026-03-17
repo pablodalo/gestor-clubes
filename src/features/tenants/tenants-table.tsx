@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,14 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { deleteTenant } from "@/actions/tenants";
 import { Building2, MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
@@ -25,6 +34,10 @@ type Props = {
 
 export function TenantsTable({ tenants }: Props) {
   const router = useRouter();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selected, setSelected] = useState<TenantRow | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const columns: DataTableColumn<TenantRow>[] = [
     { key: "name", header: "Nombre", render: (t) => <span className="font-medium text-foreground">{t.name}</span> },
@@ -32,11 +45,19 @@ export function TenantsTable({ tenants }: Props) {
     { key: "createdAt", header: "Creado", render: (t) => <span className="text-muted-foreground">{new Date(t.createdAt).toLocaleDateString("es-AR")}</span> },
   ];
 
-  async function handleDelete(t: TenantRow) {
-    if (!confirm(`¿Eliminar el club "${t.name}"? Se borrarán todos los datos (usuarios, socios, inventario, etc.). Esta acción no se puede deshacer.`)) return;
-    const result = await deleteTenant(t.id);
-    if (result.error) alert(result.error);
-    else router.refresh();
+  async function handleDelete() {
+    if (!selected) return;
+    setError("");
+    setLoading(true);
+    const result = await deleteTenant(selected.id);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setConfirmOpen(false);
+    setSelected(null);
+    router.refresh();
   }
 
   const exportData = tenants.map((r) => ({
@@ -88,7 +109,11 @@ export function TenantsTable({ tenants }: Props) {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={() => handleDelete(t)}
+                onClick={() => {
+                  setSelected(t);
+                  setError("");
+                  setConfirmOpen(true);
+                }}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Eliminar
@@ -97,6 +122,36 @@ export function TenantsTable({ tenants }: Props) {
           </DropdownMenu>
         )}
       />
+      <Dialog open={confirmOpen} onOpenChange={(open) => { setConfirmOpen(open); if (!open) { setSelected(null); setError(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar club</DialogTitle>
+            <DialogDescription>
+              {selected
+                ? `Vas a eliminar el club «${selected.name}». Se borrarán usuarios, socios, inventario, cultivo y todos los datos asociados. Esta acción no se puede deshacer.`
+                : "Vas a eliminar este club."}
+            </DialogDescription>
+          </DialogHeader>
+          {error && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md mb-2">
+              {error}
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              {loading ? "Eliminando..." : "Eliminar club"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ListPageLayout>
   );
 }

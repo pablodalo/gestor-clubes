@@ -12,6 +12,14 @@ import {
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LocationFormDialog } from "@/features/locations/location-form";
 import { deleteLocation } from "@/actions/locations";
 import type { Location } from "@prisma/client";
@@ -36,6 +44,10 @@ export function LocationsTable({ tenantSlug, locations, canCreate, canEdit, canD
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Location | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selected, setSelected] = useState<Location | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const refresh = () => router.refresh();
   const parentOptions = locations.map((l) => ({ id: l.id, name: l.name }));
@@ -46,12 +58,19 @@ export function LocationsTable({ tenantSlug, locations, canCreate, canEdit, canD
     { key: "description", header: "Descripción", render: (l) => <span className="text-muted-foreground">{l.description ?? "—"}</span> },
   ];
 
-  async function handleDelete(l: Location) {
-    if (!canDelete) return;
-    if (!confirm(`¿Eliminar la ubicación «${l.name}»?`)) return;
-    const result = await deleteLocation(l.id);
-    if (result.error) alert(result.error);
-    else refresh();
+  async function handleDelete() {
+    if (!canDelete || !selected) return;
+    setError("");
+    setLoading(true);
+    const result = await deleteLocation(selected.id);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setConfirmOpen(false);
+    setSelected(null);
+    refresh();
   }
 
   const exportData = locations.map((l) => ({ id: l.id, name: l.name, type: l.type, description: l.description ?? "" }));
@@ -97,7 +116,11 @@ export function LocationsTable({ tenantSlug, locations, canCreate, canEdit, canD
                   {canDelete && (
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
-                      onClick={() => handleDelete(l)}
+                      onClick={() => {
+                        setSelected(l);
+                        setError("");
+                        setConfirmOpen(true);
+                      }}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Eliminar
@@ -117,6 +140,36 @@ export function LocationsTable({ tenantSlug, locations, canCreate, canEdit, canD
         edit={editing}
         parentOptions={parentOptions}
       />
+      <Dialog open={confirmOpen} onOpenChange={(open) => { setConfirmOpen(open); if (!open) { setSelected(null); setError(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar ubicación</DialogTitle>
+            <DialogDescription>
+              {selected
+                ? `Vas a eliminar la ubicación «${selected.name}». Si está en uso por movimientos o inventario, no se podrá borrar.`
+                : "Vas a eliminar esta ubicación."}
+            </DialogDescription>
+          </DialogHeader>
+          {error && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md mb-2">
+              {error}
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading || !canDelete}
+            >
+              {loading ? "Eliminando..." : "Eliminar ubicación"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
