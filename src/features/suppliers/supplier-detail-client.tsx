@@ -126,14 +126,13 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
 
   const headerState = activeOrder ? "Pedido en proceso" : "Sin pedidos activos";
   const eta = supplier.nextDeliveryAt ? new Date(supplier.nextDeliveryAt).toLocaleDateString("es-AR") : null;
-  const mainContact = supplier.email ?? supplier.phone ?? "—";
 
   return (
     <div className="space-y-6">
       {/* BLOQUE 1: Header resumen */}
       <Card>
         <CardContent className="py-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-center">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-center">
             <div>
               <p className="text-xs text-muted-foreground">Mail</p>
               <p className="font-medium truncate">{supplier.email ?? "—"}</p>
@@ -141,10 +140,6 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
             <div>
               <p className="text-xs text-muted-foreground">Teléfono</p>
               <p className="font-medium truncate">{supplier.phone ?? "—"}</p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Contacto principal</p>
-              <p className="font-medium truncate">{mainContact}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Estado</p>
@@ -286,12 +281,15 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={!supplier.email || (!generated && selectedItems.length === 0)}
+                    disabled={!supplier.email?.trim() || (!generated && selectedItems.length === 0)}
                     onClick={() => {
                       const body = generated || buildMessage(selectedItems);
                       const subject = `Pedido - ${supplier.name}`;
-                      const href = `mailto:${encodeURIComponent(supplier.email ?? "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                      window.location.href = href;
+                      const to = (supplier.email ?? "").trim();
+                      const href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                      // En algunos browsers `location.href` no dispara el cliente de mail; probamos ambos.
+                      const opened = window.open(href, "_self");
+                      if (!opened) window.location.assign(href);
                     }}
                   >
                     <Mail className="h-4 w-4 mr-2" />

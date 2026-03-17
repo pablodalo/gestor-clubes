@@ -794,7 +794,7 @@ async function main() {
         });
       }
 
-      const strain = await prisma.plantStrain.upsert({
+      const strainGelato = await prisma.plantStrain.upsert({
         where: { tenantId_name: { tenantId: tenant.id, name: "Gelato 41" } },
         update: {},
         create: {
@@ -808,7 +808,7 @@ async function main() {
       });
 
       await prisma.cultivationLotStrain.upsert({
-        where: { cultivationLotId_strainId: { cultivationLotId: cultivationLot.id, strainId: strain.id } },
+        where: { cultivationLotId_strainId: { cultivationLotId: cultivationLot.id, strainId: strainGelato.id } },
         update: {
           plantsCount: 24,
           estimatedYieldGrams: 1200,
@@ -816,7 +816,7 @@ async function main() {
         create: {
           tenantId: tenant.id,
           cultivationLotId: cultivationLot.id,
-          strainId: strain.id,
+          strainId: strainGelato.id,
           plantsCount: 24,
           estimatedYieldGrams: 1200,
         },
@@ -830,7 +830,7 @@ async function main() {
         create: {
           tenantId: tenant.id,
           cultivationLotId: cultivationLot.id,
-          strainId: strain.id,
+          strainId: strainGelato.id,
           code: "TDC-PL-001",
           stage: "floracion",
           status: "active",
@@ -843,15 +843,96 @@ async function main() {
           tenantId_category_strainId: {
             tenantId: tenant.id,
             category: "flores",
-            strainId: strain.id,
+            strainId: strainGelato.id,
           },
         },
         update: { availableGrams: 750 },
         create: {
           tenantId: tenant.id,
           category: "flores",
-          strainId: strain.id,
+          strainId: strainGelato.id,
           availableGrams: 750,
+        },
+      });
+
+      // Extra stock para extractos de Gelato
+      await prisma.inventoryStock.upsert({
+        where: {
+          tenantId_category_strainId: {
+            tenantId: tenant.id,
+            category: "extractos",
+            strainId: strainGelato.id,
+          },
+        },
+        update: { availableGrams: 120 },
+        create: {
+          tenantId: tenant.id,
+          category: "extractos",
+          strainId: strainGelato.id,
+          availableGrams: 120,
+        },
+      });
+
+      // Otra genética de ejemplo: OG Kush
+      const strainOgKush = await prisma.plantStrain.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: "OG Kush" } },
+        update: {},
+        create: {
+          tenantId: tenant.id,
+          name: "OG Kush",
+          genetics: "Chemdawg x Hindu Kush",
+          thcPct: 22.0,
+          cbdPct: 0.5,
+          cycleDays: 63,
+        },
+      });
+
+      await prisma.cultivationLotStrain.upsert({
+        where: { cultivationLotId_strainId: { cultivationLotId: cultivationLot.id, strainId: strainOgKush.id } },
+        update: {
+          plantsCount: 18,
+          estimatedYieldGrams: 900,
+        },
+        create: {
+          tenantId: tenant.id,
+          cultivationLotId: cultivationLot.id,
+          strainId: strainOgKush.id,
+          plantsCount: 18,
+          estimatedYieldGrams: 900,
+        },
+      });
+
+      await prisma.inventoryStock.upsert({
+        where: {
+          tenantId_category_strainId: {
+            tenantId: tenant.id,
+            category: "flores",
+            strainId: strainOgKush.id,
+          },
+        },
+        update: { availableGrams: 420 },
+        create: {
+          tenantId: tenant.id,
+          category: "flores",
+          strainId: strainOgKush.id,
+          availableGrams: 420,
+        },
+      });
+
+      await prisma.inventoryStock.upsert({
+        where: {
+          tenantId_category_strainId: {
+            tenantId: tenant.id,
+            category: "extractos",
+            strainId: strainOgKush.id,
+          },
+        },
+        update: { availableGrams: 80 },
+        create: {
+          tenantId: tenant.id,
+          category: "extractos",
+          strainId: strainOgKush.id,
+          availableGrams: 80,
         },
       });
 
@@ -860,7 +941,7 @@ async function main() {
           tenantId: tenant.id,
           memberId: member1.id,
           category: "flores",
-          strainId: strain.id,
+          strainId: strainGelato.id,
           grams: 10,
           note: "Dispensación demo",
         },

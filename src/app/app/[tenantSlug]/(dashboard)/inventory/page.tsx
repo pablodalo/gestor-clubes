@@ -65,11 +65,19 @@ export default async function InventoryPage({ params }: Props) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>
-                <Link href={`/app/${tenantSlug}/inventory/flores`} className="hover:underline underline-offset-4">
-                  Flores
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle>
+                  <Link href={`/app/${tenantSlug}/inventory/flores`} className="hover:underline underline-offset-4">
+                    Flores
+                  </Link>
+                </CardTitle>
+                <Link
+                  href={`/app/${tenantSlug}/inventory/flores`}
+                  className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
+                >
+                  Ver detalle
                 </Link>
-              </CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {flowerRows.map(({ strain, grams }) => (
@@ -91,11 +99,19 @@ export default async function InventoryPage({ params }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle>
-                <Link href={`/app/${tenantSlug}/inventory/extractos`} className="hover:underline underline-offset-4">
-                  Extractos
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle>
+                  <Link href={`/app/${tenantSlug}/inventory/extractos`} className="hover:underline underline-offset-4">
+                    Extractos
+                  </Link>
+                </CardTitle>
+                <Link
+                  href={`/app/${tenantSlug}/inventory/extractos`}
+                  className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
+                >
+                  Ver detalle
                 </Link>
-              </CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {extractRows.map(({ strain, grams }) => (

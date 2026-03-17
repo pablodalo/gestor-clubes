@@ -39,19 +39,29 @@ export default async function InventoryFlowersPage({ params }: Props) {
     );
   }
 
-  const [strains, stocks, products] = await Promise.all([
+  const [strains, stocks, products, lotLinks] = await Promise.all([
     prisma.plantStrain.findMany({ where: { tenantId: tenant.id }, orderBy: { name: "asc" } }),
     prisma.inventoryStock.findMany({ where: { tenantId: tenant.id, category: "flores" } }),
     prisma.product.findMany({ where: { tenantId: tenant.id, category: "flores", status: "active" }, orderBy: { name: "asc" } }),
+    prisma.cultivationLotStrain.findMany({
+      where: { tenantId: tenant.id },
+      include: { cultivationLot: true },
+    }),
   ]);
 
   const stockByStrainId = new Map(stocks.map((s) => [s.strainId, Number(s.availableGrams)]));
   const productByNormalizedName = new Map(products.map((p) => [normalizeProductName(p.name), p]));
+  const lotByStrainId = new Map(
+    lotLinks
+      .filter((ls) => ls.cultivationLot)
+      .map((ls) => [ls.strainId, ls.cultivationLot])
+  );
 
   const rows = strains.map((strain) => {
     const grams = stockByStrainId.get(strain.id) ?? 0;
     const product = productByNormalizedName.get(normalizeProductName(strain.name)) ?? null;
-    return { strain, grams, product };
+    const lot = lotByStrainId.get(strain.id) ?? null;
+    return { strain, grams, product, lot };
   });
 
   return (
@@ -71,18 +81,24 @@ export default async function InventoryFlowersPage({ params }: Props) {
           <CardTitle>Cepas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {rows.map(({ strain, grams, product }) => (
-            <div key={strain.id} className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-3">
-              <div className="min-w-0">
+          {rows.map(({ strain, grams, product, lot }) => (
+            <div
+              key={strain.id}
+              className="flex flex-col gap-3 rounded-lg border border-border/60 p-3 md:flex-row md:items-center md:justify-between"
+            >
+              <div className="min-w-0 space-y-1">
                 <p className="font-medium truncate">{strain.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{strain.genetics ?? "—"}</p>
+                <p className="text-xs text-muted-foreground">
+                  Lote: <span className="font-medium">{lot?.code ?? "—"}</span>
+                </p>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
+              <div className="flex flex-wrap items-center gap-4 md:justify-end">
+                <div>
                   <p className="text-xs text-muted-foreground">Stock</p>
                   <p className="text-sm tabular-nums">{grams.toFixed(2)} g</p>
                 </div>
-                <div className="text-right">
+                <div>
                   <p className="text-xs text-muted-foreground">Precio</p>
                   <p className="text-sm tabular-nums">
                     {product ? `${product.price.toString()} ${product.currency}${product.unit ? ` / ${product.unit}` : ""}` : "—"}
