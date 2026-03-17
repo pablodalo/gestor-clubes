@@ -77,7 +77,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{edit ? "Editar plan" : "Nuevo plan de membresía"}</DialogTitle>
           <DialogDescription>
@@ -90,44 +90,45 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
               {error}
             </p>
           )}
-          <div className="space-y-6 py-4">
-            {/* Datos básicos */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2 space-y-2">
-                <Label htmlFor="name">Nombre</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  required
-                  defaultValue={edit?.name}
-                  placeholder="Ej. Flores + Extractos"
-                />
+          <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-1">
+            {/* 1. Identidad */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Identidad</h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2 space-y-2">
+                  <Label htmlFor="name">Nombre del plan</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    required
+                    defaultValue={edit?.name}
+                    placeholder="Ej. Flores + Extractos"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tier">Tier (opcional)</Label>
+                  <Input
+                    id="tier"
+                    name="tier"
+                    defaultValue={(edit as unknown as { tier?: string | null })?.tier ?? ""}
+                    placeholder="Ej. básico / premium"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <Label htmlFor="description">Descripción (opcional)</Label>
+                  <Input
+                    id="description"
+                    name="description"
+                    defaultValue={edit?.description ?? ""}
+                    placeholder="Incluye 30g flores y 10g extractos/mes"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="tier">Tier (opcional)</Label>
-                <Input
-                  id="tier"
-                  name="tier"
-                  defaultValue={(edit as unknown as { tier?: string | null })?.tier ?? ""}
-                  placeholder="Ej. básico / premium"
-                />
-              </div>
-              <div className="sm:col-span-2 space-y-2">
-                <Label htmlFor="description">Descripción (opcional)</Label>
-                <Input
-                  id="description"
-                  name="description"
-                  defaultValue={edit?.description ?? ""}
-                  placeholder="Incluye 30g flores y 10g extractos/mes"
-                />
-              </div>
-            </div>
+            </section>
 
-            {/* Precio y cobro */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Precio y cobro
-              </p>
+            {/* 2. Precio y cobro */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Precio y cobro</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="price">Precio (opcional)</Label>
@@ -149,13 +150,26 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                     placeholder="ARS"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recurrenceDay">Día de cobro (1-28, opcional)</Label>
+                  <Input
+                    id="recurrenceDay"
+                    name="recurrenceDay"
+                    type="number"
+                    min={1}
+                    max={28}
+                    defaultValue={edit?.recurrenceDay ?? ""}
+                    placeholder="10"
+                  />
+                </div>
               </div>
-            </div>
+            </section>
 
-            {/* Límites */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Límites de consumo (opcional)
+            {/* 3. Límites de consumo */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Límites de consumo</h3>
+              <p className="text-xs text-muted-foreground">
+                El límite mensual del plan se usa como tope en la config. operativa del socio.
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -189,16 +203,14 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   />
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Vigencia */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Vigencia
-              </p>
+            {/* 4. Vigencia */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Vigencia</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="validityType">Vigencia</Label>
+                  <Label htmlFor="validityType">Tipo de vigencia</Label>
                   <select
                     id="validityType"
                     name="validityType"
@@ -225,14 +237,12 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   />
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Renovación */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Renovación
-              </p>
-              <div className="grid items-center gap-4 sm:grid-cols-[auto,1fr]">
+            {/* 5. Renovación */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Renovación</h3>
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
                   <input
                     id="requiresRenewal"
@@ -243,12 +253,12 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                       (edit as unknown as { requiresRenewal?: boolean })?.requiresRenewal ?? false
                     }
                   />
-                  <Label htmlFor="requiresRenewal" className="text-sm">
+                  <Label htmlFor="requiresRenewal" className="text-sm font-normal">
                     Requiere renovación
                   </Label>
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="renewalEveryDays">Cada cuántos días (opcional)</Label>
+                <div className="space-y-1 min-w-[120px]">
+                  <Label htmlFor="renewalEveryDays" className="text-xs">Cada cuántos días (opcional)</Label>
                   <Input
                     id="renewalEveryDays"
                     name="renewalEveryDays"
@@ -262,40 +272,24 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   />
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Estado */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Estado
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="recurrenceDay">Día de cobro (1-28, opcional)</Label>
-                  <Input
-                    id="recurrenceDay"
-                    name="recurrenceDay"
-                    type="number"
-                    min={1}
-                    max={28}
-                    defaultValue={edit?.recurrenceDay ?? ""}
-                    placeholder="10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Estado</Label>
-                  <select
-                    id="status"
-                    name="status"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    defaultValue={edit?.status ?? "active"}
-                  >
-                    <option value="active">Activo</option>
-                    <option value="inactive">Inactivo</option>
-                  </select>
-                </div>
+            {/* 6. Estado del plan */}
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Estado</h3>
+              <div className="max-w-[200px]">
+                <Label htmlFor="status">Plan activo / inactivo</Label>
+                <select
+                  id="status"
+                  name="status"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1"
+                  defaultValue={edit?.status ?? "active"}
+                >
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
               </div>
-            </div>
+            </section>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -22,10 +22,16 @@ const nav = (slug: string, unreadNotificationsCount: number): NavItem[] => [
 
 export function PortalShell({
   tenant,
+  logoUrl,
+  appName,
   unreadNotificationsCount = 0,
   children,
 }: {
   tenant: TenantContext;
+  /** Logo del tenant (branding). Si no hay, se muestran iniciales. */
+  logoUrl?: string | null;
+  /** Nombre de la app (branding). Fallback a tenant.name */
+  appName?: string | null;
   unreadNotificationsCount?: number;
   children: React.ReactNode;
 }) {
@@ -33,6 +39,7 @@ export function PortalShell({
   const params = useParams();
   const slug = (params?.tenantSlug as string) ?? tenant.slug;
   const links = nav(slug, unreadNotificationsCount);
+  const displayName = appName?.trim() || tenant.name;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -40,10 +47,18 @@ export function PortalShell({
         <div className="container flex h-auto max-w-6xl mx-auto flex-col gap-2 px-3 py-2 sm:h-14 sm:flex-row sm:items-center sm:justify-between sm:px-4">
           <div className="flex items-center gap-3 sm:gap-8">
             <span className="flex items-center gap-2 font-semibold text-foreground truncate max-w-[180px] sm:max-w-none">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
-                {tenant.name?.slice(0, 2).toUpperCase() ?? "P"}
-              </span>
-              Portal · {tenant.name}
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={displayName}
+                  className="h-8 w-8 shrink-0 object-contain rounded-md border border-border bg-card"
+                />
+              ) : (
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
+                  {tenant.name?.slice(0, 2).toUpperCase() ?? "P"}
+                </span>
+              )}
+              Portal · {displayName}
             </span>
             <div className="flex-1 overflow-x-auto">
               <nav className="flex items-center gap-1 min-w-max pr-2">

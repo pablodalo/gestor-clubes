@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { portalAuthOptions } from "@/lib/auth";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getTenantBranding } from "@/lib/branding";
 import { notFound } from "next/navigation";
 import { PortalShell } from "@/components/portal-shell";
 import { logError } from "@/lib/server-log";
@@ -34,11 +35,19 @@ export default async function PortalSociosDashboardLayout({ children, params }: 
       );
     }
 
-    const { data: notifications } = await getMemberNotificationsForPortal(tenantSlug);
+    const [branding, { data: notifications }] = await Promise.all([
+      getTenantBranding(tenantSlug, "slug"),
+      getMemberNotificationsForPortal(tenantSlug),
+    ]);
     const unreadCount = notifications?.filter((n) => !n.read).length ?? 0;
 
     return (
-      <PortalShell tenant={tenant} unreadNotificationsCount={unreadCount}>
+      <PortalShell
+        tenant={tenant}
+        logoUrl={branding.logoUrl}
+        appName={branding.appName}
+        unreadNotificationsCount={unreadCount}
+      >
         {children}
       </PortalShell>
     );

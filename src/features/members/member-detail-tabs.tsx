@@ -129,7 +129,9 @@ export function MemberDetailTabs({
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustNote, setAdjustNote] = useState("");
 
-  const monthlyLimitNum = Number(member.monthlyLimit?.toString?.() ?? "0") || 0;
+  // Tope desde plan de membresía (Límite mensual); fallback al valor del socio
+  const limitSource = membershipPlan?.monthlyLimit ?? member.monthlyLimit;
+  const monthlyLimitNum = Number(limitSource?.toString?.() ?? "0") || 0;
   const remainingNum = Number(member.remainingBalance?.toString?.() ?? "0") || 0;
   const consumedNum = Number(member.consumedThisPeriod?.toString?.() ?? "0") || 0;
   const totalForBar = Math.max(monthlyLimitNum, remainingNum + consumedNum, 0.0001);
@@ -483,6 +485,11 @@ export function MemberDetailTabs({
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Uso de cupo
               </p>
+              {membershipPlan?.monthlyLimit != null && (
+                <p className="text-[11px] text-muted-foreground">
+                  Tope según plan «{membershipPlan.name}»: {membershipPlan.monthlyLimit?.toString() ?? "—"}
+                </p>
+              )}
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px] text-muted-foreground">
                   <span>Consumido este período</span>
@@ -582,7 +589,12 @@ export function MemberDetailTabs({
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
                 <p className="text-xs text-muted-foreground">Límite mensual</p>
-                <p className="text-xl font-semibold">{member.monthlyLimit?.toString() ?? "—"}</p>
+                <p className="text-xl font-semibold">
+                  {(membershipPlan?.monthlyLimit ?? member.monthlyLimit)?.toString() ?? "—"}
+                </p>
+                {membershipPlan?.monthlyLimit != null && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Según plan «{membershipPlan.name}»</p>
+                )}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Saldo restante</p>
