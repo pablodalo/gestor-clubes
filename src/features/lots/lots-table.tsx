@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { LotFormDialog } from "@/features/lots/lot-form";
 import { deleteLot } from "@/actions/lots";
+import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Pencil, Trash2, Package, PackageOpen } from "lucide-react";
 
 type LotRow = Awaited<ReturnType<typeof import("@/lib/prisma").prisma.inventoryLot.findMany>>[number] & {
@@ -33,8 +34,20 @@ export function LotsTable({ tenantSlug, lots, locations, canCreate }: Props) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LotRow | null>(null);
+  const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const refresh = () => router.refresh();
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return lots.filter((l) => {
+      if (statusFilter && l.status !== statusFilter) return false;
+      if (!term) return true;
+      const hay = [l.code, l.description ?? "", l.status].join(" ").toLowerCase();
+      return hay.includes(term);
+    });
+  }, [lots, q, statusFilter]);
 
   const columns: DataTableColumn<LotRow>[] = [
     { key: "code", header: "Código", render: (l) => <span className="font-mono font-medium text-foreground">{l.code}</span> },
@@ -54,7 +67,7 @@ export function LotsTable({ tenantSlug, lots, locations, canCreate }: Props) {
     else refresh();
   }
 
-  const exportData = lots.map((l) => ({
+  const exportData = filtered.map((l) => ({
     id: l.id,
     code: l.code,
     description: l.description ?? "",
@@ -81,9 +94,33 @@ export function LotsTable({ tenantSlug, lots, locations, canCreate }: Props) {
       >
         <DataTable
           columns={columns}
-          data={lots}
+          data={filtered}
           keyExtractor={(l) => l.id}
           emptyState={{ icon: PackageOpen, title: "Sin lotes", description: "Creá uno desde «Nuevo lote»." }}
+          toolbar={
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por código o descripción…"
+                  className="sm:max-w-sm"
+                />
+                <select
+                  className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="">Estado (todos)</option>
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} resultado(s)
+              </span>
+            </div>
+          }
           rowActions={(l) => (
             canCreate ? (
               <DropdownMenu>

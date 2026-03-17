@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
 import { UserFormDialog } from "@/features/users/user-form";
 import { deleteTenantUser } from "@/actions/users";
 import type { User, Role } from "@prisma/client";
+import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Pencil, Trash2, UserPlus, Users } from "lucide-react";
 
 type UserWithRole = User & { role: Role };
@@ -49,8 +50,22 @@ export function UsersTable({
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<UserWithRole | null>(null);
+  const [q, setQ] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const refresh = () => router.refresh();
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return users.filter((u) => {
+      if (roleFilter && u.role.name !== roleFilter) return false;
+      if (statusFilter && u.status !== statusFilter) return false;
+      if (!term) return true;
+      const hay = [u.name, u.email, u.role.name, u.status].join(" ").toLowerCase();
+      return hay.includes(term);
+    });
+  }, [users, q, roleFilter, statusFilter]);
 
   const columns: DataTableColumn<UserWithRole>[] = [
     { key: "name", header: "Nombre", render: (u) => <span className="font-medium text-foreground">{u.name}</span> },
@@ -67,7 +82,7 @@ export function UsersTable({
     else refresh();
   }
 
-  const exportData = users.map((u) => ({
+  const exportData = filtered.map((u) => ({
     id: u.id,
     name: u.name,
     email: u.email,
@@ -94,9 +109,48 @@ export function UsersTable({
       >
         <DataTable
           columns={columns}
-          data={users}
+          data={filtered}
           keyExtractor={(u) => u.id}
           emptyState={{ icon: Users, title: "Sin usuarios", description: "Creá uno desde «Nuevo usuario»." }}
+          toolbar={
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por nombre o email…"
+                  className="sm:max-w-sm"
+                />
+                <div className="flex gap-2">
+                  <select
+                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                  >
+                    <option value="">Rol (todos)</option>
+                    {roles.map((r) => (
+                      <option key={r.id} value={r.name}>
+                        {roleDisplayName[r.name] ?? r.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">Estado (todos)</option>
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                    <option value="suspended">Suspendido</option>
+                  </select>
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} resultado(s)
+              </span>
+            </div>
+          }
           rowActions={(u) =>
             canUpdate || canDelete ? (
               <DropdownMenu>

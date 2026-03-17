@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,7 @@ import {
 import { LocationFormDialog } from "@/features/locations/location-form";
 import { deleteLocation } from "@/actions/locations";
 import type { Location } from "@prisma/client";
+import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Pencil, Trash2, MapPin, MapPinned } from "lucide-react";
 
 type Props = {
@@ -48,9 +49,21 @@ export function LocationsTable({ tenantSlug, locations, canCreate, canEdit, canD
   const [selected, setSelected] = useState<Location | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [q, setQ] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
 
   const refresh = () => router.refresh();
   const parentOptions = locations.map((l) => ({ id: l.id, name: l.name }));
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return locations.filter((l) => {
+      if (typeFilter && l.type !== typeFilter) return false;
+      if (!term) return true;
+      const hay = [l.name, l.type, l.description ?? ""].join(" ").toLowerCase();
+      return hay.includes(term);
+    });
+  }, [locations, q, typeFilter]);
 
   const columns: DataTableColumn<Location>[] = [
     { key: "name", header: "Nombre", render: (l) => <span className="font-medium text-foreground">{l.name}</span> },
@@ -73,7 +86,7 @@ export function LocationsTable({ tenantSlug, locations, canCreate, canEdit, canD
     refresh();
   }
 
-  const exportData = locations.map((l) => ({ id: l.id, name: l.name, type: l.type, description: l.description ?? "" }));
+  const exportData = filtered.map((l) => ({ id: l.id, name: l.name, type: l.type, description: l.description ?? "" }));
 
   return (
     <>
@@ -94,9 +107,35 @@ export function LocationsTable({ tenantSlug, locations, canCreate, canEdit, canD
       >
         <DataTable
           columns={columns}
-          data={locations}
+          data={filtered}
           keyExtractor={(l) => l.id}
           emptyState={{ icon: MapPinned, title: "Sin ubicaciones", description: "Creá una desde «Nueva ubicación»." }}
+          toolbar={
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por nombre o descripción…"
+                  className="sm:max-w-sm"
+                />
+                <select
+                  className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                >
+                  <option value="">Tipo (todos)</option>
+                  <option value="zone">Zona</option>
+                  <option value="building">Edificio</option>
+                  <option value="room">Sala</option>
+                  <option value="shelf">Estante</option>
+                </select>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} resultado(s)
+              </span>
+            </div>
+          }
           rowActions={(l) =>
             canEdit || canDelete ? (
               <DropdownMenu>

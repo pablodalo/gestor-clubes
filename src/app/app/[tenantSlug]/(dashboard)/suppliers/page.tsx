@@ -4,7 +4,6 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { SuppliersTable } from "@/features/admin/suppliers-table";
-import { SupplierForm } from "@/features/admin/supplier-form";
 import { logError } from "@/lib/server-log";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
@@ -44,20 +43,7 @@ export default async function SuppliersPage({ params }: Props) {
 
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Proveedores</h1>
-          <p className="text-muted-foreground mt-1">Gestión de proveedores e insumos.</p>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <SuppliersTable suppliers={rows} />
-          </div>
-          {canManage && (
-            <div>
-              <SupplierForm />
-            </div>
-          )}
-        </div>
+        <SuppliersTable suppliers={rows} canCreate={canManage} />
       </div>
     );
   } catch (error) {
