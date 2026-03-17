@@ -4,6 +4,7 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { notFound } from "next/navigation";
 import { PortalShell } from "@/components/portal-shell";
 import { logError } from "@/lib/server-log";
+import { getMemberNotificationsForPortal } from "@/actions/member-notifications";
 
 type Props = {
   children: React.ReactNode;
@@ -33,7 +34,14 @@ export default async function PortalSociosDashboardLayout({ children, params }: 
       );
     }
 
-    return <PortalShell tenant={tenant}>{children}</PortalShell>;
+    const { data: notifications } = await getMemberNotificationsForPortal(tenantSlug);
+    const unreadCount = notifications?.filter((n) => !n.read).length ?? 0;
+
+    return (
+      <PortalShell tenant={tenant} unreadNotificationsCount={unreadCount}>
+        {children}
+      </PortalShell>
+    );
   } catch (err) {
     logError("PortalSociosDashboardLayout", err);
     throw err;

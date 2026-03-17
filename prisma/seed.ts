@@ -159,6 +159,46 @@ async function main() {
 
   console.log("Tenants: demo-club (LeWyd), club-ejemplo (The Dab Club)");
 
+  const membershipPlansDemo = [
+    { name: "Básico", description: "30 g flores / mes", price: 25000, recurrenceDay: 10 },
+    { name: "Premium", description: "30 g flores + 10 g extractos / mes", price: 45000, recurrenceDay: 10 },
+  ];
+  for (const plan of membershipPlansDemo) {
+    await prisma.membershipPlan.upsert({
+      where: {
+        tenantId_name: { tenantId: tenant1.id, name: plan.name },
+      },
+      update: { description: plan.description, price: plan.price, recurrenceDay: plan.recurrenceDay },
+      create: {
+        tenantId: tenant1.id,
+        name: plan.name,
+        description: plan.description,
+        price: plan.price,
+        recurrenceDay: plan.recurrenceDay,
+        currency: "ARS",
+        status: "active",
+      },
+    });
+  }
+  for (const plan of membershipPlansDemo) {
+    await prisma.membershipPlan.upsert({
+      where: {
+        tenantId_name: { tenantId: tenant2.id, name: plan.name },
+      },
+      update: { description: plan.description, price: plan.price, recurrenceDay: plan.recurrenceDay },
+      create: {
+        tenantId: tenant2.id,
+        name: plan.name,
+        description: plan.description,
+        price: plan.price,
+        recurrenceDay: plan.recurrenceDay,
+        currency: "ARS",
+        status: "active",
+      },
+    });
+  }
+  console.log("Membership plans: Básico, Premium (por tenant)");
+
   const OPERADOR_PERMISSION_KEYS = [
     "members.read", "members.create", "members.update",
     "inventory.read", "inventory.create", "inventory.move", "inventory.adjust",

@@ -24,10 +24,14 @@ export function PortalNotificationsList({ tenantSlug, notifications }: Props) {
       {notifications.map((n) => (
         <li
           key={n.id}
-          className={`flex justify-between items-start gap-4 border rounded-lg p-4 ${n.read ? "bg-muted/30" : ""}`}
+          className={`flex justify-between items-start gap-4 border rounded-lg p-4 ${
+            n.read
+              ? "bg-muted/30 border-border"
+              : "border-l-4 border-l-primary bg-primary/5 border border-primary/20"
+          }`}
         >
           <div className="min-w-0">
-            <p className="font-medium">{n.title}</p>
+            <p className={n.read ? "font-medium" : "font-semibold text-foreground"}>{n.title}</p>
             {n.body && <p className="text-sm text-muted-foreground mt-1">{n.body}</p>}
             <p className="text-xs text-muted-foreground mt-2">{formatDate(n.createdAt)}</p>
           </div>

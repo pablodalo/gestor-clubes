@@ -7,28 +7,30 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TenantContext } from "@/lib/tenant";
 
-const nav = (slug: string) => [
+const nav = (slug: string, unreadNotificationsCount: number) => [
   { href: `/portal/socios/${slug}`, label: "Inicio" },
   { href: `/portal/socios/${slug}/profile`, label: "Mi perfil" },
   { href: `/portal/socios/${slug}/membership`, label: "Mi membresía" },
   { href: `/portal/socios/${slug}/balance`, label: "Mi saldo" },
   { href: `/portal/socios/${slug}/history`, label: "Mi historial" },
-  { href: `/portal/socios/${slug}/notifications`, label: "Notificaciones" },
+  { href: `/portal/socios/${slug}/notifications`, label: "Notificaciones", badge: unreadNotificationsCount },
   { href: `/portal/socios/${slug}/movements`, label: "Movimientos" },
   { href: `/portal/socios/${slug}/tickets`, label: "Tickets" },
 ];
 
 export function PortalShell({
   tenant,
+  unreadNotificationsCount = 0,
   children,
 }: {
   tenant: TenantContext;
+  unreadNotificationsCount?: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const params = useParams();
   const slug = (params?.tenantSlug as string) ?? tenant.slug;
-  const links = nav(slug);
+  const links = nav(slug, unreadNotificationsCount);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -47,13 +49,18 @@ export function PortalShell({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                    "relative px-3 py-2 text-sm font-medium rounded-md transition-colors",
                     pathname === item.href
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                   )}
                 >
                   {item.label}
+                  {"badge" in item && (item as { badge?: number }).badge > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                      {(item as { badge: number }).badge > 99 ? "99+" : (item as { badge: number }).badge}
+                    </span>
+                  )}
                 </Link>
               ))}
             </nav>

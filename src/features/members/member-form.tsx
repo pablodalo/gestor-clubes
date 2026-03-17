@@ -284,32 +284,25 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
             {tab === "membresia" && (
               <div className="rounded-lg border bg-muted/20 p-4 space-y-4">
                 <p className="text-sm font-medium text-foreground">Membresía</p>
-                {membershipPlans.length > 0 ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="membershipPlanId">Plan</Label>
-                    <select
-                      id="membershipPlanId"
-                      name="membershipPlanId"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      defaultValue={editWithPlanId?.membershipPlanId ?? ""}
-                    >
-                      <option value="">Sin plan</option>
-                      {membershipPlans.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label htmlFor="membershipPlan">Plan (texto libre)</Label>
-                    <Input
-                      id="membershipPlan"
-                      name="membershipPlan"
-                      defaultValue={edit?.membershipPlan ?? ""}
-                      placeholder="Configurá planes en Membresías"
-                    />
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="membershipPlanId">Plan</Label>
+                  <select
+                    id="membershipPlanId"
+                    name="membershipPlanId"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    defaultValue={editWithPlanId?.membershipPlanId ?? ""}
+                  >
+                    <option value="">Sin plan</option>
+                    {membershipPlans.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  {membershipPlans.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Creá planes en el módulo <strong>Membresías</strong> del menú para asignarlos aquí.
+                    </p>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="membershipCurrency">Moneda</Label>

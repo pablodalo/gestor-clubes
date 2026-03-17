@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getPlatformSession } from "@/lib/server-context";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { MemberDetailTabs } from "@/features/members/member-detail-tabs";
+import { ImpersonateMemberButton } from "@/features/members/impersonate-member-button";
 
 type Props = {
   params: Promise<{ tenantSlug: string; memberId: string }>;
@@ -11,7 +13,7 @@ type Props = {
 
 export default async function MemberProfilePage({ params }: Props) {
   const { tenantSlug, memberId } = await params;
-  const tenant = await getTenantBySlug(tenantSlug);
+  const [tenant, platform] = await Promise.all([getTenantBySlug(tenantSlug), getPlatformSession()]);
   if (!tenant) return notFound();
 
   const member = await prisma.member.findFirst({
@@ -58,12 +60,12 @@ export default async function MemberProfilePage({ params }: Props) {
             {member.firstName} {member.lastName}
           </h1>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="default" size="sm" className="gap-2">
-            <Link href={`/portal/socios/${tenantSlug}/login`} target="_blank" rel="noopener noreferrer">
-              Abrir portal del socio
-            </Link>
-          </Button>
+        <div className="flex gap-2 items-center">
+          <ImpersonateMemberButton
+            isPlatform={!!platform}
+            tenantSlug={tenantSlug}
+            memberId={member.id}
+          />
           <Button asChild variant="outline" size="sm">
             <Link href={`/app/${tenantSlug}/members`}>Volver al listado</Link>
           </Button>

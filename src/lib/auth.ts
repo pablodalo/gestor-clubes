@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { verifyImpersonateToken } from "@/lib/impersonate-token";
 
 export type AuthContext = "platform" | "tenant" | "member";
 
@@ -157,6 +158,35 @@ export const authOptions: NextAuthOptions = {
         if (!member?.account || !(await compare(credentials.password, member.account.passwordHash)))
           return null;
         await updateLastLogin("member", member.account.id);
+        return {
+          id: member.account.id,
+          email: member.account.email,
+          name: `${member.firstName} ${member.lastName}`,
+          context: "member" as AuthContext,
+          userId: member.account.id,
+          tenantId: tenant.id,
+          tenantSlug: tenant.slug,
+          role: "socio",
+        };
+      },
+    }),
+    CredentialsProvider({
+      id: "member-impersonate",
+      name: "MemberImpersonate",
+      credentials: { token: { label: "Token" }, tenantSlug: { label: "Tenant" } },
+      async authorize(credentials) {
+        if (!credentials?.token || !credentials?.tenantSlug) return null;
+        const payload = verifyImpersonateToken(credentials.token);
+        if (!payload || payload.tenantSlug !== credentials.tenantSlug) return null;
+        const tenant = await prisma.tenant.findFirst({
+          where: { slug: payload.tenantSlug, status: "active" },
+        });
+        if (!tenant) return null;
+        const member = await prisma.member.findFirst({
+          where: { id: payload.memberId, tenantId: tenant.id, status: "active" },
+          include: { account: true },
+        });
+        if (!member?.account || member.account.status !== "active") return null;
         return {
           id: member.account.id,
           email: member.account.email,

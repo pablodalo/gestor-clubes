@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,31 @@ import { Label } from "@/components/ui/label";
 
 export default function PortalSociosLoginPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const tenantSlug = (params?.tenantSlug as string) ?? "";
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [impersonateDone, setImpersonateDone] = useState(false);
+
+  const impersonateToken = searchParams.get("impersonate");
+
+  useEffect(() => {
+    if (!impersonateToken || !tenantSlug || impersonateDone) return;
+    setImpersonateDone(true);
+    setLoading(true);
+    signIn("member-impersonate", {
+      token: impersonateToken,
+      tenantSlug,
+      redirect: true,
+      callbackUrl: `/portal/socios/${tenantSlug}`,
+    }).then((res) => {
+      setLoading(false);
+      if (res?.error) setError("Enlace inválido o expirado.");
+    });
+  }, [impersonateToken, tenantSlug, impersonateDone]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,6 +59,18 @@ export default function PortalSociosLoginPage() {
       setError("Error al iniciar sesión.");
     }
     setLoading(false);
+  }
+
+  if (impersonateToken && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">Entrando como socio...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

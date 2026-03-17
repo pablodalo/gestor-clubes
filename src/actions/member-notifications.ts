@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { getTenantSession } from "@/lib/server-context";
+import { getPlatformSession } from "@/lib/server-context";
 import { getMemberAndTenantFromSession } from "@/lib/portal-session";
 import { z } from "zod";
 
@@ -81,18 +82,35 @@ const createSchema = z.object({
 });
 
 export async function createMemberNotification(input: z.infer<typeof createSchema>) {
-  try {
-    await requirePermission(PERMISSION_KEYS.members_update);
-  } catch {
-    return { error: "No tenés permiso para enviar notificaciones a socios" };
-  }
-  const ctx = await getTenantContext();
-  if (!ctx) return { error: "No autorizado" };
-
   const parsed = createSchema.safeParse(input);
   if (!parsed.success) {
     const msg = Object.values(parsed.error.flatten().fieldErrors).flat()[0];
     return { error: msg ?? "Datos inválidos" };
+  }
+
+  let ctx = await getTenantContext();
+  if (!ctx) {
+    const platform = await getPlatformSession();
+    if (platform) {
+      const member = await prisma.member.findUnique({
+        where: { id: parsed.data.memberId },
+        select: { id: true, tenantId: true },
+      });
+      if (!member) return { error: "Socio no encontrado" };
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: member.tenantId },
+        select: { slug: true },
+      });
+      if (!tenant) return { error: "Tenant no encontrado" };
+      ctx = { tenantId: member.tenantId, tenantSlug: tenant.slug, userId: platform.userId };
+    }
+  }
+  if (!ctx) return { error: "No autorizado" };
+
+  try {
+    await requirePermission(PERMISSION_KEYS.members_update);
+  } catch {
+    return { error: "No tenés permiso para enviar notificaciones a socios" };
   }
 
   const member = await prisma.member.findFirst({
@@ -113,5 +131,6 @@ export async function createMemberNotification(input: z.infer<typeof createSchem
 
   revalidatePath(`/app/${ctx.tenantSlug}/members`);
   revalidatePath(`/app/${ctx.tenantSlug}/members/${parsed.data.memberId}`);
+  revalidatePath(`/portal/socios/${ctx.tenantSlug}`);
   return { ok: true };
 }
