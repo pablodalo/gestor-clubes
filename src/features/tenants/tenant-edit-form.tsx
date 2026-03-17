@@ -39,7 +39,13 @@ export function TenantEditForm({ tenant }: Props) {
       setError(result.error);
       return;
     }
-    router.refresh();
+    // Si cambió el slug, navegamos a la URL nueva del tenant.
+    const newSlug = result.data?.slug ?? tenant.slug;
+    if (newSlug !== tenant.slug) {
+      router.replace(`/platform/tenants/${newSlug}`);
+    } else {
+      router.refresh();
+    }
   }
 
   const currentTz = tenant.timezone ?? "America/Argentina/Buenos_Aires";
