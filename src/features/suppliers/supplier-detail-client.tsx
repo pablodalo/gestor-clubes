@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Supplier, SupplierOrder, SupplierOrderItem, SupplierPayment } from "@prisma/client";
-import { createSupplierOrder, updateSupplierOrderStatus } from "@/actions/supplier-orders";
+import { createSupplierOrder, deleteSupplierOrder, updateSupplierOrderStatus } from "@/actions/supplier-orders";
 import { createSupplierPayment } from "@/actions/supplier-payments";
 import { Copy, CreditCard, Plus, RefreshCcw } from "lucide-react";
 
@@ -52,6 +52,8 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, p
   const router = useRouter();
   const lastOrder = orders[0] ?? null;
   const activeOrder = orders.find((o) => o.status !== "delivered") ?? null;
+  const [viewing, setViewing] = useState<OrderWithItems | null>(null);
+  const generatorId = "generador";
 
   const [draftItems, setDraftItems] = useState<DraftItem[]>(() => {
     const base = (lastOrder?.items ?? []).map((it) => ({
@@ -92,6 +94,12 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, p
       o.messageSnapshot ??
         buildMessage(o.items.map((it) => ({ name: it.name, quantity: Number(it.quantity ?? 0) })))
     );
+
+    // Scroll al generador para acelerar el flujo
+    requestAnimationFrame(() => {
+      const el = document.getElementById(generatorId);
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function loadLastOrder() {
@@ -238,7 +246,7 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, p
           )}
 
           {/* BLOQUE 3: Generador de pedido (simple) */}
-          <Card>
+          <Card id={generatorId}>
             <CardHeader>
               <CardTitle>Generador de pedido</CardTitle>
             </CardHeader>
@@ -322,11 +330,30 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, p
                   <div key={o.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2">
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{new Date(o.date).toLocaleDateString("es-AR")}</p>
-                      <p className="text-xs text-muted-foreground">{o.status}</p>
+                      <p className={o.status !== "delivered" ? "text-xs font-medium" : "text-xs text-muted-foreground"}>
+                        {o.status !== "delivered" ? "Activo" : o.status}
+                      </p>
                     </div>
-                    <Button type="button" variant="outline" size="sm" onClick={() => loadFromOrder(o)}>
-                      Repetir pedido
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setViewing(o)}>
+                        Ver
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => loadFromOrder(o)}>
+                        Repetir
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (!confirm("¿Eliminar este pedido?")) return;
+                          await deleteSupplierOrder({ orderId: o.id, supplierId: supplier.id });
+                          router.refresh();
+                        }}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}
@@ -395,6 +422,39 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, p
           </Dialog>
         </aside>
       </div>
+
+      <Dialog open={!!viewing} onOpenChange={(open) => !open && setViewing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pedido</DialogTitle>
+            <DialogDescription>
+              {viewing ? `${new Date(viewing.date).toLocaleDateString("es-AR")} · ${viewing.status}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {viewing ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <ul className="text-sm space-y-1">
+                  {viewing.items.map((it) => (
+                    <li key={it.id} className="flex items-center justify-between gap-4">
+                      <span className="truncate">{it.name}</span>
+                      <span className="tabular-nums text-muted-foreground">x {Number(it.quantity ?? 0)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="grid gap-2">
+                <Label>Mensaje</Label>
+                <textarea
+                  readOnly
+                  className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={viewing.messageSnapshot ?? buildMessage(viewing.items.map((it) => ({ name: it.name, quantity: Number(it.quantity ?? 0) })))}
+                />
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

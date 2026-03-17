@@ -104,3 +104,35 @@ export async function updateSupplierOrderStatus(input: z.infer<typeof updateStat
   return { ok: true };
 }
 
+const deleteOrderSchema = z.object({
+  orderId: z.string().min(1),
+  supplierId: z.string().min(1),
+});
+
+export async function deleteSupplierOrder(input: z.infer<typeof deleteOrderSchema>) {
+  try {
+    await requirePermission(PERMISSION_KEYS.suppliers_manage);
+  } catch {
+    return { error: "No tenés permiso para eliminar pedidos" };
+  }
+
+  const ctx = await assertTenantSession().catch(() => null);
+  if (!ctx) return { error: "No autorizado" };
+
+  const parsed = deleteOrderSchema.safeParse(input);
+  if (!parsed.success) return { error: "Datos inválidos" };
+
+  const data = parsed.data;
+  const order = await prisma.supplierOrder.findFirst({
+    where: { id: data.orderId, tenantId: ctx.tenantId, supplierId: data.supplierId },
+    select: { id: true, supplierId: true },
+  });
+  if (!order) return { error: "Pedido no encontrado" };
+
+  await prisma.supplierOrder.delete({ where: { id: order.id } });
+
+  revalidatePath(`/app/${ctx.tenantSlug}/suppliers`);
+  revalidatePath(`/app/${ctx.tenantSlug}/suppliers/${order.supplierId}`);
+  return { ok: true };
+}
+

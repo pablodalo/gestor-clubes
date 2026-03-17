@@ -51,6 +51,15 @@ export function SuppliersTable({
   const formatMoney = (value: number) =>
     new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value);
 
+  const daysAgoLabel = (date?: Date | null) => {
+    if (!date) return "—";
+    const d = new Date(date);
+    const diffDays = Math.max(0, Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24)));
+    if (diffDays === 0) return "Hoy";
+    if (diffDays === 1) return "Ayer";
+    return `Hace ${diffDays} días`;
+  };
+
   const getEstado = (s: Row): "Sin pedidos" | "En proceso" | "Pendiente" => {
     const hasOrders = !!s.lastOrder;
     if (!hasOrders) return "Sin pedidos";
@@ -78,7 +87,10 @@ export function SuppliersTable({
       className: "w-[16%]",
       render: (s) =>
         s.lastOrder ? (
-          <span className="text-muted-foreground">{new Date(s.lastOrder.date).toLocaleDateString("es-AR")}</span>
+          <div className="text-muted-foreground">
+            <div>{new Date(s.lastOrder.date).toLocaleDateString("es-AR")}</div>
+            <div className="text-xs">{daysAgoLabel(s.lastOrder.date)}</div>
+          </div>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
@@ -149,6 +161,21 @@ export function SuppliersTable({
           keyExtractor={(s) => s.id}
           emptyMessage="No hay proveedores."
           onRowClick={(s) => router.push(`/app/${tenantSlug}/suppliers/${s.id}`)}
+          rowClassName="group"
+          rowActions={(s) => (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/app/${tenantSlug}/suppliers/${s.id}#generador`);
+              }}
+            >
+              Nuevo pedido
+            </Button>
+          )}
           toolbar={
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
