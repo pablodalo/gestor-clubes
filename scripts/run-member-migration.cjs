@@ -147,6 +147,12 @@ async function run() {
       console.log("MembershipPlan.requires_renewal ya existe, migración renovación omitida.");
     }
   } catch (err) {
+    // Si no se puede conectar a la base (build sin DB disponible), no rompemos el build:
+    // Prisma lanza PrismaClientInitializationError con mensaje "Can't reach database server".
+    if (err && (err.code === "P1001" || String(err.message || "").includes("Can't reach database server"))) {
+      console.warn("run-member-migration: no se pudo conectar a la base, se omiten migraciones en este build.");
+      process.exit(0);
+    }
     console.error("Error en run-member-migration:", err);
     process.exit(1);
   } finally {
