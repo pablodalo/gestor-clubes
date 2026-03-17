@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { createMember, updateMember, type CreateMemberInput } from "@/actions/members";
+import { createMember, updateMember, type CreateMemberInput, type UpdateMemberInput } from "@/actions/members";
 import type { Member } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { User, FileCheck, CreditCard } from "lucide-react";
@@ -54,63 +54,96 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const getStr = (name: string) => {
-      const v = formData.get(name);
-      return v == null ? "" : String(v);
-    };
-    const getTrim = (name: string) => getStr(name).trim();
-    const getOptTrim = (name: string) => {
-      const v = getTrim(name);
+    const raw = (name: string) => formData.get(name);
+    const has = (name: string) => raw(name) !== null;
+    const str = (name: string) => (raw(name) == null ? "" : String(raw(name)));
+    const trim = (name: string) => str(name).trim();
+    const optTrim = (name: string) => {
+      if (!has(name)) return undefined;
+      const v = trim(name);
       return v ? v : undefined;
     };
 
-    const membershipPlanIdRaw = getTrim("membershipPlanId") || undefined;
-
-    const payload: CreateMemberInput = {
-      memberNumber: getTrim("memberNumber"),
-      firstName: getTrim("firstName"),
-      lastName: getTrim("lastName"),
-      email: getOptTrim("email"),
-      phone: getOptTrim("phone"),
-      documentType: getOptTrim("documentType"),
-      documentNumber: getOptTrim("documentNumber"),
-      status: (getStr("status") as CreateMemberInput["status"]) || "active",
-      birthDate: getOptTrim("birthDate"),
-      address: getOptTrim("address"),
-      city: getOptTrim("city"),
-      stateOrProvince: getOptTrim("stateOrProvince"),
-      country: getOptTrim("country"),
-      emergencyContactName: getOptTrim("emergencyContactName"),
-      emergencyContactPhone: getOptTrim("emergencyContactPhone"),
-      statusReason: getOptTrim("statusReason"),
-      reprocannNumber: getOptTrim("reprocannNumber"),
-      reprocannAffiliateNumber: getOptTrim("reprocannAffiliateNumber"),
-      reprocannStartDate: getOptTrim("reprocannStartDate"),
-      reprocannEndDate: getOptTrim("reprocannEndDate"),
-      reprocannActive: getStr("reprocannActive") === "active",
-      membershipPlanId: membershipPlanIdRaw || null,
-      membershipPlan: getOptTrim("membershipPlan"),
-      membershipRecurring: getStr("membershipRecurring") === "true",
-      membershipRecurrenceDay: Number(getTrim("membershipRecurrenceDay")) || undefined,
-      membershipLastPaidAt: getOptTrim("membershipLastPaidAt"),
-      membershipLastAmount: getOptTrim("membershipLastAmount"),
-      membershipCurrency: getOptTrim("membershipCurrency"),
-    };
-
+    // En modo edición (solapas), solo enviamos campos presentes para evitar "" que rompe validaciones.
     if (edit) {
+      const payload: UpdateMemberInput = {};
+
+      if (has("status")) payload.status = (str("status") as UpdateMemberInput["status"]) || undefined;
+      if (has("firstName")) payload.firstName = optTrim("firstName");
+      if (has("lastName")) payload.lastName = optTrim("lastName");
+      if (has("email")) payload.email = optTrim("email");
+      if (has("phone")) payload.phone = optTrim("phone");
+      if (has("documentType")) payload.documentType = optTrim("documentType");
+      if (has("documentNumber")) payload.documentNumber = optTrim("documentNumber");
+      if (has("birthDate")) payload.birthDate = optTrim("birthDate");
+      if (has("address")) payload.address = optTrim("address");
+      if (has("city")) payload.city = optTrim("city");
+      if (has("stateOrProvince")) payload.stateOrProvince = optTrim("stateOrProvince");
+      if (has("country")) payload.country = optTrim("country");
+      if (has("emergencyContactName")) payload.emergencyContactName = optTrim("emergencyContactName");
+      if (has("emergencyContactPhone")) payload.emergencyContactPhone = optTrim("emergencyContactPhone");
+      if (has("statusReason")) payload.statusReason = optTrim("statusReason");
+
+      if (has("reprocannNumber")) payload.reprocannNumber = optTrim("reprocannNumber");
+      if (has("reprocannAffiliateNumber")) payload.reprocannAffiliateNumber = optTrim("reprocannAffiliateNumber");
+      if (has("reprocannStartDate")) payload.reprocannStartDate = optTrim("reprocannStartDate");
+      if (has("reprocannEndDate")) payload.reprocannEndDate = optTrim("reprocannEndDate");
+      if (has("reprocannActive")) payload.reprocannActive = str("reprocannActive") === "active";
+
+      if (has("membershipPlanId")) payload.membershipPlanId = trim("membershipPlanId") || null;
+      if (has("membershipRecurring")) payload.membershipRecurring = str("membershipRecurring") === "true";
+      if (has("membershipRecurrenceDay")) payload.membershipRecurrenceDay = Number(trim("membershipRecurrenceDay")) || undefined;
+      if (has("membershipLastPaidAt")) payload.membershipLastPaidAt = optTrim("membershipLastPaidAt");
+      if (has("membershipLastAmount")) payload.membershipLastAmount = optTrim("membershipLastAmount");
+      if (has("membershipCurrency")) payload.membershipCurrency = optTrim("membershipCurrency");
+
       const result = await updateMember(edit.id, payload);
       setLoading(false);
       if (result.error) {
         setError(result.error);
         return;
       }
-    } else {
-      const result = await createMember(payload);
-      setLoading(false);
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
+      onOpenChange(false);
+      onSuccess();
+      return;
+    }
+
+    // Alta: requeridos sí o sí
+    const payload: CreateMemberInput = {
+      memberNumber: trim("memberNumber"),
+      firstName: trim("firstName"),
+      lastName: trim("lastName"),
+      email: optTrim("email"),
+      phone: optTrim("phone"),
+      documentType: optTrim("documentType"),
+      documentNumber: optTrim("documentNumber"),
+      status: (str("status") as CreateMemberInput["status"]) || "active",
+      birthDate: optTrim("birthDate"),
+      address: optTrim("address"),
+      city: optTrim("city"),
+      stateOrProvince: optTrim("stateOrProvince"),
+      country: optTrim("country"),
+      emergencyContactName: optTrim("emergencyContactName"),
+      emergencyContactPhone: optTrim("emergencyContactPhone"),
+      statusReason: optTrim("statusReason"),
+      reprocannNumber: optTrim("reprocannNumber"),
+      reprocannAffiliateNumber: optTrim("reprocannAffiliateNumber"),
+      reprocannStartDate: optTrim("reprocannStartDate"),
+      reprocannEndDate: optTrim("reprocannEndDate"),
+      reprocannActive: str("reprocannActive") === "active",
+      membershipPlanId: trim("membershipPlanId") || null,
+      membershipRecurring: str("membershipRecurring") === "true",
+      membershipRecurrenceDay: Number(trim("membershipRecurrenceDay")) || undefined,
+      membershipLastPaidAt: optTrim("membershipLastPaidAt"),
+      membershipLastAmount: optTrim("membershipLastAmount"),
+      membershipCurrency: optTrim("membershipCurrency"),
+    };
+
+    const result = await createMember(payload);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
     }
     onOpenChange(false);
     onSuccess();
