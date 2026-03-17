@@ -20,10 +20,7 @@ const createPlanSchema = z.object({
   dailyLimit: z.string().optional(),
   validityType: z.enum(["recurrent", "fixed_end"]).default("recurrent"),
   validUntil: z.string().optional(),
-  requiresRenewal: z
-    .enum(["on", "off"])
-    .optional()
-    .transform((v) => v === "on"),
+  requiresRenewal: z.boolean().optional(),
   renewalEveryDays: z.string().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
 });
