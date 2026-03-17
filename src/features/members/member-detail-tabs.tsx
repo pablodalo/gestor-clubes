@@ -473,18 +473,6 @@ export function MemberDetailTabs({
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-xs text-muted-foreground">Tier</p>
-              <p className="font-medium">{membershipPlan?.tier ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Límite mensual</p>
-              <p className="font-medium">{membershipPlan?.monthlyLimit?.toString?.() ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Límite diario</p>
-              <p className="font-medium">{membershipPlan?.dailyLimit?.toString?.() ?? "—"}</p>
-            </div>
-            <div>
               <p className="text-xs text-muted-foreground">Saldo restante</p>
               <p className="font-medium">{member.remainingBalance?.toString() ?? "0"}</p>
             </div>
