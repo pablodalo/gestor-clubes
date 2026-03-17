@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPayment } from "@/actions/payments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +17,11 @@ type MemberOption = {
 type Props = {
   members: MemberOption[];
   currency: string;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 };
 
 export function PaymentForm({ members, currency, onSuccess }: Props) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +44,8 @@ export function PaymentForm({ members, currency, onSuccess }: Props) {
       setError(result.error);
       return;
     }
-    onSuccess();
+    onSuccess?.();
+    router.refresh();
     (e.target as HTMLFormElement).reset();
   }
 

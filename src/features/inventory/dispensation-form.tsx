@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createDispensation } from "@/actions/dispensations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +13,11 @@ type Option = { id: string; label: string };
 type Props = {
   strains: Option[];
   members: Option[];
-  onSuccess: () => void;
+  onSuccess?: () => void;
 };
 
 export function DispensationForm({ strains, members, onSuccess }: Props) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +38,8 @@ export function DispensationForm({ strains, members, onSuccess }: Props) {
       setError(result.error);
       return;
     }
-    onSuccess();
+    onSuccess?.();
+    router.refresh();
     (e.target as HTMLFormElement).reset();
   }
 

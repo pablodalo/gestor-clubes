@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createSale } from "@/actions/sales";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,11 @@ type ProductOption = { id: string; name: string; price: string; currency: string
 type Props = {
   members: MemberOption[];
   products: ProductOption[];
-  onSuccess: () => void;
+  onSuccess?: () => void;
 };
 
 export function SaleForm({ members, products, onSuccess }: Props) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +38,8 @@ export function SaleForm({ members, products, onSuccess }: Props) {
       setError(result.error);
       return;
     }
-    onSuccess();
+    onSuccess?.();
+    router.refresh();
     (e.target as HTMLFormElement).reset();
   }
 

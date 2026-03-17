@@ -136,10 +136,9 @@ export default async function InventoryPage({ params }: Props) {
             <DispensationForm
               strains={strains.map((s) => ({ id: s.id, label: s.name }))}
               members={members.map((m) => ({ id: m.id, label: `${m.memberNumber} · ${m.firstName} ${m.lastName}` }))}
-              onSuccess={() => {}}
             />
             {canManageProducts && (
-              <ProductForm currency={tenant.currency} onSuccess={() => {}} />
+              <ProductForm currency={tenant.currency} />
             )}
           </div>
         </div>

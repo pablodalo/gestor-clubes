@@ -54,7 +54,7 @@ export default async function SuppliersPage({ params }: Props) {
           </div>
           {canManage && (
             <div>
-              <SupplierForm onSuccess={() => {}} />
+              <SupplierForm />
             </div>
           )}
         </div>

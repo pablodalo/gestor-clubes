@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateCultivationSchedule } from "@/actions/cultivation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ type Props = {
   lotId: string;
   defaultWatering?: Date | null;
   defaultFeeding?: Date | null;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 };
 
 const toDateInput = (value?: Date | null) => (value ? new Date(value).toISOString().slice(0, 10) : "");
@@ -21,6 +22,7 @@ export function CultivationScheduleForm({
   defaultFeeding,
   onSuccess,
 }: Props) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +41,8 @@ export function CultivationScheduleForm({
       setError(result.error);
       return;
     }
-    onSuccess();
+    onSuccess?.();
+    router.refresh();
   }
 
   return (

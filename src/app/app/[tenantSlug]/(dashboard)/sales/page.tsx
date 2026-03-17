@@ -73,7 +73,6 @@ export default async function SalesPage({ params }: Props) {
                 price: p.price.toString(),
                 currency: p.currency,
               }))}
-              onSuccess={() => {}}
             />
           </div>
         )}

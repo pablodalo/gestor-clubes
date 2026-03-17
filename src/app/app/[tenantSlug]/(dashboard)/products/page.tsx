@@ -44,7 +44,7 @@ export default async function ProductsPage({ params }: Props) {
           </div>
           {canManage && (
             <div>
-              <ProductForm currency={tenant.currency} onSuccess={() => {}} />
+              <ProductForm currency={tenant.currency} />
             </div>
           )}
         </div>

@@ -66,7 +66,6 @@ export default async function PaymentsPage({ params }: Props) {
                 memberNumber: m.memberNumber,
               }))}
               currency={currency}
-              onSuccess={() => {}}
             />
           </div>
         )}

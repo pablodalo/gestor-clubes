@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createSupplyItem } from "@/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type SupplierOption = { id: string; name: string };
 
-export function SupplyForm({ suppliers, onSuccess }: { suppliers: SupplierOption[]; onSuccess: () => void }) {
+export function SupplyForm({ suppliers, onSuccess }: { suppliers: SupplierOption[]; onSuccess?: () => void }) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +34,8 @@ export function SupplyForm({ suppliers, onSuccess }: { suppliers: SupplierOption
       setError(result.error);
       return;
     }
-    onSuccess();
+    onSuccess?.();
+    router.refresh();
     (e.target as HTMLFormElement).reset();
   }
 

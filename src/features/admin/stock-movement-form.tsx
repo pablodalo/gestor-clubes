@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createSupplyMovement } from "@/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type SupplyOption = { id: string; name: string; unit?: string | null };
 
-export function StockMovementForm({ supplies, onSuccess }: { supplies: SupplyOption[]; onSuccess: () => void }) {
+export function StockMovementForm({ supplies, onSuccess }: { supplies: SupplyOption[]; onSuccess?: () => void }) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +31,8 @@ export function StockMovementForm({ supplies, onSuccess }: { supplies: SupplyOpt
       setError(result.error);
       return;
     }
-    onSuccess();
+    onSuccess?.();
+    router.refresh();
     (e.target as HTMLFormElement).reset();
   }
 

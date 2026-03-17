@@ -51,12 +51,20 @@ export default async function TenantDetailPage({ params }: Props) {
             <h1 className="text-2xl font-bold tracking-tight">{tenant.name}</h1>
             <p className="text-muted-foreground mt-0.5">Configuración del club y apariencia.</p>
           </div>
-          <Button asChild variant="default" className="gap-2 shrink-0">
-            <Link href={`/app/${slug}`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" />
-              Abrir panel del club
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link href={`/portal/socios/${slug}/login`} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                Portal del socio
+              </Link>
+            </Button>
+            <Button asChild variant="default" className="gap-2">
+              <Link href={`/app/${slug}`} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                Abrir panel del club
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <TenantDetailTabs tenant={tenant} branding={branding} />

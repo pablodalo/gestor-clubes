@@ -51,17 +51,27 @@ export default async function MemberProfilePage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">Ficha de socio</p>
           <h1 className="text-2xl font-bold tracking-tight">
             {member.firstName} {member.lastName}
           </h1>
         </div>
-        <Button asChild variant="outline">
-          <Link href={`/app/${tenantSlug}/members`}>Volver</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="default" size="sm" className="gap-2">
+            <Link href={`/portal/socios/${tenantSlug}/login`} target="_blank" rel="noopener noreferrer">
+              Abrir portal del socio
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/app/${tenantSlug}/members`}>Volver al listado</Link>
+          </Button>
+        </div>
       </div>
+      <p className="text-sm text-muted-foreground">
+        Usá las pestañas para ver y gestionar <strong>Datos</strong>, <strong>Membresía</strong>, <strong>Config. operativa</strong>, <strong>Historial</strong>, <strong>Saldo / cupo</strong>, <strong>Notificaciones</strong> y <strong>Cuenta de acceso</strong>. El socio ingresa al portal con su email y contraseña.
+      </p>
 
       <MemberDetailTabs
         tenantSlug={tenantSlug}

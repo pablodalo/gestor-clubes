@@ -185,7 +185,7 @@ export default async function CultivationPage({ params }: Props) {
                   ))
                 )}
               </div>
-              <StrainForm onSuccess={() => {}} />
+              <StrainForm />
             </CardContent>
           </Card>
 
@@ -223,7 +223,6 @@ export default async function CultivationPage({ params }: Props) {
               <PlantForm
                 strains={strains.map((strain) => ({ id: strain.id, name: strain.name }))}
                 lots={lots.map((lot) => ({ id: lot.id, code: lot.code }))}
-                onSuccess={() => {}}
               />
             </CardContent>
           </Card>
@@ -259,7 +258,7 @@ export default async function CultivationPage({ params }: Props) {
                   ))
                 )}
               </div>
-              <ControlForm lots={lots.map((lot) => ({ id: lot.id, code: lot.code }))} onSuccess={() => {}} />
+              <ControlForm lots={lots.map((lot) => ({ id: lot.id, code: lot.code }))} />
             </CardContent>
           </Card>
         </div>

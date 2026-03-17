@@ -46,7 +46,7 @@ export default async function StrainsPage({ params }: Props) {
           <DataTable columns={columns} data={strains} keyExtractor={(s) => s.id} emptyMessage="No hay cepas." />
         </div>
         <div>
-          <StrainForm onSuccess={() => {}} />
+          <StrainForm />
         </div>
       </div>
     </div>

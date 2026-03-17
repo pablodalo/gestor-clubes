@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createCultivationEvent } from "@/actions/cultivation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label";
 
 type Props = {
   lotId: string;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 };
 
 const EVENT_TYPES = [
@@ -21,6 +22,7 @@ const EVENT_TYPES = [
 ];
 
 export function CultivationEventForm({ lotId, onSuccess }: Props) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -40,7 +42,8 @@ export function CultivationEventForm({ lotId, onSuccess }: Props) {
       setError(result.error);
       return;
     }
-    onSuccess();
+    onSuccess?.();
+    router.refresh();
     (e.target as HTMLFormElement).reset();
   }
 

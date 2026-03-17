@@ -66,7 +66,6 @@ export default async function StockPage({ params }: Props) {
           <div>
             <StockMovementForm
               supplies={supplies.map((s) => ({ id: s.id, name: s.name, unit: s.unit }))}
-              onSuccess={() => {}}
             />
           </div>
         )}

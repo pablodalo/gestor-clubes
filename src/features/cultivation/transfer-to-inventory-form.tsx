@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { transferCultivationToInventory } from "@/actions/cultivation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,11 @@ type StrainOption = { id: string; name: string };
 type Props = {
   lotId: string;
   strains: StrainOption[];
-  onSuccess: () => void;
+  onSuccess?: () => void;
 };
 
 export function TransferToInventoryForm({ lotId, strains, onSuccess }: Props) {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -46,7 +48,8 @@ export function TransferToInventoryForm({ lotId, strains, onSuccess }: Props) {
       setError(result.error);
       return;
     }
-    onSuccess();
+    onSuccess?.();
+    router.refresh();
     (e.target as HTMLFormElement).reset();
   }
 

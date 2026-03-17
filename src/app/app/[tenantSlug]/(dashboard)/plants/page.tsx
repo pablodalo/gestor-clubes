@@ -62,7 +62,7 @@ export default async function PlantsPage({ params }: Props) {
           <DataTable columns={columns} data={plants} keyExtractor={(p) => p.id} emptyMessage="No hay plantas." />
         </div>
         <div>
-          <PlantForm strains={strains} lots={lots} onSuccess={() => {}} />
+          <PlantForm strains={strains} lots={lots} />
         </div>
       </div>
     </div>

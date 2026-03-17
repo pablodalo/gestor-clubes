@@ -126,7 +126,7 @@ export default async function CultivationLotPage({ params }: Props) {
             <CardTitle>Registrar evento</CardTitle>
           </CardHeader>
           <CardContent>
-            <CultivationEventForm lotId={lot.id} onSuccess={() => {}} />
+            <CultivationEventForm lotId={lot.id} />
           </CardContent>
         </Card>
         <Card>
@@ -185,7 +185,6 @@ export default async function CultivationLotPage({ params }: Props) {
               lotId={lot.id}
               defaultWatering={lot.nextWateringAt}
               defaultFeeding={lot.nextFeedingAt}
-              onSuccess={() => {}}
             />
           </CardContent>
         </Card>
@@ -197,7 +196,6 @@ export default async function CultivationLotPage({ params }: Props) {
             <TransferToInventoryForm
               lotId={lot.id}
               strains={lot.strains.map((s) => ({ id: s.strain.id, name: s.strain.name }))}
-              onSuccess={() => {}}
             />
           </CardContent>
         </Card>
@@ -245,7 +243,7 @@ export default async function CultivationLotPage({ params }: Props) {
             <CardTitle>Agregar hito</CardTitle>
           </CardHeader>
           <CardContent>
-            <CultivationTaskForm lotId={lot.id} onSuccess={() => {}} />
+            <CultivationTaskForm lotId={lot.id} />
           </CardContent>
         </Card>
         <Card>
@@ -280,7 +278,6 @@ export default async function CultivationLotPage({ params }: Props) {
               strains={lot.strains.map((s) => ({ id: s.strain.id, name: s.strain.name }))}
               lots={[{ id: lot.id, code: lot.code }]}
               defaultLotId={lot.id}
-              onSuccess={() => {}}
             />
           </CardContent>
         </Card>
@@ -292,7 +289,6 @@ export default async function CultivationLotPage({ params }: Props) {
             <ControlForm
               lots={[{ id: lot.id, code: lot.code }]}
               defaultLotId={lot.id}
-              onSuccess={() => {}}
             />
           </CardContent>
         </Card>

@@ -210,23 +210,26 @@ export function MemberDetailTabs({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 border-b border-border flex-wrap">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-t-md border-b-2 -mb-px transition-colors",
-              tab === t.id
-                ? "border-primary text-primary bg-primary/5"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            )}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
+      <div className="rounded-lg border bg-muted/30 p-1">
+        <p className="text-xs font-medium text-muted-foreground px-2 py-1 mb-2">Secciones del socio</p>
+        <div className="flex gap-1 flex-wrap">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-md transition-colors",
+                tab === t.id
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (

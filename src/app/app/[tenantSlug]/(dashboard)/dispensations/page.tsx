@@ -68,7 +68,6 @@ export default async function DispensationsPage({ params }: Props) {
                 label: `${m.memberNumber} · ${m.firstName} ${m.lastName}`,
               }))}
               strains={strains.map((s) => ({ id: s.id, label: s.name }))}
-              onSuccess={() => {}}
             />
           </div>
         )}

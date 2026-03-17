@@ -59,7 +59,7 @@ export default async function ControlsPage({ params }: Props) {
           <DataTable columns={columns} data={controls} keyExtractor={(c) => c.id} emptyMessage="No hay controles." />
         </div>
         <div>
-          <ControlForm lots={lots} onSuccess={() => {}} />
+          <ControlForm lots={lots} />
         </div>
       </div>
     </div>
