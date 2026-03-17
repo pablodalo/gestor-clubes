@@ -1,3 +1,6 @@
+"use client";
+
+import React, { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -16,6 +19,10 @@ export type DataTableColumn<T> = {
   align?: "left" | "center" | "right";
   render?: (item: T) => React.ReactNode;
   className?: string;
+  /** Habilita ordenamiento haciendo clic en el encabezado */
+  sortable?: boolean;
+  /** Cómo obtener el valor a ordenar para esta columna (por defecto usa item[key]) */
+  sortAccessor?: (item: T) => unknown;
 };
 
 export type DataTableEmptyState = {
@@ -48,6 +55,34 @@ export function DataTable<T>({
   rowActions,
   rowClassName,
 }: DataTableProps<T>) {
+  const [sort, setSort] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+
+  const sortedData = useMemo(() => {
+    if (!sort) return data;
+    const col = columns.find((c) => c.key === sort.key);
+    if (!col) return data;
+    const accessor =
+      col.sortAccessor ??
+      ((item: T) => (item as unknown as Record<string, unknown>)[col.key]);
+
+    const compare = (a: unknown, b: unknown) => {
+      if (a == null && b == null) return 0;
+      if (a == null) return -1;
+      if (b == null) return 1;
+
+      const av = a instanceof Date ? a.getTime() : a;
+      const bv = b instanceof Date ? b.getTime() : b;
+
+      if (typeof av === "number" && typeof bv === "number") return av - bv;
+      return String(av).localeCompare(String(bv), "es", { sensitivity: "base" });
+    };
+
+    return [...data].sort((a, b) => {
+      const res = compare(accessor(a), accessor(b));
+      return sort.direction === "asc" ? res : -res;
+    });
+  }, [data, columns, sort]);
+
   const colCount = columns.length + (rowActions ? 1 : 0);
   const emptyContent = emptyState ? (
     <EmptyState
@@ -79,7 +114,28 @@ export function DataTable<T>({
                   col.className
                 )}
               >
-                {col.header}
+                {col.sortable !== false ? (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 select-none"
+                    onClick={() =>
+                      setSort((prev) =>
+                        prev && prev.key === col.key && prev.direction === "asc"
+                          ? { key: col.key, direction: "desc" }
+                          : { key: col.key, direction: "asc" }
+                      )
+                    }
+                  >
+                    <span>{col.header}</span>
+                    {sort?.key === col.key && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {sort.direction === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  col.header
+                )}
               </TableHead>
             ))}
             {rowActions && (
@@ -100,7 +156,7 @@ export function DataTable<T>({
               </TableCell>
             </TableRow>
           ) : (
-            data.map((item) => (
+            sortedData.map((item) => (
               <TableRow key={keyExtractor(item)} className={rowClassName}>
                 {columns.map((col) => (
                   <TableCell
