@@ -122,20 +122,20 @@ export async function updateMembershipPlan(planId: string, input: UpdateMembersh
   });
   if (!existing) return { error: "Plan no encontrado" };
 
-  const data = parsed.data as Record<string, unknown>;
+  const data = parsed.data;
   const updateData: Record<string, unknown> = {};
   if (data.name !== undefined) updateData.name = data.name;
-  if (data.description !== undefined) updateData.description = data.description?.trim() || null;
+  if (data.description !== undefined) updateData.description = typeof data.description === "string" ? data.description.trim() || null : null;
   if (data.currency !== undefined) updateData.currency = data.currency;
   if (data.recurrenceDay !== undefined) updateData.recurrenceDay = data.recurrenceDay;
   if (data.status !== undefined) updateData.status = data.status;
   if (data.price !== undefined) {
-    updateData.price = data.price != null && data.price !== "" ? new Prisma.Decimal(data.price as string) : null;
+    updateData.price = data.price != null && data.price !== "" ? new Prisma.Decimal(String(data.price)) : null;
   }
 
   if (data.name && data.name !== existing.name) {
     const dup = await prisma.membershipPlan.findUnique({
-      where: { tenantId_name: { tenantId: ctx.tenantId, name: data.name as string } },
+      where: { tenantId_name: { tenantId: ctx.tenantId, name: data.name } },
     });
     if (dup) return { error: "Ya existe un plan con ese nombre" };
   }
