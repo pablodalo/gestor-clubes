@@ -67,7 +67,14 @@ export default async function InventoryPage({ params }: Props) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Flores</CardTitle>
+              <CardTitle>
+                <Link
+                  href={`/app/${tenantSlug}/inventory/flores`}
+                  className="hover:underline underline-offset-4"
+                >
+                  Flores
+                </Link>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {flowerPreview.map(({ strain, grams }) => (
@@ -84,22 +91,27 @@ export default async function InventoryPage({ params }: Props) {
                   </div>
                 </div>
               ))}
-              {flowerRows.length > flowerPreview.length && (
-                <div className="flex justify-end">
-                  <Link
-                    href={`/app/${tenantSlug}/inventory/flores`}
-                    className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
-                  >
-                    Ver más
-                  </Link>
-                </div>
-              )}
+              <div className="flex justify-end">
+                <Link
+                  href={`/app/${tenantSlug}/inventory/flores`}
+                  className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
+                >
+                  Ver más
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Extractos</CardTitle>
+              <CardTitle>
+                <Link
+                  href={`/app/${tenantSlug}/inventory/extractos`}
+                  className="hover:underline underline-offset-4"
+                >
+                  Extractos
+                </Link>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {extractPreview.map(({ strain, grams }) => (
@@ -116,16 +128,14 @@ export default async function InventoryPage({ params }: Props) {
                   </div>
                 </div>
               ))}
-              {extractRows.length > extractPreview.length && (
-                <div className="flex justify-end">
-                  <Link
-                    href={`/app/${tenantSlug}/inventory/extractos`}
-                    className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
-                  >
-                    Ver más
-                  </Link>
-                </div>
-              )}
+              <div className="flex justify-end">
+                <Link
+                  href={`/app/${tenantSlug}/inventory/extractos`}
+                  className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
+                >
+                  Ver más
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>

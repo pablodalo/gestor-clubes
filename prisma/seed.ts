@@ -764,6 +764,74 @@ async function main() {
         },
       });
 
+      // Proveedores extra de ejemplo
+      await prisma.supplier.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: "Packaging Verde" } },
+        update: {
+          suppliesProvided: "Bolsas compostables, cajas, etiquetas",
+          paymentStatus: "ok",
+          pendingPayment: false,
+          pendingDelivery: true,
+          nextDeliveryAt: new Date("2024-12-20"),
+        },
+        create: {
+          tenantId: tenant.id,
+          name: "Packaging Verde",
+          email: "ventas@packagingverde.com",
+          phone: "+54 11 5555-3030",
+          suppliesProvided: "Bolsas compostables, cajas, etiquetas",
+          paymentStatus: "ok",
+          pendingPayment: false,
+          pendingDelivery: true,
+          nextDeliveryAt: new Date("2024-12-20"),
+          status: "active",
+        },
+      });
+
+      await prisma.supplier.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: "Laboratorio Analítico CBD" } },
+        update: {
+          suppliesProvided: "Análisis de potencia, metales pesados",
+          paymentStatus: "pending",
+          pendingPayment: true,
+          pendingDelivery: false,
+          nextDeliveryAt: null,
+        },
+        create: {
+          tenantId: tenant.id,
+          name: "Laboratorio Analítico CBD",
+          email: "turnos@labcbd.com",
+          phone: "+54 11 5555-9090",
+          suppliesProvided: "Análisis de potencia, metales pesados",
+          paymentStatus: "pending",
+          pendingPayment: true,
+          pendingDelivery: false,
+          status: "active",
+        },
+      });
+
+      await prisma.supplier.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: "ClimaPro Sistemas" } },
+        update: {
+          suppliesProvided: "Aires, filtros, control de clima",
+          paymentStatus: "ok",
+          pendingPayment: false,
+          pendingDelivery: false,
+          nextDeliveryAt: null,
+        },
+        create: {
+          tenantId: tenant.id,
+          name: "ClimaPro Sistemas",
+          email: "proyectos@climapro.com",
+          phone: "+54 11 5555-4545",
+          suppliesProvided: "Aires, filtros, control de clima",
+          paymentStatus: "ok",
+          pendingPayment: false,
+          pendingDelivery: false,
+          status: "active",
+        },
+      });
+
       const supplies = [
         { name: "Fertilizante A", category: "fertilizante", unit: "l", minQty: 5, currentQty: 3, isMissing: true, renewalAt: new Date("2024-12-11") },
         { name: "Sustrato Premium", category: "sustrato", unit: "kg", minQty: 20, currentQty: 40, isMissing: false, renewalAt: new Date("2024-12-20") },
