@@ -88,7 +88,7 @@ type TabId = "datos" | "membresia" | "operativa" | "historial" | "saldo" | "noti
 type Props = {
   tenantSlug: string;
   member: MemberData;
-  membershipPlanTier?: string | null;
+  membershipPlan?: { name: string; tier: string | null } | null;
   payments: PaymentRow[];
   account: { id: string; email: string; status: string } | null;
   notifications: NotifRow[];
@@ -99,7 +99,7 @@ type Props = {
 export function MemberDetailTabs({
   tenantSlug,
   member,
-  membershipPlanTier,
+  membershipPlan,
   payments,
   account,
   notifications,
@@ -337,7 +337,10 @@ export function MemberDetailTabs({
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs text-muted-foreground">Tipo / Plan</p>
-              <p className="font-medium">{member.membershipType ?? member.membershipPlan ?? "—"}</p>
+              <p className="font-medium">{member.membershipType ?? membershipPlan?.name ?? member.membershipPlan ?? "—"}</p>
+              {membershipPlan?.tier ? (
+                <p className="text-xs text-muted-foreground mt-1">Tier: <span className="font-medium text-foreground">{membershipPlan.tier}</span></p>
+              ) : null}
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Estado membresía</p>
@@ -410,7 +413,7 @@ export function MemberDetailTabs({
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs text-muted-foreground">Tier</p>
-              <p className="font-medium">{membershipPlanTier ?? "—"}</p>
+              <p className="font-medium">{membershipPlan?.tier ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Límite mensual</p>

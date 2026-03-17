@@ -119,6 +119,14 @@ export async function createMember(input: CreateMemberInput) {
       ? (data.allowedProducts ? (() => { try { return JSON.parse(data.allowedProducts); } catch { return null; } })() : null)
       : null;
 
+  const plan =
+    data.membershipPlanId && data.membershipPlanId.trim()
+      ? await prisma.membershipPlan.findFirst({
+          where: { id: data.membershipPlanId.trim(), tenantId: ctx.tenantId },
+          select: { id: true, name: true, currency: true, recurrenceDay: true },
+        })
+      : null;
+
   if (data.documentNumber?.trim()) {
     const dupDoc = await prisma.member.findFirst({
       where: { tenantId: ctx.tenantId, documentNumber: data.documentNumber.trim() },
@@ -155,8 +163,8 @@ export async function createMember(input: CreateMemberInput) {
       reprocannStartDate,
       reprocannEndDate,
       reprocannActive: data.reprocannActive ?? false,
-      membershipPlanId: data.membershipPlanId && data.membershipPlanId.trim() ? data.membershipPlanId : null,
-      membershipPlan: data.membershipPlan || null,
+      membershipPlanId: plan?.id ?? null,
+      membershipPlan: plan?.name ?? null,
       membershipType: data.membershipType || null,
       membershipStatus: data.membershipStatus || null,
       membershipStartDate,
@@ -164,10 +172,10 @@ export async function createMember(input: CreateMemberInput) {
       membershipRenewalDate,
       membershipNotes: data.membershipNotes?.trim() || null,
       membershipRecurring: data.membershipRecurring ?? false,
-      membershipRecurrenceDay: data.membershipRecurrenceDay ?? null,
+      membershipRecurrenceDay: (data.membershipRecurrenceDay ?? plan?.recurrenceDay) ?? null,
       membershipLastPaidAt,
       membershipLastAmount,
-      membershipCurrency: data.membershipCurrency || "ARS",
+      membershipCurrency: data.membershipCurrency || plan?.currency || "ARS",
       monthlyLimit,
       dailyLimit,
       remainingBalance,
@@ -278,6 +286,26 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
   if (data.allowedCategories !== undefined) updateData.allowedCategories = toJson(data.allowedCategories);
   if (data.allowedProducts !== undefined) updateData.allowedProducts = toJson(data.allowedProducts);
   if (data.internalNotes !== undefined) updateData.internalNotes = toStr(data.internalNotes);
+
+  // Normalizar plan/campos si se asigna membershipPlanId
+  if (updateData.membershipPlanId !== undefined) {
+    const planId = updateData.membershipPlanId as string | null;
+    if (!planId) {
+      updateData.membershipPlan = null;
+    } else {
+      const plan = await prisma.membershipPlan.findFirst({
+        where: { id: planId, tenantId: ctx.tenantId },
+        select: { name: true, currency: true, recurrenceDay: true },
+      });
+      if (plan) {
+        updateData.membershipPlan = plan.name;
+        if (updateData.membershipCurrency === undefined) updateData.membershipCurrency = plan.currency;
+        if (updateData.membershipRecurrenceDay === undefined && plan.recurrenceDay != null) {
+          updateData.membershipRecurrenceDay = plan.recurrenceDay;
+        }
+      }
+    }
+  }
 
   const member = await prisma.member.update({
     where: { id: memberId },

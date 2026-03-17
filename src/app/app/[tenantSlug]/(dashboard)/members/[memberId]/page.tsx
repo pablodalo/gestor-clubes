@@ -78,7 +78,7 @@ export default async function MemberProfilePage({ params }: Props) {
       <MemberDetailTabs
         tenantSlug={tenantSlug}
         member={member}
-        membershipPlanTier={member.membershipPlanRel?.tier ?? null}
+        membershipPlan={member.membershipPlanRel ? { name: member.membershipPlanRel.name, tier: member.membershipPlanRel.tier ?? null } : null}
         payments={payments}
         account={member.account}
         notifications={notifications}
