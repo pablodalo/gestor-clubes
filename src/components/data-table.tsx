@@ -43,8 +43,6 @@ type DataTableProps<T> = {
   /** Contenido de la última celda por fila (menú de acciones discreto) */
   rowActions?: (item: T) => React.ReactNode;
   rowClassName?: string;
-  /** Tamaño de página para paginado en cliente (por defecto 20) */
-  pageSize?: number;
 };
 
 export function DataTable<T>({
@@ -58,8 +56,6 @@ export function DataTable<T>({
   rowClassName,
 }: DataTableProps<T>) {
   const [sort, setSort] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
-  const [page, setPage] = useState(1);
-  const pageSize = 20;
 
   const sortedData = useMemo(() => {
     if (!sort) return data;
@@ -88,13 +84,6 @@ export function DataTable<T>({
   }, [data, columns, sort]);
 
   const colCount = columns.length + (rowActions ? 1 : 0);
-  const totalItems = sortedData.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-
-  const currentPage = Math.min(page, totalPages);
-  const start = (currentPage - 1) * pageSize;
-  const end = start + pageSize;
-  const pageData = sortedData.slice(start, end);
   const emptyContent = emptyState ? (
     <EmptyState
       icon={emptyState.icon}
@@ -167,7 +156,7 @@ export function DataTable<T>({
               </TableCell>
             </TableRow>
           ) : (
-            pageData.map((item) => (
+            sortedData.map((item) => (
               <TableRow key={keyExtractor(item)} className={rowClassName}>
                 {columns.map((col) => (
                   <TableCell
@@ -189,41 +178,6 @@ export function DataTable<T>({
           )}
         </TableBody>
       </Table>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2 text-xs sm:text-sm">
-          <span className="text-muted-foreground">
-            Mostrando{" "}
-            <span className="font-medium">
-              {start + 1}–{Math.min(end, totalItems)}
-            </span>{" "}
-            de <span className="font-medium">{totalItems}</span>
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </Button>
-            <span className="text-muted-foreground">
-              Página <span className="font-medium">{currentPage}</span> de{" "}
-              <span className="font-medium">{totalPages}</span>
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Siguiente
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
