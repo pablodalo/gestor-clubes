@@ -15,6 +15,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
+    "db:baseline": "prisma migrate resolve --applied 20260314063200_add_platform_user_permissions && prisma migrate resolve --applied 20260314100000_add_navigation_layout_tenant_branding && prisma migrate resolve --applied 20260316000000_add_audit_actor_name && prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
