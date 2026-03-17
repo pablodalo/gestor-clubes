@@ -74,7 +74,12 @@ export function PortalShell({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => signOut({ callbackUrl: `/portal/socios/${slug}/login` })}
+              onClick={() =>
+                signOut({
+                  callbackUrl: `/portal/socios/${slug}/login`,
+                  redirect: true,
+                })
+              }
             >
               Salir
             </Button>
