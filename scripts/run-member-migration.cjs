@@ -64,6 +64,15 @@ async function membershipPlanTierExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function membershipPlanLimitsExist() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'membershipplan' AND column_name = 'monthly_limit'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function run() {
   if (!process.env.DATABASE_URL) {
     console.log("DATABASE_URL no definida, se omite run-member-migration");
@@ -94,6 +103,14 @@ async function run() {
       console.log("Migración tier de membresías aplicada correctamente.");
     } else {
       console.log("MembershipPlan.tier ya existe, migración tier omitida.");
+    }
+
+    if (!(await membershipPlanLimitsExist())) {
+      const statements = runSqlFile(path.join(migrationsDir, "20260317120000_add_membership_plan_limits", "migration.sql"));
+      await executeStatements(statements, "[membresías-límites]");
+      console.log("Migración límites de membresías aplicada correctamente.");
+    } else {
+      console.log("MembershipPlan.monthly_limit ya existe, migración límites omitida.");
     }
   } catch (err) {
     console.error("Error en run-member-migration:", err);

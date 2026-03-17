@@ -25,7 +25,6 @@ import {
   Wallet,
   Bell,
   KeyRound,
-  Pencil,
 } from "lucide-react";
 
 type MemberData = {
@@ -88,7 +87,12 @@ type TabId = "datos" | "membresia" | "operativa" | "historial" | "saldo" | "noti
 type Props = {
   tenantSlug: string;
   member: MemberData;
-  membershipPlan?: { name: string; tier: string | null } | null;
+  membershipPlan?: {
+    name: string;
+    tier: string | null;
+    monthlyLimit?: { toString: () => string } | null;
+    dailyLimit?: { toString: () => string } | null;
+  } | null;
   payments: PaymentRow[];
   account: { id: string; email: string; status: string } | null;
   notifications: NotifRow[];
@@ -109,6 +113,11 @@ export function MemberDetailTabs({
   const [tab, setTab] = useState<TabId>("datos");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [canReserveProducts, setCanReserveProducts] = useState(member.canReserveProducts);
+  const [canPreorder, setCanPreorder] = useState(member.canPreorder);
+  const [canAccessEvents, setCanAccessEvents] = useState(member.canAccessEvents);
+  const [canInviteGuest, setCanInviteGuest] = useState(member.canInviteGuest);
+  const [operativaSaving, setOperativaSaving] = useState<null | "reserve" | "preorder" | "events" | "invite">(null);
   const [accountEmail, setAccountEmail] = useState(member.email ?? "");
   const [accountPassword, setAccountPassword] = useState("");
   const [resetPassword, setResetPassword] = useState("");
@@ -116,6 +125,70 @@ export function MemberDetailTabs({
   const [notifBody, setNotifBody] = useState("");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustNote, setAdjustNote] = useState("");
+
+  const setOperativaField = async (field: "reserve" | "preorder" | "events" | "invite", next: boolean) => {
+    setError("");
+    setOperativaSaving(field);
+    const prev = { canReserveProducts, canPreorder, canAccessEvents, canInviteGuest };
+    if (field === "reserve") setCanReserveProducts(next);
+    if (field === "preorder") setCanPreorder(next);
+    if (field === "events") setCanAccessEvents(next);
+    if (field === "invite") setCanInviteGuest(next);
+
+    const payload =
+      field === "reserve"
+        ? { canReserveProducts: next }
+        : field === "preorder"
+          ? { canPreorder: next }
+          : field === "events"
+            ? { canAccessEvents: next }
+            : { canInviteGuest: next };
+
+    try {
+      const res = await updateMember(member.id, payload);
+      if (res?.error) {
+        setError(res.error);
+        setCanReserveProducts(prev.canReserveProducts);
+        setCanPreorder(prev.canPreorder);
+        setCanAccessEvents(prev.canAccessEvents);
+        setCanInviteGuest(prev.canInviteGuest);
+      }
+    } catch {
+      setError("No se pudo guardar el cambio");
+      setCanReserveProducts(prev.canReserveProducts);
+      setCanPreorder(prev.canPreorder);
+      setCanAccessEvents(prev.canAccessEvents);
+      setCanInviteGuest(prev.canInviteGuest);
+    } finally {
+      setOperativaSaving(null);
+    }
+  };
+
+  const OperativaToggle = ({
+    label,
+    value,
+    onToggle,
+    saving,
+  }: {
+    label: string;
+    value: boolean;
+    onToggle: (next: boolean) => void;
+    saving: boolean;
+  }) => (
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <Button
+        type="button"
+        size="sm"
+        variant={value ? "default" : "outline"}
+        disabled={saving}
+        onClick={() => onToggle(!value)}
+        className="min-w-20"
+      >
+        {saving ? "Guardando..." : value ? "Sí" : "No"}
+      </Button>
+    </div>
+  );
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: "datos", label: "Datos", icon: <User className="h-4 w-4" /> },
@@ -389,18 +462,7 @@ export function MemberDetailTabs({
           </CardContent>
           <CardContent className="border-t">
             <p className="text-sm font-medium mb-2">Historial de pagos</p>
-            {payments.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No hay pagos registrados.</p>
-            ) : (
-              <ul className="space-y-1 text-sm">
-                {payments.map((p) => (
-                  <li key={p.id} className="flex justify-between">
-                    <span>{formatDate(p.paidAt)}</span>
-                    <span>{p.amount.toString()} {p.currency} · {p.method ?? "—"}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <p className="text-muted-foreground text-sm">Próximamente.</p>
           </CardContent>
         </Card>
       )}
@@ -417,11 +479,11 @@ export function MemberDetailTabs({
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Límite mensual</p>
-              <p className="font-medium">{member.monthlyLimit?.toString() ?? "—"}</p>
+              <p className="font-medium">{membershipPlan?.monthlyLimit?.toString?.() ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Límite diario</p>
-              <p className="font-medium">{member.dailyLimit?.toString() ?? "—"}</p>
+              <p className="font-medium">{membershipPlan?.dailyLimit?.toString?.() ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Saldo restante</p>
@@ -431,44 +493,36 @@ export function MemberDetailTabs({
               <p className="text-xs text-muted-foreground">Consumido este período</p>
               <p className="font-medium">{member.consumedThisPeriod?.toString() ?? "0"}</p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Puede reservar productos</p>
-              <Badge variant={member.canReserveProducts ? "success" : "secondary"}>
-                {member.canReserveProducts ? "Sí" : "No"}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Preorden</p>
-              <Badge variant={member.canPreorder ? "success" : "secondary"}>
-                {member.canPreorder ? "Sí" : "No"}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Acceso a eventos</p>
-              <Badge variant={member.canAccessEvents ? "success" : "secondary"}>
-                {member.canAccessEvents ? "Sí" : "No"}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Puede invitar invitados</p>
-              <Badge variant={member.canInviteGuest ? "success" : "secondary"}>
-                {member.canInviteGuest ? "Sí" : "No"}
-              </Badge>
-            </div>
+            <OperativaToggle
+              label="Puede reservar productos"
+              value={canReserveProducts}
+              saving={operativaSaving === "reserve"}
+              onToggle={(next) => setOperativaField("reserve", next)}
+            />
+            <OperativaToggle
+              label="Preorden"
+              value={canPreorder}
+              saving={operativaSaving === "preorder"}
+              onToggle={(next) => setOperativaField("preorder", next)}
+            />
+            <OperativaToggle
+              label="Acceso a eventos"
+              value={canAccessEvents}
+              saving={operativaSaving === "events"}
+              onToggle={(next) => setOperativaField("events", next)}
+            />
+            <OperativaToggle
+              label="Puede invitar invitados"
+              value={canInviteGuest}
+              saving={operativaSaving === "invite"}
+              onToggle={(next) => setOperativaField("invite", next)}
+            />
             {member.internalNotes && (
               <div className="sm:col-span-2">
                 <p className="text-xs text-muted-foreground">Notas internas</p>
                 <p className="font-medium">{member.internalNotes}</p>
               </div>
             )}
-          </CardContent>
-          <CardContent className="border-t pt-4">
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/app/${tenantSlug}/members`}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Editar en listado
-              </Link>
-            </Button>
           </CardContent>
         </Card>
       )}

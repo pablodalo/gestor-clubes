@@ -47,6 +47,8 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
       recurrenceDay: (formData.get("recurrenceDay") as string).trim()
         ? Number(formData.get("recurrenceDay"))
         : undefined,
+      monthlyLimit: (formData.get("monthlyLimit") as string).trim() || undefined,
+      dailyLimit: (formData.get("dailyLimit") as string).trim() || undefined,
       status: (formData.get("status") as "active" | "inactive") || "active",
     };
 
@@ -159,6 +161,30 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   <option value="active">Activo</option>
                   <option value="inactive">Inactivo</option>
                 </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="monthlyLimit">Límite mensual (opcional)</Label>
+                <Input
+                  id="monthlyLimit"
+                  name="monthlyLimit"
+                  type="number"
+                  step="0.01"
+                  defaultValue={(edit as unknown as { monthlyLimit?: unknown })?.monthlyLimit != null ? String((edit as any).monthlyLimit) : ""}
+                  placeholder="30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dailyLimit">Límite diario (opcional)</Label>
+                <Input
+                  id="dailyLimit"
+                  name="dailyLimit"
+                  type="number"
+                  step="0.01"
+                  defaultValue={(edit as unknown as { dailyLimit?: unknown })?.dailyLimit != null ? String((edit as any).dailyLimit) : ""}
+                  placeholder="1"
+                />
               </div>
             </div>
           </div>

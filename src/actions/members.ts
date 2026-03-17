@@ -123,7 +123,7 @@ export async function createMember(input: CreateMemberInput) {
     data.membershipPlanId && data.membershipPlanId.trim()
       ? await prisma.membershipPlan.findFirst({
           where: { id: data.membershipPlanId.trim(), tenantId: ctx.tenantId },
-          select: { id: true, name: true, currency: true, recurrenceDay: true },
+          select: { id: true, name: true, currency: true, recurrenceDay: true, monthlyLimit: true, dailyLimit: true },
         })
       : null;
 
@@ -176,8 +176,8 @@ export async function createMember(input: CreateMemberInput) {
       membershipLastPaidAt,
       membershipLastAmount,
       membershipCurrency: data.membershipCurrency || plan?.currency || "ARS",
-      monthlyLimit,
-      dailyLimit,
+      monthlyLimit: plan?.monthlyLimit ?? monthlyLimit,
+      dailyLimit: plan?.dailyLimit ?? dailyLimit,
       remainingBalance,
       consumedThisPeriod: new Prisma.Decimal(0),
       canReserveProducts: data.canReserveProducts ?? true,
@@ -295,7 +295,7 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
     } else {
       const plan = await prisma.membershipPlan.findFirst({
         where: { id: planId, tenantId: ctx.tenantId },
-        select: { name: true, currency: true, recurrenceDay: true },
+        select: { name: true, currency: true, recurrenceDay: true, monthlyLimit: true, dailyLimit: true },
       });
       if (plan) {
         updateData.membershipPlan = plan.name;
@@ -303,6 +303,9 @@ export async function updateMember(memberId: string, input: UpdateMemberInput) {
         if (updateData.membershipRecurrenceDay === undefined && plan.recurrenceDay != null) {
           updateData.membershipRecurrenceDay = plan.recurrenceDay;
         }
+        // Límites salen del plan por defecto (source-of-truth)
+        if (plan.monthlyLimit != null) updateData.monthlyLimit = plan.monthlyLimit;
+        if (plan.dailyLimit != null) updateData.dailyLimit = plan.dailyLimit;
       }
     }
   }

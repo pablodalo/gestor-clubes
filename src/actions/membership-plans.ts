@@ -16,6 +16,8 @@ const createPlanSchema = z.object({
   price: z.string().optional(),
   currency: z.string().default("ARS"),
   recurrenceDay: z.coerce.number().int().min(1).max(28).optional().nullable(),
+  monthlyLimit: z.string().optional(),
+  dailyLimit: z.string().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
 });
 
@@ -71,6 +73,10 @@ export async function createMembershipPlan(input: CreateMembershipPlanInput) {
 
   const data = parsed.data;
   const price = data.price != null && data.price !== "" ? new Prisma.Decimal(data.price) : null;
+  const monthlyLimit =
+    data.monthlyLimit != null && data.monthlyLimit !== "" ? new Prisma.Decimal(String(data.monthlyLimit)) : null;
+  const dailyLimit =
+    data.dailyLimit != null && data.dailyLimit !== "" ? new Prisma.Decimal(String(data.dailyLimit)) : null;
 
   const existing = await prisma.membershipPlan.findUnique({
     where: { tenantId_name: { tenantId: ctx.tenantId, name: data.name } },
@@ -86,6 +92,8 @@ export async function createMembershipPlan(input: CreateMembershipPlanInput) {
       price,
       currency: data.currency || "ARS",
       recurrenceDay: data.recurrenceDay ?? null,
+      monthlyLimit,
+      dailyLimit,
       status: data.status,
     },
   });
@@ -134,6 +142,14 @@ export async function updateMembershipPlan(planId: string, input: UpdateMembersh
   if (data.status !== undefined) updateData.status = data.status;
   if (data.price !== undefined) {
     updateData.price = data.price != null && data.price !== "" ? new Prisma.Decimal(String(data.price)) : null;
+  }
+  if (data.monthlyLimit !== undefined) {
+    updateData.monthlyLimit =
+      data.monthlyLimit != null && data.monthlyLimit !== "" ? new Prisma.Decimal(String(data.monthlyLimit)) : null;
+  }
+  if (data.dailyLimit !== undefined) {
+    updateData.dailyLimit =
+      data.dailyLimit != null && data.dailyLimit !== "" ? new Prisma.Decimal(String(data.dailyLimit)) : null;
   }
 
   if (data.name && data.name !== existing.name) {

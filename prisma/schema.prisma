@@ -178,6 +178,8 @@ model MembershipPlan {
   price       Decimal? @db.Decimal(12, 2)
   currency    String   @default("ARS")
   recurrenceDay Int?   @map("recurrence_day") // día del mes para cobro recurrente (1-28)
+  monthlyLimit Decimal? @map("monthly_limit") @db.Decimal(12, 2)
+  dailyLimit   Decimal? @map("daily_limit") @db.Decimal(12, 2)
   status      String   @default("active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
