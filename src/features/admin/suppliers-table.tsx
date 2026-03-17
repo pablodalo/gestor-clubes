@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Supplier } from "@prisma/client";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,6 @@ import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -35,92 +35,81 @@ export function SuppliersTable({
   suppliers: Row[];
   canCreate: boolean;
 }) {
+  const router = useRouter();
   const [q, setQ] = useState("");
-  const [deliveryFilter, setDeliveryFilter] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("");
   const [open, setOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return suppliers.filter((s) => {
-      if (deliveryFilter === "pending" && !s.pendingDelivery) return false;
-      if (deliveryFilter === "ok" && s.pendingDelivery) return false;
-      const paymentPending = s.pendingPayment || s.paymentStatus === "pending";
-      if (paymentFilter === "pending" && !paymentPending) return false;
-      if (paymentFilter === "ok" && paymentPending) return false;
       if (!term) return true;
-      const hay = [s.name, s.suppliesProvided ?? "", s.email ?? "", s.phone ?? ""].join(" ").toLowerCase();
+      const hay = [s.name, s.suppliesProvided ?? ""].join(" ").toLowerCase();
       return hay.includes(term);
     });
-  }, [suppliers, q, deliveryFilter, paymentFilter]);
+  }, [suppliers, q]);
 
   const formatMoney = (value: number) =>
     new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value);
+
+  const getEstado = (s: Row): "Sin pedidos" | "En proceso" | "Pendiente" => {
+    const hasOrders = !!s.lastOrder;
+    if (!hasOrders) return "Sin pedidos";
+    if ((s.activeOrdersCount ?? 0) > 0) return "En proceso";
+    if (Number(s.balance ?? 0) > 0) return "Pendiente";
+    return "Sin pedidos";
+  };
 
   const columns: DataTableColumn<Row>[] = [
     {
       key: "name",
       header: "Proveedor",
-      render: (s) => (
-        <Link
-          href={`/app/${tenantSlug}/suppliers/${s.id}`}
-          className="font-medium text-foreground hover:underline"
-        >
-          {s.name}
-        </Link>
-      ),
+      className: "w-[30%]",
+      render: (s) => <span className="font-medium text-foreground">{s.name}</span>,
     },
-    { key: "suppliesProvided", header: "Suministra", render: (s) => s.suppliesProvided ?? "—" },
-    { key: "suppliesCount", header: "Suministros", render: (s) => s.suppliesCount ?? 0, align: "center" },
+    {
+      key: "suppliesProvided",
+      header: "Categoría",
+      className: "w-[28%] text-muted-foreground",
+      render: (s) => <span className="text-muted-foreground">{s.suppliesProvided ?? "—"}</span>,
+    },
     {
       key: "lastOrder",
       header: "Último pedido",
+      className: "w-[16%]",
       render: (s) =>
         s.lastOrder ? (
-          <span className="text-muted-foreground">
-            {new Date(s.lastOrder.date).toLocaleDateString("es-AR")} · {formatMoney(Number(s.lastOrder.total ?? 0))}
-          </span>
+          <span className="text-muted-foreground">{new Date(s.lastOrder.date).toLocaleDateString("es-AR")}</span>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
     },
     {
-      key: "activeOrders",
-      header: "Activos",
-      align: "center",
+      key: "estado",
+      header: "Estado",
+      className: "w-[14%]",
       render: (s) => (
-        <Badge variant={(s.activeOrdersCount ?? 0) > 0 ? "secondary" : "success"}>
-          {(s.activeOrdersCount ?? 0) > 0 ? `${s.activeOrdersCount}` : "0"}
+        <Badge
+          variant={
+            getEstado(s) === "En proceso"
+              ? "warning"
+              : getEstado(s) === "Pendiente"
+                ? "destructive"
+                : "secondary"
+          }
+        >
+          {getEstado(s)}
         </Badge>
       ),
     },
     {
       key: "balance",
       header: "Balance",
+      align: "right",
+      className: "w-[12%] tabular-nums",
       render: (s) => (
         <span className={Number(s.balance ?? 0) > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
           {formatMoney(Number(s.balance ?? 0))}
         </span>
-      ),
-    },
-    { key: "email", header: "Email", render: (s) => s.email ?? "—" },
-    { key: "phone", header: "Teléfono", render: (s) => s.phone ?? "—" },
-    {
-      key: "delivery",
-      header: "Entregas",
-      render: (s) => (
-        <Badge variant={s.pendingDelivery ? "secondary" : "success"}>
-          {s.pendingDelivery ? `Pendiente${s.nextDeliveryAt ? ` · ${new Date(s.nextDeliveryAt).toLocaleDateString("es-AR")}` : ""}` : "Al día"}
-        </Badge>
-      ),
-    },
-    {
-      key: "payments",
-      header: "Pagos",
-      render: (s) => (
-        <Badge variant={s.pendingPayment || s.paymentStatus === "pending" ? "secondary" : "success"}>
-          {s.pendingPayment || s.paymentStatus === "pending" ? "Pendiente" : "Al día"}
-        </Badge>
       ),
     },
   ];
@@ -134,11 +123,7 @@ export function SuppliersTable({
     lastOrderTotal: Number(s.lastOrder?.total ?? 0),
     activeOrdersCount: s.activeOrdersCount ?? 0,
     balance: Number(s.balance ?? 0),
-    email: s.email ?? "",
-    phone: s.phone ?? "",
-    pendingDelivery: s.pendingDelivery ? "Sí" : "No",
-    nextDeliveryAt: s.nextDeliveryAt ? new Date(s.nextDeliveryAt).toISOString() : "",
-    pendingPayment: s.pendingPayment || s.paymentStatus === "pending" ? "Sí" : "No",
+    estado: getEstado(s),
   }));
 
   return (
@@ -163,35 +148,16 @@ export function SuppliersTable({
           data={filtered}
           keyExtractor={(s) => s.id}
           emptyMessage="No hay proveedores."
+          onRowClick={(s) => router.push(`/app/${tenantSlug}/suppliers/${s.id}`)}
           toolbar={
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Buscar por nombre, email, teléfono…"
+                  placeholder="Buscar por nombre o categoría…"
                   className="sm:max-w-sm"
                 />
-                <div className="flex gap-2">
-                  <select
-                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={deliveryFilter}
-                    onChange={(e) => setDeliveryFilter(e.target.value)}
-                  >
-                    <option value="">Entregas (todas)</option>
-                    <option value="pending">Pendientes</option>
-                    <option value="ok">Al día</option>
-                  </select>
-                  <select
-                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={paymentFilter}
-                    onChange={(e) => setPaymentFilter(e.target.value)}
-                  >
-                    <option value="">Pagos (todos)</option>
-                    <option value="pending">Pendientes</option>
-                    <option value="ok">Al día</option>
-                  </select>
-                </div>
               </div>
               <span className="text-xs text-muted-foreground">{filtered.length} resultado(s)</span>
             </div>

@@ -44,6 +44,8 @@ type DataTableProps<T> = {
   /** Contenido de la última celda por fila (menú de acciones discreto) */
   rowActions?: (item: T) => React.ReactNode;
   rowClassName?: string;
+  /** Si se provee, la fila completa es clickeable */
+  onRowClick?: (item: T) => void;
   /** Paginado en cliente (por defecto true) */
   paginate?: boolean;
   /** Tamaño de página (por defecto 20) */
@@ -59,6 +61,7 @@ export function DataTable<T>({
   toolbar,
   rowActions,
   rowClassName,
+  onRowClick,
   paginate = true,
   pageSize = 20,
 }: DataTableProps<T>) {
@@ -172,7 +175,23 @@ export function DataTable<T>({
             </TableRow>
           ) : (
             viewData.map((item) => (
-              <TableRow key={keyExtractor(item)} className={rowClassName}>
+              <TableRow
+                key={keyExtractor(item)}
+                className={cn(
+                  rowClassName,
+                  onRowClick && "cursor-pointer hover:bg-muted/40"
+                )}
+                onClick={onRowClick ? () => onRowClick(item) : undefined}
+                role={onRowClick ? "link" : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") onRowClick(item);
+                      }
+                    : undefined
+                }
+              >
                 {columns.map((col) => (
                   <TableCell
                     key={col.key}
