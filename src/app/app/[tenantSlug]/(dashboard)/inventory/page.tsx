@@ -5,10 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { NoPermissionMessage } from "@/components/no-permission";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DispensationForm } from "@/features/inventory/dispensation-form";
-import { ProductsTable } from "@/features/products/products-table";
-import { ProductForm } from "@/features/products/product-form";
 import { logError } from "@/lib/server-log";
+import Link from "next/link";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -31,21 +29,12 @@ export default async function InventoryPage({ params }: Props) {
   }
 
   try {
-    const [stocks, strains, members, products] = await Promise.all([
+    const [stocks, strains] = await Promise.all([
       prisma.inventoryStock.findMany({
         where: { tenantId: tenant.id },
         include: { strain: true },
       }),
       prisma.plantStrain.findMany({
-        where: { tenantId: tenant.id },
-        orderBy: { name: "asc" },
-      }),
-      prisma.member.findMany({
-        where: { tenantId: tenant.id, status: "active" },
-        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-        select: { id: true, firstName: true, lastName: true, memberNumber: true },
-      }),
-      prisma.product.findMany({
         where: { tenantId: tenant.id },
         orderBy: { name: "asc" },
       }),
@@ -70,77 +59,61 @@ export default async function InventoryPage({ params }: Props) {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Inventario / Productos</h1>
           <p className="text-muted-foreground mt-1">
-            Flores y extractos disponibles para comercializar, junto con el catálogo de productos del club.
+            Flores y extractos disponibles para comercializar.
           </p>
         </div>
-        <div className="grid gap-6 xl:grid-cols-3">
-          <div className="xl:col-span-2 grid gap-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Flores</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {flowerRows.map(({ strain, grams }) => (
-                    <div key={strain.id} className="flex items-center justify-between rounded-lg border border-border/60 p-3">
-                      <div>
-                        <p className="font-medium">{strain.name}</p>
-                        <p className="text-xs text-muted-foreground">{strain.genetics ?? "—"}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant={grams > 0 ? "success" : "secondary"}>
-                          {grams > 0 ? "En stock" : "Sin stock"}
-                        </Badge>
-                        <span className="text-sm">{grams.toFixed(2)} g</span>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Extractos</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {extractRows.map(({ strain, grams }) => (
-                    <div key={strain.id} className="flex items-center justify-between rounded-lg border border-border/60 p-3">
-                      <div>
-                        <p className="font-medium">{strain.name}</p>
-                        <p className="text-xs text-muted-foreground">{strain.genetics ?? "—"}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant={grams > 0 ? "success" : "secondary"}>
-                          {grams > 0 ? "En stock" : "Sin stock"}
-                        </Badge>
-                        <span className="text-sm">{grams.toFixed(2)} g</span>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <Link href={`/app/${tenantSlug}/inventory/flores`} className="hover:underline underline-offset-4">
+                  Flores
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {flowerRows.map(({ strain, grams }) => (
+                <div key={strain.id} className="flex items-center justify-between rounded-lg border border-border/60 p-3">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{strain.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{strain.genetics ?? "—"}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={grams > 0 ? "success" : "secondary"}>
+                      {grams > 0 ? "En stock" : "Sin stock"}
+                    </Badge>
+                    <span className="text-sm tabular-nums">{grams.toFixed(2)} g</span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
 
-            {canReadProducts && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Productos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ProductsTable products={products} />
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          <div className="space-y-6">
-            <DispensationForm
-              strains={strains.map((s) => ({ id: s.id, label: s.name }))}
-              members={members.map((m) => ({ id: m.id, label: `${m.memberNumber} · ${m.firstName} ${m.lastName}` }))}
-            />
-            {canManageProducts && (
-              <ProductForm currency={tenant.currency} />
-            )}
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <Link href={`/app/${tenantSlug}/inventory/extractos`} className="hover:underline underline-offset-4">
+                  Extractos
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {extractRows.map(({ strain, grams }) => (
+                <div key={strain.id} className="flex items-center justify-between rounded-lg border border-border/60 p-3">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{strain.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{strain.genetics ?? "—"}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={grams > 0 ? "success" : "secondary"}>
+                      {grams > 0 ? "En stock" : "Sin stock"}
+                    </Badge>
+                    <span className="text-sm tabular-nums">{grams.toFixed(2)} g</span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

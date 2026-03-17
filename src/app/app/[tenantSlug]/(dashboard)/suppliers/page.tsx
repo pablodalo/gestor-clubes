@@ -53,27 +53,21 @@ export default async function SuppliersPage({ params }: Props) {
     });
     const activeOrdersBySupplier = new Map(activeOrders.map((g) => [g.supplierId, g._count.id]));
 
-    // Total pedidos y total pagos por proveedor (para balance)
-    const ordersSum = await prisma.supplierOrder.groupBy({
-      by: ["supplierId"],
-      where: { tenantId: tenant.id },
-      _sum: { total: true },
+    // Pedido activo más reciente por proveedor (si existe)
+    const activeLastOrders = await prisma.supplierOrder.findMany({
+      where: { tenantId: tenant.id, status: { in: ["draft", "sent", "in_progress"] } },
+      distinct: ["supplierId"],
+      orderBy: [{ supplierId: "asc" }, { date: "desc" }],
+      select: { supplierId: true, date: true, total: true, status: true },
     });
-    const paymentsSum = await prisma.supplierPayment.groupBy({
-      by: ["supplierId"],
-      where: { tenantId: tenant.id },
-      _sum: { amount: true },
-    });
-    const ordersSumBySupplier = new Map(ordersSum.map((g) => [g.supplierId, Number(g._sum.total ?? 0)]));
-    const paymentsSumBySupplier = new Map(paymentsSum.map((g) => [g.supplierId, Number(g._sum.amount ?? 0)]));
+    const activeLastOrderBySupplier = new Map(activeLastOrders.map((o) => [o.supplierId, o]));
 
     const rows = suppliers.map((supplier) => ({
       ...supplier,
       suppliesCount: supplier.supplies.length,
       lastOrder: lastOrderBySupplier.get(supplier.id) ?? null,
       activeOrdersCount: activeOrdersBySupplier.get(supplier.id) ?? 0,
-      balance:
-        (ordersSumBySupplier.get(supplier.id) ?? 0) - (paymentsSumBySupplier.get(supplier.id) ?? 0),
+      activeLastOrder: activeLastOrderBySupplier.get(supplier.id) ?? null,
     }));
 
     return (

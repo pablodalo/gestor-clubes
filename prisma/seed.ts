@@ -719,6 +719,51 @@ async function main() {
         },
       });
 
+      await prisma.supplier.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: "Envases & Frascos SRL" } },
+        update: {
+          suppliesProvided: "Frascos, envases, etiquetas",
+          paymentStatus: "ok",
+          pendingPayment: false,
+          pendingDelivery: false,
+          nextDeliveryAt: null,
+        },
+        create: {
+          tenantId: tenant.id,
+          name: "Envases & Frascos SRL",
+          email: "pedidos@envasesfrascos.com",
+          phone: "+54 11 5555-0101",
+          suppliesProvided: "Frascos, envases, etiquetas",
+          paymentStatus: "ok",
+          pendingPayment: false,
+          pendingDelivery: false,
+          status: "active",
+        },
+      });
+
+      await prisma.supplier.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: "Herramientas Cultivo Pro" } },
+        update: {
+          suppliesProvided: "Herramientas, medidores, riego",
+          paymentStatus: "pending",
+          pendingPayment: true,
+          pendingDelivery: false,
+          nextDeliveryAt: new Date("2024-12-18"),
+        },
+        create: {
+          tenantId: tenant.id,
+          name: "Herramientas Cultivo Pro",
+          email: "info@cultivopro.com",
+          phone: "+54 11 4444-0202",
+          suppliesProvided: "Herramientas, medidores, riego",
+          paymentStatus: "pending",
+          pendingPayment: true,
+          pendingDelivery: false,
+          nextDeliveryAt: new Date("2024-12-18"),
+          status: "active",
+        },
+      });
+
       const supplies = [
         { name: "Fertilizante A", category: "fertilizante", unit: "l", minQty: 5, currentQty: 3, isMissing: true, renewalAt: new Date("2024-12-11") },
         { name: "Sustrato Premium", category: "sustrato", unit: "kg", minQty: 20, currentQty: 40, isMissing: false, renewalAt: new Date("2024-12-20") },

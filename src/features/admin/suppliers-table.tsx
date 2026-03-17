@@ -17,13 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SupplierForm } from "@/features/admin/supplier-form";
-import { Truck, Building2 } from "lucide-react";
+import { Truck, Building2, Search } from "lucide-react";
 
 type Row = Supplier & {
   suppliesCount?: number;
   lastOrder?: { date: Date; total: unknown; status: string } | null;
   activeOrdersCount?: number;
-  balance?: number;
+  activeLastOrder?: { date: Date; total: unknown; status: string } | null;
 };
 
 export function SuppliersTable({
@@ -48,49 +48,33 @@ export function SuppliersTable({
     });
   }, [suppliers, q]);
 
-  const formatMoney = (value: number) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value);
-
-  const daysAgoLabel = (date?: Date | null) => {
-    if (!date) return "—";
-    const d = new Date(date);
-    const diffDays = Math.max(0, Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24)));
-    if (diffDays === 0) return "Hoy";
-    if (diffDays === 1) return "Ayer";
-    return `Hace ${diffDays} días`;
-  };
-
-  const getEstado = (s: Row): "Sin pedidos" | "En proceso" | "Pendiente" => {
-    const hasOrders = !!s.lastOrder;
-    if (!hasOrders) return "Sin pedidos";
-    if ((s.activeOrdersCount ?? 0) > 0) return "En proceso";
-    if (Number(s.balance ?? 0) > 0) return "Pendiente";
-    return "Sin pedidos";
-  };
-
-  const estadoBadgeVariant = (estado: ReturnType<typeof getEstado>) => {
-    if (estado === "En proceso") return "warning" as const;
-    if (estado === "Pendiente") return "destructive" as const;
-    return "secondary" as const;
+  const getEstado = (s: Row) => {
+    const st = (s.activeLastOrder ?? s.lastOrder)?.status ?? null;
+    if (!st) return { label: "Sin pedidos", variant: "secondary" as const };
+    if (st === "draft") return { label: "Borrador", variant: "secondary" as const };
+    if (st === "sent") return { label: "Enviado", variant: "default" as const };
+    if (st === "in_progress") return { label: "En progreso", variant: "warning" as const };
+    if (st === "delivered") return { label: "Entregado", variant: "success" as const };
+    return { label: st, variant: "outline" as const };
   };
 
   const columns: DataTableColumn<Row>[] = [
     {
       key: "name",
       header: "Proveedor",
-      className: "w-[28%]",
+      className: "w-[34%]",
       render: (s) => <span className="font-medium text-foreground truncate block">{s.name}</span>,
     },
     {
       key: "suppliesProvided",
       header: "Categoría",
-      className: "w-[22%]",
+      className: "w-[34%]",
       render: (s) => <span className="text-muted-foreground truncate block">{s.suppliesProvided ?? "—"}</span>,
     },
     {
       key: "lastOrder",
       header: "Último pedido",
-      className: "w-[14%]",
+      className: "w-[16%]",
       render: (s) =>
         s.lastOrder ? (
           <span className="text-muted-foreground">{new Date(s.lastOrder.date).toLocaleDateString("es-AR")}</span>
@@ -99,31 +83,14 @@ export function SuppliersTable({
         ),
     },
     {
-      key: "activity",
-      header: "Actividad",
-      className: "w-[14%]",
-      render: (s) => <span className="text-muted-foreground">{daysAgoLabel(s.lastOrder?.date ?? null)}</span>,
-      sortable: false,
-    },
-    {
       key: "estado",
       header: "Estado",
-      className: "w-[12%]",
-      render: (s) => (
-        <Badge variant={estadoBadgeVariant(getEstado(s))}>{getEstado(s)}</Badge>
-      ),
+      className: "w-[16%]",
+      render: (s) => {
+        const estado = getEstado(s);
+        return <Badge variant={estado.variant}>{estado.label}</Badge>;
+      },
       sortable: false,
-    },
-    {
-      key: "balance",
-      header: "Balance",
-      align: "right",
-      className: "w-[10%] tabular-nums",
-      render: (s) => (
-        <span className={Number(s.balance ?? 0) > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
-          {formatMoney(Number(s.balance ?? 0))}
-        </span>
-      ),
     },
   ];
 
@@ -135,8 +102,7 @@ export function SuppliersTable({
     lastOrderDate: s.lastOrder ? new Date(s.lastOrder.date).toISOString() : "",
     lastOrderTotal: Number(s.lastOrder?.total ?? 0),
     activeOrdersCount: s.activeOrdersCount ?? 0,
-    balance: Number(s.balance ?? 0),
-    estado: getEstado(s),
+    estado: getEstado(s).label,
   }));
 
   return (
@@ -162,30 +128,19 @@ export function SuppliersTable({
           keyExtractor={(s) => s.id}
           emptyMessage="No hay proveedores."
           onRowClick={(s) => router.push(`/app/${tenantSlug}/suppliers/${s.id}`)}
-          rowClassName="group"
-          rowActions={(s) => (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/app/${tenantSlug}/suppliers/${s.id}#generador`);
-              }}
-            >
-              Nuevo pedido
-            </Button>
-          )}
           toolbar={
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <Input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Buscar por nombre o categoría…"
-                  className="sm:max-w-sm"
-                />
+                <div className="relative sm:max-w-sm w-full">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder=""
+                    className="pl-9"
+                    aria-label="Buscar"
+                  />
+                </div>
               </div>
               <span className="text-xs text-muted-foreground">{filtered.length} resultado(s)</span>
             </div>

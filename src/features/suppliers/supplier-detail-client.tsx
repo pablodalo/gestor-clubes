@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Supplier, SupplierOrder, SupplierOrderItem } from "@prisma/client";
 import { createSupplierOrder, deleteSupplierOrder, updateSupplierOrderStatus } from "@/actions/supplier-orders";
-import { Copy, Plus, RefreshCcw } from "lucide-react";
+import { Copy, Mail, MessageCircle, Plus, RefreshCcw } from "lucide-react";
 
 type OrderWithItems = SupplierOrder & { items: SupplierOrderItem[] };
 
@@ -24,14 +24,9 @@ type Props = {
   currency: string;
   supplier: Supplier;
   orders: OrderWithItems[];
-  balance: number;
 };
 
 type DraftItem = { name: string; quantity: number };
-
-function formatMoney(value: number, currency: string) {
-  return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
-}
 
 function buildMessage(items: { name: string; quantity: number }[]) {
   const lines = items
@@ -40,7 +35,16 @@ function buildMessage(items: { name: string; quantity: number }[]) {
   return `Hola! Te paso pedido:\n\n${lines.join("\n")}\n\nGracias!`;
 }
 
-export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, balance }: Props) {
+function normalizePhoneForWhatsapp(raw?: string | null) {
+  if (!raw) return null;
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  // Si ya viene con prefijo (ej 54...), usamos tal cual.
+  if (digits.length >= 10) return digits;
+  return null;
+}
+
+export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }: Props) {
   const router = useRouter();
   const lastOrder = orders[0] ?? null;
   const activeOrder = orders.find((o) => o.status !== "delivered") ?? null;
@@ -122,6 +126,7 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, b
 
   const headerState = activeOrder ? "Pedido en proceso" : "Sin pedidos activos";
   const eta = supplier.nextDeliveryAt ? new Date(supplier.nextDeliveryAt).toLocaleDateString("es-AR") : null;
+  const mainContact = supplier.email ?? supplier.phone ?? "—";
 
   return (
     <div className="space-y-6">
@@ -129,21 +134,25 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, b
       <Card>
         <CardContent className="py-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-center">
-            <div className="lg:col-span-2 min-w-0">
-              <p className="text-xs text-muted-foreground">Contacto</p>
-              <p className="font-medium truncate">{supplier.email ?? supplier.phone ?? "—"}</p>
+            <div>
+              <p className="text-xs text-muted-foreground">Mail</p>
+              <p className="font-medium truncate">{supplier.email ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Teléfono</p>
+              <p className="font-medium truncate">{supplier.phone ?? "—"}</p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Contacto principal</p>
+              <p className="font-medium truncate">{mainContact}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Estado</p>
               <p className="font-medium">{headerState}</p>
             </div>
-            <div>
+            <div className="lg:text-right">
               <p className="text-xs text-muted-foreground">ETA</p>
               <p className="font-medium">{eta ?? "—"}</p>
-            </div>
-            <div className="lg:text-right">
-              <p className="text-xs text-muted-foreground">Balance</p>
-              <p className="text-lg font-semibold tabular-nums">{formatMoney(balance, currency)}</p>
             </div>
           </div>
         </CardContent>
@@ -273,6 +282,35 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders, b
                   <Button type="button" variant="outline" onClick={handleCopy} disabled={!generated && selectedItems.length === 0}>
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!supplier.email || (!generated && selectedItems.length === 0)}
+                    onClick={() => {
+                      const body = generated || buildMessage(selectedItems);
+                      const subject = `Pedido - ${supplier.name}`;
+                      const href = `mailto:${encodeURIComponent(supplier.email ?? "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                      window.location.href = href;
+                    }}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Mail
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!normalizePhoneForWhatsapp(supplier.phone) || (!generated && selectedItems.length === 0)}
+                    onClick={() => {
+                      const body = generated || buildMessage(selectedItems);
+                      const phone = normalizePhoneForWhatsapp(supplier.phone);
+                      if (!phone) return;
+                      const href = `https://wa.me/${phone}?text=${encodeURIComponent(body)}`;
+                      window.open(href, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    WhatsApp
                   </Button>
                   <Button type="button" onClick={saveOrderSnapshot}>
                     Guardar pedido
