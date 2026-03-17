@@ -6,6 +6,7 @@ import { createAuditLog } from "@/server/audit";
 import { z } from "zod";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { put as putBlob } from "@vercel/blob";
 
 const updateBrandingSchema = z.object({
   appName: z.string().nullable(),
@@ -91,11 +92,26 @@ export async function uploadLogo(
     return { error: "Formato no permitido. Usá PNG, JPG, GIF, WebP o SVG." };
   }
 
-  // En Vercel/serverless no hay filesystem escribible; no intentar guardar en public/uploads.
+  // En producción (Vercel): usar Vercel Blob si está configurado.
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const pathname = `logos/logo-${tenantId}-${Date.now()}.${ext}`;
+      const blob = await putBlob(pathname, file, { access: "public" });
+      return { data: { url: blob.url } };
+    } catch (err) {
+      console.error("uploadLogo (blob)", err);
+      return {
+        error:
+          "No se pudo subir la imagen. Probá de nuevo o usá la opción «Pegar URL».",
+      };
+    }
+  }
+
+  // En Vercel sin Blob: no hay filesystem escribible.
   if (process.env.VERCEL === "1") {
     return {
       error:
-        "En este entorno no se pueden subir archivos. Usá la opción «Pegar URL» más abajo con un enlace a la imagen (ej. desde Imgur o tu hosting).",
+        "En este entorno no se pueden subir archivos. Configurá Vercel Blob (BLOB_READ_WRITE_TOKEN) o usá la opción «Pegar URL».",
     };
   }
 
