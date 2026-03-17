@@ -201,3 +201,111 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 };
+
+const secureCookie = process.env.NODE_ENV === "production";
+
+/**
+ * Auth aislado para portal de socios. Usa basePath propio y cookies con nombres distintos
+ * para que loguear un socio NO invalide la sesión del superadmin/tenant en el panel.
+ */
+export const portalAuthOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  // Importante: signIn del portal se maneja por rutas del portal.
+  pages: {
+    signIn: "/portal",
+  },
+  cookies: {
+    sessionToken: {
+      name: "gc-portal.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: secureCookie,
+      },
+    },
+    callbackUrl: {
+      name: "gc-portal.callback-url",
+      options: {
+        sameSite: "lax",
+        path: "/",
+        secure: secureCookie,
+      },
+    },
+    csrfToken: {
+      name: "gc-portal.csrf-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: secureCookie,
+      },
+    },
+  },
+  callbacks: authOptions.callbacks,
+  providers: [
+    CredentialsProvider({
+      id: "member",
+      name: "Member",
+      credentials: {
+        email: { label: "Email" },
+        password: { label: "Password" },
+        tenantSlug: { label: "Tenant" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password || !credentials?.tenantSlug) return null;
+        const tenant = await prisma.tenant.findFirst({
+          where: { slug: credentials.tenantSlug, status: "active" },
+        });
+        if (!tenant) return null;
+        const member = await prisma.member.findFirst({
+          where: { tenantId: tenant.id, email: credentials.email, status: "active" },
+          include: { account: true },
+        });
+        if (!member?.account || !(await compare(credentials.password, member.account.passwordHash)))
+          return null;
+        await updateLastLogin("member", member.account.id);
+        return {
+          id: member.account.id,
+          email: member.account.email,
+          name: `${member.firstName} ${member.lastName}`,
+          context: "member" as AuthContext,
+          userId: member.account.id,
+          tenantId: tenant.id,
+          tenantSlug: tenant.slug,
+          role: "socio",
+        };
+      },
+    }),
+    CredentialsProvider({
+      id: "member-impersonate",
+      name: "MemberImpersonate",
+      credentials: { token: { label: "Token" }, tenantSlug: { label: "Tenant" } },
+      async authorize(credentials) {
+        if (!credentials?.token || !credentials?.tenantSlug) return null;
+        const payload = verifyImpersonateToken(credentials.token);
+        if (!payload || payload.tenantSlug !== credentials.tenantSlug) return null;
+        const tenant = await prisma.tenant.findFirst({
+          where: { slug: payload.tenantSlug, status: "active" },
+        });
+        if (!tenant) return null;
+        const member = await prisma.member.findFirst({
+          where: { id: payload.memberId, tenantId: tenant.id, status: "active" },
+          include: { account: true },
+        });
+        if (!member?.account || member.account.status !== "active") return null;
+        return {
+          id: member.account.id,
+          email: member.account.email,
+          name: `${member.firstName} ${member.lastName}`,
+          context: "member" as AuthContext,
+          userId: member.account.id,
+          tenantId: tenant.id,
+          tenantSlug: tenant.slug,
+          role: "socio",
+        };
+      },
+    }),
+  ],
+};

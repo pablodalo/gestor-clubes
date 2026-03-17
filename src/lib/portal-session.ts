@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { portalAuthOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
  * Si la sesión no es member o no coincide el tenantSlug, retorna null.
  */
 export async function getMemberAndTenantFromSession(tenantSlug: string) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(portalAuthOptions);
   if (!session?.user) return null;
 
   const ctx = (session as unknown as { context?: string }).context;

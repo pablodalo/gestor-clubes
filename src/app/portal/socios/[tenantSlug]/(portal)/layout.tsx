@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { portalAuthOptions } from "@/lib/auth";
 import { getTenantBySlug } from "@/lib/tenant";
 import { notFound } from "next/navigation";
 import { PortalShell } from "@/components/portal-shell";
@@ -17,7 +17,7 @@ export default async function PortalSociosDashboardLayout({ children, params }: 
     const tenant = await getTenantBySlug(tenantSlug);
     if (!tenant) notFound();
 
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(portalAuthOptions);
     const ctx = (session as unknown as { context?: string })?.context;
     const isMember =
       ctx === "member" && (session as unknown as { tenantSlug?: string }).tenantSlug === tenantSlug;
