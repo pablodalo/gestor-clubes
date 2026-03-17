@@ -69,14 +69,15 @@ export async function updateTenantBranding(
 }
 
 /** Sube una imagen de logo y devuelve la URL pública (ruta /uploads/...). Solo platform. */
-export async function uploadLogo(tenantId: string, formData: FormData): Promise<{ data?: { url: string }; error?: string }> {
+export async function uploadLogo(
+  tenantId: string,
+  formData: FormData
+): Promise<{ data?: { url: string }; error?: string }> {
   try {
     await assertPlatformSession();
   } catch {
     return { error: "No autorizado" };
   }
-  const ok = await validateTenantIdExists(tenantId);
-  if (!ok) return { error: "Tenant no encontrado" };
 
   const file = formData.get("file") as File | null;
   if (!file || !file.size || !file.type.startsWith("image/")) {
