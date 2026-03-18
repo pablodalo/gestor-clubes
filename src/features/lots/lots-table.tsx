@@ -38,6 +38,9 @@ export function LotsTable({ tenantSlug, lots, locations, canCreate }: Props) {
   const [editing, setEditing] = useState<LotRow | null>(null);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [lotToDelete, setLotToDelete] = useState<LotRow | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
 
   const refresh = () => router.refresh();
 
