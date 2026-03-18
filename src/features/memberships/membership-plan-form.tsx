@@ -152,14 +152,19 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                     <div>
                       <Label>Tier</Label>
                       <div className={fieldClass}>
-                        <div className="inline-flex flex-wrap gap-2 rounded-lg border border-input bg-background p-1">
+                        <div className="inline-flex flex-wrap gap-2 rounded-xl border border-input bg-background p-1.5">
                           {TIER_OPTIONS.map((opt) => (
                             <Button
                               key={opt}
                               type="button"
                               size="sm"
-                              variant={tier === opt ? "default" : "ghost"}
-                              className={tier === opt ? "" : "text-muted-foreground"}
+                              variant="ghost"
+                              className={
+                                "h-8 rounded-full px-3 text-xs font-medium transition-colors " +
+                                (tier === opt
+                                  ? "bg-primary/10 text-primary hover:bg-primary/15"
+                                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")
+                              }
                               onClick={() => setTier(opt)}
                             >
                               {opt}
