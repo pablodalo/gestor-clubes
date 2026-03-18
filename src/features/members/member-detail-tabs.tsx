@@ -552,7 +552,7 @@ export function MemberDetailTabs({
                       : `${consumedNum.toFixed(2)} (sin tope)`}
                   </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div className="h-3 sm:h-4 w-full rounded-full bg-muted/70 overflow-hidden ring-1 ring-border">
                   <div
                     className="h-full bg-primary transition-all"
                     style={{ width: `${consumedPct}%` }}
