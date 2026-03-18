@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   createMembershipPlan,
   updateMembershipPlan,
@@ -111,201 +112,214 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
     renewalEveryDays?: number | null;
   };
 
+  const fieldClass = "mt-1.5";
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
-        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4">
-          <DialogTitle>{edit ? "Editar plan" : "Nuevo plan de membresía"}</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden border-border bg-card shadow-xl rounded-xl">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-3">
+          <DialogTitle className="text-xl">{edit ? "Editar plan" : "Nuevo plan de membresía"}</DialogTitle>
           <DialogDescription>
             {edit ? "Modificá los datos del plan." : "Completá los datos del plan."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
           {error && (
-            <p className="mx-6 mb-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive flex-shrink-0">
+            <p className="mx-6 mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive flex-shrink-0 border border-destructive/20">
               {error}
             </p>
           )}
-          <div className="overflow-y-auto flex-1 px-6 pb-6">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-              {/* Identidad */}
-              <div className="col-span-2">
-                <Label htmlFor="name">Nombre del plan</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  required
-                  defaultValue={edit?.name}
-                  placeholder="Ej. Flores + Extractos"
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label>Tier</Label>
-                <Select value={tier || "none"} onValueChange={(v) => setTier(v === "none" ? "" : v)}>
-                  <SelectTrigger className="mt-1.5 w-full">
-                    <SelectValue placeholder="Sin tier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIER_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value || "none"} value={opt.value || "none"}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="description">Descripción (opcional)</Label>
-                <Input
-                  id="description"
-                  name="description"
-                  defaultValue={edit?.description ?? ""}
-                  placeholder="Ej. 30g flores y 10g extractos/mes"
-                  className="mt-1.5"
-                />
-              </div>
+          <div className="overflow-y-auto flex-1 px-6 pb-6 min-h-0">
+            <div className="space-y-4">
+              {/* Bloque 1: Datos del plan */}
+              <Card className="border-border bg-muted/20 shadow-none">
+                <CardHeader className="py-3 px-4">
+                  <h3 className="text-sm font-semibold text-foreground">Datos del plan</h3>
+                </CardHeader>
+                <CardContent className="pt-0 px-4 pb-4 space-y-4">
+                  <div>
+                    <Label htmlFor="name">Nombre</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      required
+                      defaultValue={edit?.name}
+                      placeholder="Ej. Flores + Extractos"
+                      className={fieldClass}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Tier</Label>
+                      <Select value={tier || "none"} onValueChange={(v) => setTier(v === "none" ? "" : v)}>
+                        <SelectTrigger className={fieldClass + " w-full"}>
+                          <SelectValue placeholder="Sin tier" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIER_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value || "none"} value={opt.value || "none"}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="description">Descripción (opcional)</Label>
+                      <Input
+                        id="description"
+                        name="description"
+                        defaultValue={edit?.description ?? ""}
+                        placeholder="Ej. 30g flores y 10g extractos/mes"
+                        className={fieldClass}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-              {/* Precio y cobro */}
-              <div className="col-span-2 pt-2 mt-2 border-t border-border">
-                <p className="text-sm font-medium text-foreground mb-3">Precio y cobro</p>
-              </div>
-              <div>
-                <Label htmlFor="price">Precio</Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  step="0.01"
-                  defaultValue={edit?.price != null ? String(edit.price) : ""}
-                  placeholder="25000"
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="currency">Moneda</Label>
-                <Input
-                  id="currency"
-                  name="currency"
-                  defaultValue={edit?.currency ?? "ARS"}
-                  placeholder="ARS"
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="recurrenceDay">Día de cobro (1-28)</Label>
-                <Input
-                  id="recurrenceDay"
-                  name="recurrenceDay"
-                  type="number"
-                  min={1}
-                  max={28}
-                  defaultValue={edit?.recurrenceDay ?? ""}
-                  placeholder="10"
-                  className="mt-1.5"
-                />
-              </div>
-              <div className="col-span-2" />
+              {/* Bloque 2: Precio y cobro + Límites en una fila */}
+              <Card className="border-border bg-muted/20 shadow-none">
+                <CardHeader className="py-3 px-4">
+                  <h3 className="text-sm font-semibold text-foreground">Precio, cobro y límites</h3>
+                </CardHeader>
+                <CardContent className="pt-0 px-4 pb-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    <div>
+                      <Label htmlFor="price">Precio</Label>
+                      <Input
+                        id="price"
+                        name="price"
+                        type="number"
+                        step="0.01"
+                        defaultValue={edit?.price != null ? String(edit.price) : ""}
+                        placeholder="25000"
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="currency">Moneda</Label>
+                      <Input
+                        id="currency"
+                        name="currency"
+                        defaultValue={edit?.currency ?? "ARS"}
+                        placeholder="ARS"
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="recurrenceDay">Día cobro (1-28)</Label>
+                      <Input
+                        id="recurrenceDay"
+                        name="recurrenceDay"
+                        type="number"
+                        min={1}
+                        max={28}
+                        defaultValue={edit?.recurrenceDay ?? ""}
+                        placeholder="10"
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="monthlyLimit">Límite mensual</Label>
+                      <Input
+                        id="monthlyLimit"
+                        name="monthlyLimit"
+                        type="number"
+                        step="0.01"
+                        defaultValue={editExt?.monthlyLimit != null ? String(editExt.monthlyLimit) : ""}
+                        placeholder="30"
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dailyLimit">Límite diario</Label>
+                      <Input
+                        id="dailyLimit"
+                        name="dailyLimit"
+                        type="number"
+                        step="0.01"
+                        defaultValue={editExt?.dailyLimit != null ? String(editExt.dailyLimit) : ""}
+                        placeholder="1"
+                        className={fieldClass}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-              {/* Límites */}
-              <div className="col-span-2 pt-2 mt-2 border-t border-border">
-                <p className="text-sm font-medium text-foreground mb-3">Límites de consumo</p>
-              </div>
-              <div>
-                <Label htmlFor="monthlyLimit">Límite mensual</Label>
-                <Input
-                  id="monthlyLimit"
-                  name="monthlyLimit"
-                  type="number"
-                  step="0.01"
-                  defaultValue={editExt?.monthlyLimit != null ? String(editExt.monthlyLimit) : ""}
-                  placeholder="30"
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="dailyLimit">Límite diario</Label>
-                <Input
-                  id="dailyLimit"
-                  name="dailyLimit"
-                  type="number"
-                  step="0.01"
-                  defaultValue={editExt?.dailyLimit != null ? String(editExt.dailyLimit) : ""}
-                  placeholder="1"
-                  className="mt-1.5"
-                />
-              </div>
-
-              {/* Vigencia y renovación */}
-              <div className="col-span-2 pt-2 mt-2 border-t border-border">
-                <p className="text-sm font-medium text-foreground mb-3">Vigencia y renovación</p>
-              </div>
-              <div>
-                <Label>Tipo de vigencia</Label>
-                <Select value={validityType} onValueChange={setValidityType}>
-                  <SelectTrigger className="mt-1.5 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recurrent">Recurrente (sin fecha de fin)</SelectItem>
-                    <SelectItem value="fixed_end">Con fecha de caducidad</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="validUntil">Fecha de caducidad</Label>
-                <Input
-                  id="validUntil"
-                  name="validUntil"
-                  type="date"
-                  defaultValue={
-                    editExt?.validUntil ? new Date(editExt.validUntil).toISOString().slice(0, 10) : ""
-                  }
-                  className="mt-1.5"
-                />
-              </div>
-              <div className="col-span-2 flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
-                  <input
-                    id="requiresRenewal"
-                    name="requiresRenewal"
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    defaultChecked={editExt?.requiresRenewal ?? false}
-                  />
-                  Requiere renovación
-                </label>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="renewalEveryDays" className="text-sm font-normal text-muted-foreground">Cada</Label>
-                  <Input
-                    id="renewalEveryDays"
-                    name="renewalEveryDays"
-                    type="number"
-                    min={1}
-                    className="w-20 h-9"
-                    defaultValue={editExt?.renewalEveryDays ?? ""}
-                    placeholder="30"
-                  />
-                  <span className="text-sm text-muted-foreground">días</span>
-                </div>
-              </div>
-
-              {/* Estado */}
-              <div className="col-span-2 pt-2 mt-2 border-t border-border flex items-center justify-between">
-                <Label className="text-sm font-medium">Estado del plan</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Activo</SelectItem>
-                    <SelectItem value="inactive">Inactivo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Bloque 3: Vigencia y estado */}
+              <Card className="border-border bg-muted/20 shadow-none">
+                <CardHeader className="py-3 px-4">
+                  <h3 className="text-sm font-semibold text-foreground">Vigencia y estado</h3>
+                </CardHeader>
+                <CardContent className="pt-0 px-4 pb-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-end">
+                    <div>
+                      <Label>Tipo de vigencia</Label>
+                      <Select value={validityType} onValueChange={setValidityType}>
+                        <SelectTrigger className={fieldClass + " w-full"}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="recurrent">Recurrente (sin fin)</SelectItem>
+                          <SelectItem value="fixed_end">Con fecha de fin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="validUntil">Fecha de caducidad</Label>
+                      <Input
+                        id="validUntil"
+                        name="validUntil"
+                        type="date"
+                        defaultValue={
+                          editExt?.validUntil ? new Date(editExt.validUntil).toISOString().slice(0, 10) : ""
+                        }
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground shrink-0">
+                        <input
+                          id="requiresRenewal"
+                          name="requiresRenewal"
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                          defaultChecked={editExt?.requiresRenewal ?? false}
+                        />
+                        Renovación
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          id="renewalEveryDays"
+                          name="renewalEveryDays"
+                          type="number"
+                          min={1}
+                          className="w-16 h-9"
+                          defaultValue={editExt?.renewalEveryDays ?? ""}
+                          placeholder="30"
+                        />
+                        <span className="text-xs text-muted-foreground">días</span>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Estado</Label>
+                      <Select value={status} onValueChange={setStatus}>
+                        <SelectTrigger className={fieldClass + " w-full"}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Activo</SelectItem>
+                          <SelectItem value="inactive">Inactivo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
-          <DialogFooter className="flex-shrink-0 px-6 py-4 border-t bg-muted/30">
+          <DialogFooter className="flex-shrink-0 px-6 py-4 border-t border-border bg-muted/30 rounded-b-xl">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
