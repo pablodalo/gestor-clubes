@@ -485,16 +485,34 @@ export function MemberDetailTabs({
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Uso de cupo
               </p>
-              {membershipPlan?.monthlyLimit != null && (
-                <p className="text-[11px] text-muted-foreground">
-                  Tope según plan «{membershipPlan.name}»: {membershipPlan.monthlyLimit?.toString() ?? "—"}
-                </p>
-              )}
+              <div className="rounded-md border bg-muted/30 px-3 py-2 space-y-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground">Límite mensual (tope)</span>
+                  <span className="text-sm font-semibold tabular-nums">
+                    {limitSource != null ? limitSource.toString() : "—"}
+                  </span>
+                </div>
+                {membershipPlan?.monthlyLimit != null ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Según plan «{membershipPlan.name}»
+                  </p>
+                ) : member.monthlyLimit != null ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Valor del socio (no tomado del plan)
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    Sin tope configurado. Definí el <strong>Límite mensual</strong> en el plan de membresía (Membresías) o se usará el valor del socio.
+                  </p>
+                )}
+              </div>
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px] text-muted-foreground">
                   <span>Consumido este período</span>
                   <span className="font-medium text-foreground">
-                    {consumedNum.toFixed(2)} / {totalForBar.toFixed(2)}
+                    {monthlyLimitNum > 0
+                      ? `${consumedNum.toFixed(2)} / ${totalForBar.toFixed(2)}`
+                      : `${consumedNum.toFixed(2)} (sin tope)`}
                   </span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -508,7 +526,9 @@ export function MemberDetailTabs({
                 <div className="flex justify-between text-[11px] text-muted-foreground">
                   <span>Saldo restante</span>
                   <span className="font-medium text-foreground">
-                    {remainingNum.toFixed(2)} / {totalForBar.toFixed(2)}
+                    {monthlyLimitNum > 0
+                      ? `${remainingNum.toFixed(2)} / ${totalForBar.toFixed(2)}`
+                      : `${remainingNum.toFixed(2)} (sin tope)`}
                   </span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
