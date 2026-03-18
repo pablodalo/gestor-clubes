@@ -45,14 +45,14 @@ type Props = {
 export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuccess, edit }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tier, setTier] = useState<string>("");
+  const [tier, setTier] = useState<string>("BASICO");
   const [status, setStatus] = useState<string>("active");
   const [validityType, setValidityType] = useState<string>("recurrent");
 
   useEffect(() => {
     if (open) {
       const ext = edit as unknown as { tier?: string | null; validityType?: string };
-      setTier(ext?.tier ?? "");
+      setTier(ext?.tier ?? "BASICO");
       setStatus(edit?.status ?? "active");
       setValidityType(ext?.validityType ?? "recurrent");
     }
@@ -77,7 +77,10 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
       monthlyLimit: (formData.get("monthlyLimit") as string).trim() || undefined,
       dailyLimit: (formData.get("dailyLimit") as string).trim() || undefined,
       validityType: (validityType || "recurrent") as "recurrent" | "fixed_end",
-      validUntil: (formData.get("validUntil") as string)?.trim() || undefined,
+      validUntil:
+        validityType === "fixed_end"
+          ? ((formData.get("validUntil") as string)?.trim() || undefined)
+          : undefined,
       requiresRenewal: !!formData.get("requiresRenewal"),
       renewalEveryDays: (formData.get("renewalEveryDays") as string).trim() || undefined,
       status: (status as "active" | "inactive") || "active",
@@ -252,58 +255,36 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                 <CardHeader className="py-3 px-4">
                   <h3 className="text-sm font-semibold text-foreground">Vigencia y estado</h3>
                 </CardHeader>
-                <CardContent className="pt-0 px-4 pb-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 items-end">
+                <CardContent className="pt-0 px-4 pb-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                     <div>
                       <Label>Tipo de vigencia</Label>
                       <Select value={validityType} onValueChange={setValidityType}>
                         <SelectTrigger className={fieldClass + " w-full"}>
-                          <SelectValue />
+                          <SelectValue placeholder="Seleccioná una opción" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="recurrent">Recurrente (sin fin)</SelectItem>
-                          <SelectItem value="fixed_end">Con fecha de fin</SelectItem>
+                          <SelectItem value="recurrent">Recurrente (sin fecha de fin)</SelectItem>
+                          <SelectItem value="fixed_end">Con fecha de caducidad</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="validUntil">Fecha de caducidad</Label>
-                      <Input
-                        id="validUntil"
-                        name="validUntil"
-                        type="date"
-                        defaultValue={
-                          editExt?.validUntil ? new Date(editExt.validUntil).toISOString().slice(0, 10) : ""
-                        }
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground shrink-0">
-                        <input
-                          id="requiresRenewal"
-                          name="requiresRenewal"
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                          defaultChecked={editExt?.requiresRenewal ?? false}
-                        />
-                        Renovación
-                      </label>
-                      <div className="flex items-center gap-1.5">
+                    {validityType === "fixed_end" && (
+                      <div>
+                        <Label htmlFor="validUntil">Fecha de caducidad</Label>
                         <Input
-                          id="renewalEveryDays"
-                          name="renewalEveryDays"
-                          type="number"
-                          min={1}
-                          className="w-16 h-9"
-                          defaultValue={editExt?.renewalEveryDays ?? ""}
-                          placeholder="30"
+                          id="validUntil"
+                          name="validUntil"
+                          type="date"
+                          defaultValue={
+                            editExt?.validUntil ? new Date(editExt.validUntil).toISOString().slice(0, 10) : ""
+                          }
+                          className={fieldClass}
                         />
-                        <span className="text-xs text-muted-foreground">días</span>
                       </div>
-                    </div>
+                    )}
                     <div>
-                      <Label>Estado</Label>
+                      <Label>Estado del plan</Label>
                       <Select value={status} onValueChange={setStatus}>
                         <SelectTrigger className={fieldClass + " w-full"}>
                           <SelectValue />
@@ -313,6 +294,31 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                           <SelectItem value="inactive">Inactivo</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3 mt-1">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground shrink-0">
+                      <input
+                        id="requiresRenewal"
+                        name="requiresRenewal"
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        defaultChecked={editExt?.requiresRenewal ?? false}
+                      />
+                      Renovación manual
+                    </label>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <span className="whitespace-nowrap">Recordar cada</span>
+                      <Input
+                        id="renewalEveryDays"
+                        name="renewalEveryDays"
+                        type="number"
+                        min={1}
+                        className="w-16 h-9"
+                        defaultValue={editExt?.renewalEveryDays ?? ""}
+                        placeholder="30"
+                      />
+                      <span className="whitespace-nowrap">días</span>
                     </div>
                   </div>
                 </CardContent>
