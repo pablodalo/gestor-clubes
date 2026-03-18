@@ -1004,12 +1004,27 @@ async function main() {
         },
       });
 
+      // Dispensation (Fase 2): category/strainId ya no existen; el ancla real es `productId`.
+      const productForDispensation = await prisma.product.findFirst({
+        where: {
+          tenantId: tenant.id,
+          strainId: strainGelato.id,
+          // En DB ya debería estar canónico por migraciones (flores -> plant_material),
+          // pero dejamos fallback por si el seed corre en otra variante de datos.
+          category: { in: ["plant_material", "flores"] },
+        },
+        select: { id: true },
+      });
+
+      if (!productForDispensation) {
+        throw new Error("Seed: no se encontró Product para la dispensación demo (strainGelato)");
+      }
+
       await prisma.dispensation.create({
         data: {
           tenantId: tenant.id,
           memberId: member1.id,
-          category: "flores",
-          strainId: strainGelato.id,
+          productId: productForDispensation.id,
           grams: 10,
           note: "Dispensación demo",
         },
