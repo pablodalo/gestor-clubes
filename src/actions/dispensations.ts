@@ -224,8 +224,6 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
         tenantId: ctx.tenantId,
         memberId: member.id,
         productId: resolvedProductId,
-        strainId: resolvedStrainId,
-        category: resolvedCanonicalCategory,
         grams,
         note: data.notes || null,
       },

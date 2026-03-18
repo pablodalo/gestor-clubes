@@ -109,6 +109,25 @@ async function dispensationProductIdExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function dispensationCategoryExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'dispensation' AND column_name = 'category'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
+async function dispensationStrainIdExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'dispensation'
+      AND column_name IN ('strainId', 'strain_id')
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function memberConsumedThisPeriodExists() {
   const r = await prisma.$queryRawUnsafe(`
     SELECT 1 FROM information_schema.columns
@@ -199,7 +218,13 @@ async function run() {
     }
 
     // PR2+PR3 consolidación: canonicalizar categorías y backfill del ancla principal del consumo.
-    if ((await productStrainIdExists()) && (await dispensationProductIdExists())) {
+    // Requiere campos legacy en Dispensation (`category` + `strainId`) porque la migración los actualiza.
+    if (
+      (await productStrainIdExists()) &&
+      (await dispensationProductIdExists()) &&
+      (await dispensationCategoryExists()) &&
+      (await dispensationStrainIdExists())
+    ) {
       const statements = runSqlFile(
         path.join(migrationsDir, "20260320000000_consolidate_dispensation_product_category", "migration.sql")
       );
@@ -210,7 +235,13 @@ async function run() {
     }
 
     // Fase B: backfill mínimo de product.strain_id y dispensations.product_id cuando queda NULL
-    if ((await productStrainIdExists()) && (await dispensationProductIdExists())) {
+    // Requiere campos legacy en Dispensation (`category` + `strainId`) porque la migración los usa.
+    if (
+      (await productStrainIdExists()) &&
+      (await dispensationProductIdExists()) &&
+      (await dispensationCategoryExists()) &&
+      (await dispensationStrainIdExists())
+    ) {
       const statements = runSqlFile(
         path.join(
           migrationsDir,
@@ -222,6 +253,17 @@ async function run() {
       console.log("Migración Fase B (backfill seguro) aplicada correctamente.");
     } else {
       console.log("Fase B omitida: faltan columnas product.strain_id / dispensation.product_id.");
+    }
+
+    // Fase 2: eliminar Dispensation.category y Dispensation.strainId (modelo viejo)
+    if ((await dispensationCategoryExists()) || (await dispensationStrainIdExists())) {
+      const statements = runSqlFile(
+        path.join(migrationsDir, "20260323000000_drop_dispensation_category_strainid", "migration.sql")
+      );
+      await executeStatements(statements, "[Fase 2 - drop Dispensation category/strainId]");
+      console.log("Migración Fase 2 (drop Dispensation category/strainId) aplicada correctamente.");
+    } else {
+      console.log("Fase 2 omitida: Dispensation.category/strainId no existen en DB.");
     }
 
     // Fase 3: cleanup del modelo (Member.consumedThisPeriod)

@@ -472,13 +472,8 @@ model Dispensation {
   member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
   // Fuente de verdad futura del consumo:
   // `productId` (FK a `Product`) será el ancla principal para categoría/strain.
-  // Compatibilidad: se mantiene `category` y `strainId` como deprecados.
   productId  String?  @map("product_id")
   product    Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-
-  category   String   // flores | extractos (deprecated: usar productId)
-  strainId   String
-  strain     PlantStrain @relation(fields: [strainId], references: [id], onDelete: Cascade)
   grams      Decimal  @db.Decimal(12, 2)
   dispensedAt DateTime @default(now())
   note       String?
@@ -616,7 +611,6 @@ model PlantStrain {
   plants Plant[]
   cultivationLotStrains CultivationLotStrain[]
   inventoryStocks InventoryStock[]
-  dispensations Dispensation[]
   products Product[]
 
   @@unique([tenantId, name])
