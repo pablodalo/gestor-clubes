@@ -130,3 +130,52 @@ export async function getMemberBalanceAdjustmentsForPortal(tenantSlug: string) {
   });
   return { data: list };
 }
+
+/**
+ * Elimina un movimiento de saldo. Solo administradores del panel (members_update).
+ * Valida que el ajuste pertenezca al member y al tenant de la sesión.
+ */
+export async function deleteMemberBalanceAdjustment(adjustmentId: string, memberId: string) {
+  try {
+    await requirePermission(PERMISSION_KEYS.members_update);
+  } catch {
+    return { error: "No tenés permiso para eliminar movimientos" };
+  }
+  const ctx = await getTenantContext();
+  if (!ctx) return { error: "No autorizado" };
+
+  const member = await prisma.member.findFirst({
+    where: { id: memberId, tenantId: ctx.tenantId },
+  });
+  if (!member) return { error: "Socio no encontrado" };
+
+  const adjustment = await prisma.memberBalanceAdjustment.findFirst({
+    where: { id: adjustmentId, memberId, tenantId: ctx.tenantId },
+  });
+  if (!adjustment) return { error: "Movimiento no encontrado" };
+
+  await prisma.memberBalanceAdjustment.delete({
+    where: { id: adjustmentId },
+  });
+
+  await createAuditLog({
+    tenantId: ctx.tenantId,
+    actorType: "user",
+    actorId: ctx.userId,
+    actorName: ctx.actorName ?? undefined,
+    action: "member.balance_adjustment_delete",
+    entityName: "MemberBalanceAdjustment",
+    entityId: adjustmentId,
+    afterJson: JSON.stringify({
+      memberId,
+      amount: adjustment.amount.toString(),
+      type: adjustment.type,
+      note: adjustment.note,
+    }),
+    origin: "actions/member-balance",
+  });
+
+  revalidatePath(`/app/${ctx.tenantSlug}/members`);
+  revalidatePath(`/app/${ctx.tenantSlug}/members/${memberId}`);
+  return { ok: true };
+}

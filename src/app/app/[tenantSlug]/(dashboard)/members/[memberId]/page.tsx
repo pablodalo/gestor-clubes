@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTenantBySlug } from "@/lib/tenant";
 import { getPlatformSession } from "@/lib/server-context";
+import { getTenantUserPermissions } from "@/lib/rbac";
+import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { MemberDetailTabs } from "@/features/members/member-detail-tabs";
@@ -13,8 +15,13 @@ type Props = {
 
 export default async function MemberProfilePage({ params }: Props) {
   const { tenantSlug, memberId } = await params;
-  const [tenant, platform] = await Promise.all([getTenantBySlug(tenantSlug), getPlatformSession()]);
+  const [tenant, platform, permissions] = await Promise.all([
+    getTenantBySlug(tenantSlug),
+    getPlatformSession(),
+    getTenantUserPermissions(),
+  ]);
   if (!tenant) return notFound();
+  const canDeleteMovement = permissions === null || permissions.has(PERMISSION_KEYS.members_update);
 
   const member = await prisma.member.findFirst({
     where: { id: memberId, tenantId: tenant.id },
@@ -78,6 +85,7 @@ export default async function MemberProfilePage({ params }: Props) {
       <MemberDetailTabs
         tenantSlug={tenantSlug}
         member={member}
+        canDeleteMovement={canDeleteMovement}
         membershipPlan={
           member.membershipPlanRel
             ? {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ import {
   resetMemberPassword,
 } from "@/actions/member-account";
 import { createMemberNotification } from "@/actions/member-notifications";
-import { adjustMemberBalance } from "@/actions/member-balance";
+import { adjustMemberBalance, deleteMemberBalanceAdjustment } from "@/actions/member-balance";
 import { updateMember } from "@/actions/members";
 import {
   User,
@@ -25,6 +26,7 @@ import {
   History,
   Bell,
   KeyRound,
+  Trash2,
 } from "lucide-react";
 
 type MemberData = {
@@ -87,6 +89,8 @@ type TabId = "datos" | "membresia" | "operativa" | "historial" | "notificaciones
 type Props = {
   tenantSlug: string;
   member: MemberData;
+  /** Si el usuario puede eliminar movimientos de saldo (permiso members_update) */
+  canDeleteMovement?: boolean;
   membershipPlan?: {
     name: string;
     tier: string | null;
@@ -105,6 +109,7 @@ type Props = {
 export function MemberDetailTabs({
   tenantSlug,
   member,
+  canDeleteMovement = false,
   membershipPlan,
   payments,
   account,
@@ -127,6 +132,8 @@ export function MemberDetailTabs({
   const [notifBody, setNotifBody] = useState("");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustNote, setAdjustNote] = useState("");
+  const [deletingMovementId, setDeletingMovementId] = useState<string | null>(null);
+  const router = useRouter();
 
   // Tope desde plan de membresía (Límite mensual); fallback al valor del socio
   const limitSource = membershipPlan?.monthlyLimit ?? member.monthlyLimit;
@@ -613,9 +620,31 @@ export function MemberDetailTabs({
                     ) : (
                       <ul className="space-y-1 text-sm">
                         {balanceAdjustments.map((a) => (
-                          <li key={a.id} className="flex justify-between">
-                            <span>{formatDate(a.createdAt)} · {a.type}</span>
-                            <span>{a.amount.toString()} {a.note ? `· ${a.note}` : ""}</span>
+                          <li key={a.id} className="flex items-center justify-between gap-2 py-1 border-b border-border/50 last:border-0">
+                            <span className="min-w-0 flex-1">
+                              <span>{formatDate(a.createdAt)} · {a.type}</span>
+                              <span className="ml-2">{a.amount.toString()} {a.note ? `· ${a.note}` : ""}</span>
+                            </span>
+                            {canDeleteMovement && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                                aria-label="Eliminar movimiento"
+                                disabled={deletingMovementId === a.id}
+                                onClick={async () => {
+                                  if (!confirm("¿Eliminar este movimiento?")) return;
+                                  setDeletingMovementId(a.id);
+                                  const res = await deleteMemberBalanceAdjustment(a.id, member.id);
+                                  setDeletingMovementId(null);
+                                  if (res.error) setError(res.error);
+                                  else router.refresh();
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </li>
                         ))}
                       </ul>
