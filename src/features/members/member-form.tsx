@@ -45,6 +45,12 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
   const toDateInput = (value?: Date | string | null) =>
     value ? new Date(value).toISOString().slice(0, 10) : "";
 
+  const normalizeDecimalString = (raw: string): string | undefined => {
+    const v = raw.trim();
+    if (!v) return undefined;
+    return v.replace(",", ".");
+  };
+
   const parseMembershipRecurrenceDay = (raw: string): number | undefined => {
     const v = raw.trim();
     if (!v) return undefined;
@@ -105,7 +111,9 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
         payload.membershipRecurrenceDay = parseMembershipRecurrenceDay(trim("membershipRecurrenceDay"));
       }
       if (has("membershipLastPaidAt")) payload.membershipLastPaidAt = optTrim("membershipLastPaidAt");
-      if (has("membershipLastAmount")) payload.membershipLastAmount = optTrim("membershipLastAmount");
+      if (has("membershipLastAmount")) {
+        payload.membershipLastAmount = normalizeDecimalString(optTrim("membershipLastAmount") ?? "");
+      }
       if (has("membershipCurrency")) payload.membershipCurrency = optTrim("membershipCurrency");
 
       const result = await updateMember(edit.id, payload);
@@ -146,7 +154,7 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
       membershipRecurring: str("membershipRecurring") === "true",
       membershipRecurrenceDay: parseMembershipRecurrenceDay(trim("membershipRecurrenceDay")),
       membershipLastPaidAt: optTrim("membershipLastPaidAt"),
-      membershipLastAmount: optTrim("membershipLastAmount"),
+      membershipLastAmount: normalizeDecimalString(optTrim("membershipLastAmount") ?? ""),
       membershipCurrency: optTrim("membershipCurrency"),
     };
 

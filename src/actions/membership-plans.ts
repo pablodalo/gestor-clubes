@@ -71,8 +71,7 @@ export async function createMembershipPlan(input: CreateMembershipPlanInput) {
 
   const parsed = createPlanSchema.safeParse(input);
   if (!parsed.success) {
-    const msg = Object.values(parsed.error.flatten().fieldErrors).flat()[0];
-    return { error: msg ?? "Datos inválidos" };
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
   const data = parsed.data;
@@ -142,7 +141,7 @@ export async function updateMembershipPlan(planId: string, input: UpdateMembersh
   if (!ctx) return { error: "No autorizado" };
 
   const parsed = updatePlanSchema.safeParse(input);
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
 
   const existing = await prisma.membershipPlan.findFirst({
     where: { id: planId, tenantId: ctx.tenantId },

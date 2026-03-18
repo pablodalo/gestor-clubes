@@ -54,6 +54,23 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
     return n;
   };
 
+  const normalizeDecimalString = (raw: string): string | undefined => {
+    const v = raw.trim();
+    if (!v) return undefined;
+    // Soporte para coma decimal (ej. "30,5" -> "30.5").
+    // No removemos separadores de miles para no alterar la intención del usuario.
+    return v.replace(",", ".");
+  };
+
+  const parseRenewalEveryDays = (raw: string): string | undefined => {
+    const v = raw.trim();
+    if (!v) return undefined;
+    const n = Number(v.replace(",", "."));
+    if (!Number.isFinite(n) || !Number.isInteger(n)) return undefined;
+    if (n < 1) return undefined;
+    return String(n);
+  };
+
   useEffect(() => {
     if (open) {
       const ext = edit as unknown as { tier?: string | null; validityType?: string };
@@ -76,18 +93,18 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
       name: (formData.get("name") as string).trim(),
       tier,
       description: (formData.get("description") as string).trim() || undefined,
-      price: (formData.get("price") as string).trim() || undefined,
+      price: normalizeDecimalString(String(formData.get("price") ?? "")),
       currency: (formData.get("currency") as string).trim() || "ARS",
       recurrenceDay: parseRecurrenceDay(String(formData.get("recurrenceDay") ?? "")),
-      monthlyLimit: (formData.get("monthlyLimit") as string).trim() || undefined,
-      dailyLimit: (formData.get("dailyLimit") as string).trim() || undefined,
+      monthlyLimit: normalizeDecimalString(String(formData.get("monthlyLimit") ?? "")),
+      dailyLimit: normalizeDecimalString(String(formData.get("dailyLimit") ?? "")),
       validityType: (validityType || "recurrent") as "recurrent" | "fixed_end",
       validUntil:
         validityType === "fixed_end"
           ? ((formData.get("validUntil") as string)?.trim() || undefined)
           : undefined,
       requiresRenewal: !!formData.get("requiresRenewal"),
-      renewalEveryDays: (formData.get("renewalEveryDays") as string).trim() || undefined,
+      renewalEveryDays: parseRenewalEveryDays(String(formData.get("renewalEveryDays") ?? "")),
       status: (status as "active" | "inactive") || "active",
     };
 
