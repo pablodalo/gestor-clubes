@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { FileText } from "lucide-react";
 import { PlatformShell } from "@/components/platform-shell";
 import { prisma } from "@/lib/prisma";
-import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { AuditTenantFilter } from "@/features/audit/audit-tenant-filter";
+import { AuditTable } from "@/features/audit/audit-table";
 
 type AuditRow = {
   id: string;
@@ -16,7 +16,7 @@ type AuditRow = {
   action: string;
   entityName: string;
   entityId: string | null;
-  createdAt: Date;
+  createdAt: string; // ISO
   tenantId: string | null;
 };
 
@@ -63,17 +63,9 @@ export default async function AuditPage({
     action: l.action,
     entityName: l.entityName,
     entityId: l.entityId,
-    createdAt: l.createdAt,
+    createdAt: l.createdAt instanceof Date ? l.createdAt.toISOString() : String(l.createdAt),
     tenantId: l.tenantId,
   }));
-
-  const columns: DataTableColumn<AuditRow>[] = [
-    { key: "createdAt", header: "Fecha", render: (r) => <span className="text-muted-foreground">{new Date(r.createdAt).toLocaleString("es-AR")}</span> },
-    { key: "actor", header: "Actor", render: (r) => <span className="font-medium text-foreground">{r.actorName ?? r.actorType}</span> },
-    { key: "action", header: "Acción", render: (r) => r.action },
-    { key: "entityName", header: "Entidad", render: (r) => r.entityName },
-    { key: "entityId", header: "ID entidad", render: (r) => <span className="font-mono text-muted-foreground text-xs">{r.entityId ?? "—"}</span> },
-  ];
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const currentPage = Math.max(1, Math.min(parseInt(page, 10) || 1, totalPages));
@@ -85,7 +77,7 @@ export default async function AuditPage({
     action: r.action,
     entityName: r.entityName,
     entityId: r.entityId,
-    createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+    createdAt: r.createdAt,
     tenantId: r.tenantId,
   }));
 
@@ -102,12 +94,7 @@ export default async function AuditPage({
           />
         }
       >
-        <DataTable
-          columns={columns}
-          data={rows}
-          keyExtractor={(r) => r.id}
-          emptyState={{ icon: FileText, title: "Sin registros", description: "No hay registros de auditoría." }}
-        />
+        <AuditTable rows={rows} emptyMessage="Sin registros" icon={FileText} />
         {totalPages > 1 && (
           <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
             <span>

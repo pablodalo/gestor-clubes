@@ -3,8 +3,8 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
-import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StrainForm } from "@/features/cultivation/strain-form";
+import { StrainsTable } from "@/features/cultivation/strains-table";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -29,11 +29,12 @@ export default async function StrainsPage({ params }: Props) {
     orderBy: { name: "asc" },
   });
 
-  const columns: DataTableColumn<typeof strains[number]>[] = [
-    { key: "name", header: "Cepa", render: (s) => <span className="font-medium">{s.name}</span> },
-    { key: "genetics", header: "Genética", render: (s) => s.genetics ?? "—" },
-    { key: "cycleDays", header: "Ciclo (días)", render: (s) => s.cycleDays ?? "—" },
-  ];
+  const strainRows = strains.map((s) => ({
+    id: s.id,
+    name: s.name,
+    genetics: s.genetics ?? null,
+    cycleDays: s.cycleDays ?? null,
+  }));
 
   return (
     <div className="space-y-6">
@@ -43,7 +44,7 @@ export default async function StrainsPage({ params }: Props) {
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <DataTable columns={columns} data={strains} keyExtractor={(s) => s.id} emptyMessage="No hay cepas." />
+          <StrainsTable rows={strainRows} />
         </div>
         <div>
           <StrainForm />

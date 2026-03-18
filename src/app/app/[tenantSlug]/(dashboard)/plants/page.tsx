@@ -3,8 +3,8 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
-import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { PlantForm } from "@/features/cultivation/plant-form";
+import { PlantsTable } from "@/features/cultivation/plants-table";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -37,19 +37,20 @@ export default async function PlantsPage({ params }: Props) {
     }),
   ]);
 
-  const columns: DataTableColumn<typeof plants[number]>[] = [
-    { key: "code", header: "Código", render: (p) => <span className="font-medium">{p.code}</span> },
-    { key: "strain", header: "Cepa", render: (p) => p.strain?.name ?? "—" },
-    { key: "lot", header: "Lote", render: (p) => p.cultivationLot?.code ?? "—" },
-    { key: "stage", header: "Etapa", render: (p) => p.stage },
-    { key: "status", header: "Estado", render: (p) => p.status },
-  ];
-
   const lots = await prisma.cultivationLot.findMany({
     where: { tenantId: tenant.id },
     select: { id: true, code: true },
     orderBy: { code: "asc" },
   });
+
+  const plantRows = plants.map((p) => ({
+    id: p.id,
+    code: p.code,
+    strainName: p.strain?.name ?? null,
+    lotCode: p.cultivationLot?.code ?? null,
+    stage: p.stage,
+    status: p.status,
+  }));
 
   return (
     <div className="space-y-6">
@@ -59,7 +60,7 @@ export default async function PlantsPage({ params }: Props) {
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <DataTable columns={columns} data={plants} keyExtractor={(p) => p.id} emptyMessage="No hay plantas." />
+          <PlantsTable rows={plantRows} />
         </div>
         <div>
           <PlantForm strains={strains} lots={lots} />

@@ -3,8 +3,8 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
-import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { StockMovementForm } from "@/features/admin/stock-movement-form";
+import { StockTable } from "@/features/admin/stock-table";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -38,12 +38,6 @@ export default async function StockPage({ params }: Props) {
     orderBy: { name: "asc" },
   });
 
-  const columns: DataTableColumn<StockRow>[] = [
-    { key: "name", header: "Suministro", render: (s) => <span className="font-medium">{s.name}</span> },
-    { key: "currentQty", header: "Stock", render: (s) => `${s.currentQty} ${s.unit ?? ""}` },
-    { key: "minQty", header: "Mínimo", render: (s) => `${s.minQty} ${s.unit ?? ""}` },
-  ];
-
   const rows: StockRow[] = supplies.map((s) => ({
     id: s.id,
     name: s.name,
@@ -60,7 +54,7 @@ export default async function StockPage({ params }: Props) {
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <DataTable columns={columns} data={rows} keyExtractor={(r) => r.id} emptyMessage="No hay stock." />
+          <StockTable rows={rows} />
         </div>
         {canManage && (
           <div>

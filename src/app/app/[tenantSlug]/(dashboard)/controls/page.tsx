@@ -3,8 +3,8 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { NoPermissionMessage } from "@/components/no-permission";
-import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { ControlForm } from "@/features/cultivation/control-form";
+import { ControlsTable } from "@/features/cultivation/controls-table";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
@@ -38,15 +38,16 @@ export default async function ControlsPage({ params }: Props) {
     }),
   ]);
 
-  const columns: DataTableColumn<typeof controls[number]>[] = [
-    { key: "controlDate", header: "Fecha", render: (c) => new Date(c.controlDate).toLocaleDateString("es-AR") },
-    { key: "cultivationLot", header: "Lote", render: (c) => c.cultivationLot?.code ?? "—" },
-    { key: "temperature", header: "Temp", render: (c) => c.temperature?.toString?.() ?? "—" },
-    { key: "humidity", header: "Humedad", render: (c) => c.humidity?.toString?.() ?? "—" },
-    { key: "ph", header: "pH", render: (c) => c.ph?.toString?.() ?? "—" },
-    { key: "ec", header: "EC", render: (c) => c.ec?.toString?.() ?? "—" },
-    { key: "pests", header: "Plagas", render: (c) => c.pests ?? "—" },
-  ];
+  const controlRows = controls.map((c) => ({
+    id: c.id,
+    controlDateIso: c.controlDate instanceof Date ? c.controlDate.toISOString() : String(c.controlDate),
+    lotCode: c.cultivationLot?.code ?? null,
+    temperature: c.temperature != null ? String(c.temperature) : null,
+    humidity: c.humidity != null ? String(c.humidity) : null,
+    ph: c.ph != null ? String(c.ph) : null,
+    ec: c.ec != null ? String(c.ec) : null,
+    pests: c.pests ?? null,
+  }));
 
   return (
     <div className="space-y-6">
@@ -56,7 +57,7 @@ export default async function ControlsPage({ params }: Props) {
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <DataTable columns={columns} data={controls} keyExtractor={(c) => c.id} emptyMessage="No hay controles." />
+          <ControlsTable rows={controlRows} />
         </div>
         <div>
           <ControlForm lots={lots} />
