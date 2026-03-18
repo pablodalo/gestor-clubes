@@ -52,49 +52,54 @@ import {
 
 type NavItem = { href: string; label: string; permission?: string; icon: LucideIcon };
 
-function buildNavGroups(slug: string, locale: string | undefined): { label: string | null; items: NavItem[] }[] {
+function buildNavGroups(
+  slug: string,
+  locale: string | undefined,
+  opts?: { isPlatformViewer?: boolean }
+): { label: string | null; items: NavItem[] }[] {
   const t = getTranslations(locale);
+  const isPlatformViewer = !!opts?.isPlatformViewer;
   return [
     { label: null, items: [{ href: `/app/${slug}`, label: t.dashboard, icon: LayoutDashboard }] },
     {
-      label: t.admin,
+      label: "Cultivo",
       items: [
-        { href: `/app/${slug}/inventory`, label: "Inventario / Productos", permission: "inventory.read", icon: Package },
+        { href: `/app/${slug}/supplies`, label: "Suministros", permission: "supplies.read", icon: Boxes },
+        { href: `/app/${slug}/devices`, label: "Dispositivos", permission: "devices.read", icon: Cpu },
+        { href: `/app/${slug}/locations`, label: "Ubicación", permission: "inventory.read", icon: MapPin },
+        { href: `/app/${slug}/lots`, label: "Lote", permission: "lots.read", icon: Layers },
+        { href: `/app/${slug}/inventory`, label: "Producto", permission: "inventory.read", icon: Package },
+      ],
+    },
+    {
+      label: "Gestion",
+      items: [
+        {
+          href: `/app/${slug}/compliance`,
+          label: "Médica (próximamente)",
+          permission: "compliance.read",
+          icon: ShieldCheck,
+        },
         { href: `/app/${slug}/suppliers`, label: t.suppliers, permission: "suppliers.read", icon: Building2 },
-        { href: `/app/${slug}/supplies`, label: t.supplies, permission: "supplies.read", icon: Boxes },
-      ],
-    },
-    {
-      label: t.operations,
-      items: [
-        { href: `/app/${slug}/cultivation`, label: t.cultivation, permission: "cultivation.read", icon: Sprout },
-        { href: `/app/${slug}/locations`, label: t.locations, permission: "inventory.read", icon: MapPin },
-        { href: `/app/${slug}/lots`, label: t.lots, permission: "lots.read", icon: Layers },
-      ],
-    },
-    {
-      label: t.monitoring,
-      items: [{ href: `/app/${slug}/devices`, label: t.devices, permission: "devices.read", icon: Cpu }],
-    },
-    {
-      label: t.clubManagement,
-      items: [
-        { href: `/app/${slug}/users`, label: t.users, permission: "users.read", icon: Users },
         { href: `/app/${slug}/members`, label: t.members, permission: "members.read", icon: UserCircle },
         { href: `/app/${slug}/memberships`, label: "Membresías", permission: "members.read", icon: CreditCard },
-      ],
-    },
-    {
-      label: t.control,
-      items: [
         { href: `/app/${slug}/dispensations`, label: t.dispensations, permission: "dispensations.read", icon: Package },
-        { href: `/app/${slug}/payments`, label: t.payments, permission: "payments.read", icon: CreditCard },
-        { href: `/app/${slug}/tickets`, label: t.tickets, permission: "tickets.read", icon: Ticket },
-        { href: `/app/${slug}/compliance`, label: t.compliance, permission: "compliance.read", icon: ShieldCheck },
         { href: `/app/${slug}/revenue`, label: t.revenue, permission: "revenue.read", icon: Wallet },
         { href: `/app/${slug}/reports`, label: t.reports, permission: "reports.read", icon: BarChart2 },
       ],
     },
+    ...(isPlatformViewer
+      ? [
+          {
+            label: "Administración Plataforma",
+            items: [
+              { href: "/platform/users", label: t.users, icon: Users },
+              { href: "/platform/audit", label: "Reportes", icon: BarChart2 },
+              { href: `/app/${slug}/tickets`, label: t.tickets, permission: "tickets.read", icon: Ticket },
+            ],
+          },
+        ]
+      : []),
   ];
 }
 
@@ -305,7 +310,7 @@ export function AppShell({
   const openProfile = () => setProfileDialogOpen(true);
   const t = getTranslations(tenant.locale);
 
-  const groups = buildNavGroups(tenant.slug, tenant.locale)
+  const groups = buildNavGroups(tenant.slug, tenant.locale, { isPlatformViewer })
     .map((g) => ({ ...g, items: g.items.filter((item) => allowed(item.permission)) }))
     .filter((g) => g.items.length > 0);
 
