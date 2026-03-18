@@ -51,6 +51,9 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
   const lastOrder = orders[0] ?? null;
   const activeOrder = orders.find((o) => o.status !== "delivered") ?? null;
   const [viewing, setViewing] = useState<OrderWithItems | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<OrderWithItems | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
   const generatorId = "generador";
 
   const [draftItems, setDraftItems] = useState<DraftItem[]>(() => {
