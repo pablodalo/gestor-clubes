@@ -210,7 +210,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                       />
                     </div>
                     <div>
-                      <Label htmlFor="recurrenceDay">Día cobro (1-28)</Label>
+                      <Label htmlFor="recurrenceDay">Día de cobro</Label>
                       <Input
                         id="recurrenceDay"
                         name="recurrenceDay"
@@ -218,9 +218,12 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                         min={1}
                         max={28}
                         defaultValue={edit?.recurrenceDay ?? ""}
-                        placeholder="10"
+                        placeholder="Entre 1 y 28"
                         className={fieldClass}
                       />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Día del mes que se factura el plan (1 a 28).
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="monthlyLimit">Límite mensual</Label>
