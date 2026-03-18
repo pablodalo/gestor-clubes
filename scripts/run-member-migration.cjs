@@ -137,6 +137,42 @@ async function memberConsumedThisPeriodExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function membershipPlanSortOrderExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'membershipplan' AND column_name = 'sort_order'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
+async function activeMembershipPlansMissingCategoryLimitRulesExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1
+    FROM "MembershipPlan" p
+    WHERE p."status" = 'active'
+      AND (
+        NOT EXISTS (
+          SELECT 1
+          FROM "MembershipLimitRule" r1
+          WHERE r1."tenantId" = p."tenantId"
+            AND r1."membershipPlanId" = p."id"
+            AND r1."category" = 'plant_material'
+        )
+        OR
+        NOT EXISTS (
+          SELECT 1
+          FROM "MembershipLimitRule" r2
+          WHERE r2."tenantId" = p."tenantId"
+            AND r2."membershipPlanId" = p."id"
+            AND r2."category" = 'extract'
+        )
+      )
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function membershipLimitRuleTableExists() {
   const r = await prisma.$queryRawUnsafe(`
     SELECT 1 FROM information_schema.tables
@@ -215,6 +251,25 @@ async function run() {
       console.log("Migración PR1 (límites por categoría + product/dispensation) aplicada correctamente.");
     } else {
       console.log("PR1 - columns/tables ya existen, migración omitida.");
+    }
+
+    // Fase MembershipPlan: sortOrder + backfill transitorio de MembershipLimitRule por categoría.
+    // Importante para que el UI/validación ya no dependa de hardcode/tier.
+    if (
+      !(await membershipPlanSortOrderExists()) ||
+      (await activeMembershipPlansMissingCategoryLimitRulesExists())
+    ) {
+      const statements = runSqlFile(
+        path.join(
+          migrationsDir,
+          "20260324000000_membership_plan_sortOrder_and_backfill_limit_rules",
+          "migration.sql"
+        )
+      );
+      await executeStatements(statements, "[Fase plan sortOrder / backfill rules]");
+      console.log("Migración plan sortOrder/backfill aplicada correctamente.");
+    } else {
+      console.log("plan sortOrder/backfill: ya ok (migración omitida).");
     }
 
     // PR2+PR3 consolidación: canonicalizar categorías y backfill del ancla principal del consumo.

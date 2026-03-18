@@ -25,25 +25,33 @@ import {
   updateMembershipPlan,
   type CreateMembershipPlanInput,
 } from "@/actions/membership-plans";
-import type { MembershipPlan } from "@prisma/client";
+import type { MembershipLimitRule, MembershipPlan } from "@prisma/client";
 
-const TIER_OPTIONS = ["BASICO", "STANDARD", "PREMIUM"] as const;
-type TierOption = (typeof TIER_OPTIONS)[number];
+type PlanWithRules = MembershipPlan & { limitRules: MembershipLimitRule[] };
 
 type Props = {
   tenantSlug: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  edit?: MembershipPlan | null;
+  edit?: PlanWithRules | null;
 };
 
 export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuccess, edit }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tier, setTier] = useState<TierOption>("BASICO");
+  const [tier, setTier] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<string>("");
   const [status, setStatus] = useState<string>("active");
   const [validityType, setValidityType] = useState<string>("recurrent");
+
+  const [plantMonthlyLimit, setPlantMonthlyLimit] = useState<string>("");
+  const [plantDailyLimit, setPlantDailyLimit] = useState<string>("");
+  const [plantActive, setPlantActive] = useState<boolean>(true);
+
+  const [extractMonthlyLimit, setExtractMonthlyLimit] = useState<string>("");
+  const [extractDailyLimit, setExtractDailyLimit] = useState<string>("");
+  const [extractActive, setExtractActive] = useState<boolean>(true);
 
   const parseRecurrenceDay = (raw: string): number | undefined => {
     const v = raw.trim();
@@ -73,12 +81,37 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
 
   useEffect(() => {
     if (open) {
-      const ext = edit as unknown as { tier?: string | null; validityType?: string };
-      const nextTier =
-        ext?.tier && (TIER_OPTIONS as readonly string[]).includes(ext.tier) ? (ext.tier as TierOption) : "BASICO";
-      setTier(nextTier);
-      setStatus(edit?.status ?? "active");
+      const ext = edit as unknown as
+        | (PlanWithRules & { validityType?: string; monthlyLimit?: number | null; dailyLimit?: number | null })
+        | null;
+
+      setTier(ext?.tier ?? "");
+      setSortOrder(ext?.sortOrder != null ? String(ext.sortOrder) : "");
+      setStatus(ext?.status ?? "active");
       setValidityType(ext?.validityType ?? "recurrent");
+
+      const rules = ext?.limitRules ?? [];
+      const plantRule = rules.find((r) => r.category === "plant_material");
+      const extractRule = rules.find((r) => r.category === "extract");
+
+      const plantFallbackMonthly = ext?.monthlyLimit != null ? String(ext.monthlyLimit) : "";
+      const plantFallbackDaily = ext?.dailyLimit != null ? String(ext.dailyLimit) : "";
+
+      setPlantActive(plantRule?.active ?? true);
+      setPlantMonthlyLimit(plantRule?.monthlyLimit != null ? String(plantRule.monthlyLimit) : plantFallbackMonthly);
+      setPlantDailyLimit(plantRule?.dailyLimit != null ? String(plantRule.dailyLimit) : plantFallbackDaily);
+
+      // Para extract, mantenemos fallback desde los campos globales del plan por compatibilidad transitoria.
+      const extractFallbackMonthly = ext?.monthlyLimit != null ? String(ext.monthlyLimit) : "";
+      const extractFallbackDaily = ext?.dailyLimit != null ? String(ext.dailyLimit) : "";
+
+      setExtractActive(extractRule?.active ?? true);
+      setExtractMonthlyLimit(
+        extractRule?.monthlyLimit != null ? String(extractRule.monthlyLimit) : extractFallbackMonthly
+      );
+      setExtractDailyLimit(
+        extractRule?.dailyLimit != null ? String(extractRule.dailyLimit) : extractFallbackDaily
+      );
     }
   }, [open, edit]);
 
@@ -89,15 +122,37 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
     const form = e.currentTarget;
     const formData = new FormData(form);
 
+    const toNullableInt = (raw: string): number | null => {
+      const v = raw.trim();
+      if (!v) return null;
+      const n = Number(v.replace(",", "."));
+      if (!Number.isFinite(n) || !Number.isInteger(n)) return null;
+      return n;
+    };
+
     const payload: CreateMembershipPlanInput = {
       name: (formData.get("name") as string).trim(),
-      tier,
+      tier: tier.trim() || undefined,
       description: (formData.get("description") as string).trim() || undefined,
       price: normalizeDecimalString(String(formData.get("price") ?? "")),
       currency: (formData.get("currency") as string).trim() || "ARS",
       recurrenceDay: parseRecurrenceDay(String(formData.get("recurrenceDay") ?? "")),
-      monthlyLimit: normalizeDecimalString(String(formData.get("monthlyLimit") ?? "")),
-      dailyLimit: normalizeDecimalString(String(formData.get("dailyLimit") ?? "")),
+      // Compatibilidad transitoria: los límites globales del plan se toman del editor de «Materia vegetal».
+      monthlyLimit: normalizeDecimalString(plantMonthlyLimit),
+      dailyLimit: normalizeDecimalString(plantDailyLimit),
+      sortOrder: toNullableInt(sortOrder),
+      limitRules: {
+        plant_material: {
+          monthlyLimit: normalizeDecimalString(plantMonthlyLimit),
+          dailyLimit: normalizeDecimalString(plantDailyLimit),
+          active: plantActive,
+        },
+        extract: {
+          monthlyLimit: normalizeDecimalString(extractMonthlyLimit),
+          dailyLimit: normalizeDecimalString(extractDailyLimit),
+          active: extractActive,
+        },
+      },
       validityType: (validityType || "recurrent") as "recurrent" | "fixed_end",
       validUntil:
         validityType === "fixed_end"
@@ -174,28 +229,15 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Tier</Label>
-                      <div className={fieldClass}>
-                        <div className="inline-flex flex-wrap gap-2 rounded-xl border border-input bg-background p-1.5">
-                          {TIER_OPTIONS.map((opt) => (
-                            <Button
-                              key={opt}
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className={
-                                "h-8 rounded-full px-3 text-xs font-medium transition-colors " +
-                                (tier === opt
-                                  ? "bg-primary/10 text-primary hover:bg-primary/15"
-                                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")
-                              }
-                              onClick={() => setTier(opt)}
-                            >
-                              {opt}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
+                      <Label htmlFor="tier">Tier (opcional)</Label>
+                      <Input
+                        id="tier"
+                        name="tier"
+                        value={tier}
+                        onChange={(e) => setTier(e.target.value)}
+                        placeholder="Ej. BASICO / STANDARD / PREMIUM"
+                        className={fieldClass}
+                      />
                     </div>
                     <div>
                       <Label htmlFor="description">Descripción (opcional)</Label>
@@ -208,6 +250,23 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                       />
                     </div>
                   </div>
+
+                  <div>
+                    <Label htmlFor="sortOrder">Orden (opcional)</Label>
+                    <Input
+                      id="sortOrder"
+                      name="sortOrder"
+                      type="number"
+                      step={1}
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value)}
+                      placeholder="Ej. 1"
+                      className={fieldClass}
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Si no se define, se ordena por nombre.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -217,7 +276,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   <h3 className="text-sm font-semibold text-foreground">Precio, cobro y límites</h3>
                 </CardHeader>
                 <CardContent className="pt-0 px-4 pb-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="price">Precio</Label>
                       <Input
@@ -257,31 +316,116 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                         Día del mes que se factura el plan (1 a 28).
                       </p>
                     </div>
-                    <div>
-                      <Label htmlFor="monthlyLimit">Límite mensual</Label>
-                      <Input
-                        id="monthlyLimit"
-                        name="monthlyLimit"
-                        type="number"
-                        step="0.01"
-                        defaultValue={editExt?.monthlyLimit != null ? String(editExt.monthlyLimit) : ""}
-                        placeholder="30"
-                        className={fieldClass}
-                      />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Bloque 2b: Límites por categoría */}
+              <Card className="border-border bg-muted/20 shadow-none">
+                <CardHeader className="py-3 px-4">
+                  <h3 className="text-sm font-semibold text-foreground">Límites por categoría</h3>
+                </CardHeader>
+                <CardContent className="pt-0 px-4 pb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="rounded-lg border border-border/60 bg-background/40 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold">Materia vegetal</h4>
+                        <span className="text-xs text-muted-foreground">plant_material</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="plantMonthlyLimit">Mensual</Label>
+                          <Input
+                            id="plantMonthlyLimit"
+                            type="number"
+                            step="0.01"
+                            value={plantMonthlyLimit}
+                            onChange={(e) => setPlantMonthlyLimit(e.target.value)}
+                            placeholder="30"
+                            className={fieldClass}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="plantDailyLimit">Diario</Label>
+                          <Input
+                            id="plantDailyLimit"
+                            type="number"
+                            step="0.01"
+                            value={plantDailyLimit}
+                            onChange={(e) => setPlantDailyLimit(e.target.value)}
+                            placeholder="1"
+                            className={fieldClass}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Activa</Label>
+                        <Select
+                          value={plantActive ? "active" : "inactive"}
+                          onValueChange={(v) => setPlantActive(v === "active")}
+                        >
+                          <SelectTrigger className={fieldClass + " w-full"}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Sí</SelectItem>
+                            <SelectItem value="inactive">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="dailyLimit">Límite diario</Label>
-                      <Input
-                        id="dailyLimit"
-                        name="dailyLimit"
-                        type="number"
-                        step="0.01"
-                        defaultValue={editExt?.dailyLimit != null ? String(editExt.dailyLimit) : ""}
-                        placeholder="1"
-                        className={fieldClass}
-                      />
+
+                    <div className="rounded-lg border border-border/60 bg-background/40 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold">Extracto</h4>
+                        <span className="text-xs text-muted-foreground">extract</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="extractMonthlyLimit">Mensual</Label>
+                          <Input
+                            id="extractMonthlyLimit"
+                            type="number"
+                            step="0.01"
+                            value={extractMonthlyLimit}
+                            onChange={(e) => setExtractMonthlyLimit(e.target.value)}
+                            placeholder="30"
+                            className={fieldClass}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="extractDailyLimit">Diario</Label>
+                          <Input
+                            id="extractDailyLimit"
+                            type="number"
+                            step="0.01"
+                            value={extractDailyLimit}
+                            onChange={(e) => setExtractDailyLimit(e.target.value)}
+                            placeholder="1"
+                            className={fieldClass}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Activa</Label>
+                        <Select
+                          value={extractActive ? "active" : "inactive"}
+                          onValueChange={(v) => setExtractActive(v === "active")}
+                        >
+                          <SelectTrigger className={fieldClass + " w-full"}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Sí</SelectItem>
+                            <SelectItem value="inactive">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Las reglas activas se usan como fuente principal. Mientras tanto, si faltan reglas para una categoría, se usa el fallback viejo del plan.
+                  </p>
                 </CardContent>
               </Card>
 

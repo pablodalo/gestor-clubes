@@ -15,7 +15,22 @@ const createPlanSchema = z.object({
   description: z.string().optional(),
   price: z.string().optional(),
   currency: z.string().default("ARS"),
+  sortOrder: z.coerce.number().int().optional().nullable(),
   recurrenceDay: z.coerce.number().int().min(1).max(28).optional().nullable(),
+  limitRules: z
+    .object({
+      plant_material: z.object({
+        dailyLimit: z.string().optional().nullable(),
+        monthlyLimit: z.string().optional().nullable(),
+        active: z.boolean().optional().default(true),
+      }),
+      extract: z.object({
+        dailyLimit: z.string().optional().nullable(),
+        monthlyLimit: z.string().optional().nullable(),
+        active: z.boolean().optional().default(true),
+      }),
+    })
+    .optional(),
   monthlyLimit: z.string().optional(),
   dailyLimit: z.string().optional(),
   validityType: z.enum(["recurrent", "fixed_end"]).default("recurrent"),
@@ -103,6 +118,7 @@ export async function createMembershipPlan(input: CreateMembershipPlanInput) {
       description: data.description?.trim() || null,
       price,
       currency: data.currency || "ARS",
+      sortOrder: data.sortOrder ?? null,
       recurrenceDay: data.recurrenceDay ?? null,
       monthlyLimit,
       dailyLimit,
@@ -113,6 +129,61 @@ export async function createMembershipPlan(input: CreateMembershipPlanInput) {
       status: data.status,
     },
   });
+
+  const rules = data.limitRules ?? {
+    plant_material: { monthlyLimit: data.monthlyLimit, dailyLimit: data.dailyLimit, active: true },
+    extract: { monthlyLimit: data.monthlyLimit, dailyLimit: data.dailyLimit, active: true },
+  };
+
+  const toRuleDecimalOrNull = (raw: string | null | undefined) =>
+    raw != null && raw !== "" ? new Prisma.Decimal(String(raw)) : null;
+
+  await prisma.$transaction([
+    prisma.membershipLimitRule.upsert({
+      where: {
+        tenantId_membershipPlanId_category: {
+          tenantId: ctx.tenantId,
+          membershipPlanId: plan.id,
+          category: "plant_material",
+        },
+      },
+      create: {
+        tenantId: ctx.tenantId,
+        membershipPlanId: plan.id,
+        category: "plant_material",
+        monthlyLimit: toRuleDecimalOrNull(rules.plant_material.monthlyLimit ?? undefined),
+        dailyLimit: toRuleDecimalOrNull(rules.plant_material.dailyLimit ?? undefined),
+        active: !!rules.plant_material.active,
+      },
+      update: {
+        monthlyLimit: toRuleDecimalOrNull(rules.plant_material.monthlyLimit ?? undefined),
+        dailyLimit: toRuleDecimalOrNull(rules.plant_material.dailyLimit ?? undefined),
+        active: !!rules.plant_material.active,
+      },
+    }),
+    prisma.membershipLimitRule.upsert({
+      where: {
+        tenantId_membershipPlanId_category: {
+          tenantId: ctx.tenantId,
+          membershipPlanId: plan.id,
+          category: "extract",
+        },
+      },
+      create: {
+        tenantId: ctx.tenantId,
+        membershipPlanId: plan.id,
+        category: "extract",
+        monthlyLimit: toRuleDecimalOrNull(rules.extract.monthlyLimit ?? undefined),
+        dailyLimit: toRuleDecimalOrNull(rules.extract.dailyLimit ?? undefined),
+        active: !!rules.extract.active,
+      },
+      update: {
+        monthlyLimit: toRuleDecimalOrNull(rules.extract.monthlyLimit ?? undefined),
+        dailyLimit: toRuleDecimalOrNull(rules.extract.dailyLimit ?? undefined),
+        active: !!rules.extract.active,
+      },
+    }),
+  ]);
 
   await createAuditLog({
     tenantId: ctx.tenantId,
@@ -156,6 +227,7 @@ export async function updateMembershipPlan(planId: string, input: UpdateMembersh
   if (data.currency !== undefined) updateData.currency = data.currency;
   if (data.recurrenceDay !== undefined) updateData.recurrenceDay = data.recurrenceDay;
   if (data.status !== undefined) updateData.status = data.status;
+  if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder ?? null;
   if (data.price !== undefined) {
     updateData.price = data.price != null && data.price !== "" ? new Prisma.Decimal(String(data.price)) : null;
   }
@@ -201,6 +273,59 @@ export async function updateMembershipPlan(planId: string, input: UpdateMembersh
     where: { id: planId },
     data: updateData,
   });
+
+  if (data.limitRules) {
+    const rules = data.limitRules;
+    const toRuleDecimalOrNull = (raw: string | null | undefined) =>
+      raw != null && raw !== "" ? new Prisma.Decimal(String(raw)) : null;
+
+    await prisma.$transaction([
+      prisma.membershipLimitRule.upsert({
+        where: {
+          tenantId_membershipPlanId_category: {
+            tenantId: ctx.tenantId,
+            membershipPlanId: plan.id,
+            category: "plant_material",
+          },
+        },
+        create: {
+          tenantId: ctx.tenantId,
+          membershipPlanId: plan.id,
+          category: "plant_material",
+          monthlyLimit: toRuleDecimalOrNull(rules.plant_material.monthlyLimit ?? undefined),
+          dailyLimit: toRuleDecimalOrNull(rules.plant_material.dailyLimit ?? undefined),
+          active: !!rules.plant_material.active,
+        },
+        update: {
+          monthlyLimit: toRuleDecimalOrNull(rules.plant_material.monthlyLimit ?? undefined),
+          dailyLimit: toRuleDecimalOrNull(rules.plant_material.dailyLimit ?? undefined),
+          active: !!rules.plant_material.active,
+        },
+      }),
+      prisma.membershipLimitRule.upsert({
+        where: {
+          tenantId_membershipPlanId_category: {
+            tenantId: ctx.tenantId,
+            membershipPlanId: plan.id,
+            category: "extract",
+          },
+        },
+        create: {
+          tenantId: ctx.tenantId,
+          membershipPlanId: plan.id,
+          category: "extract",
+          monthlyLimit: toRuleDecimalOrNull(rules.extract.monthlyLimit ?? undefined),
+          dailyLimit: toRuleDecimalOrNull(rules.extract.dailyLimit ?? undefined),
+          active: !!rules.extract.active,
+        },
+        update: {
+          monthlyLimit: toRuleDecimalOrNull(rules.extract.monthlyLimit ?? undefined),
+          dailyLimit: toRuleDecimalOrNull(rules.extract.dailyLimit ?? undefined),
+          active: !!rules.extract.active,
+        },
+      }),
+    ]);
+  }
 
   await createAuditLog({
     tenantId: ctx.tenantId,

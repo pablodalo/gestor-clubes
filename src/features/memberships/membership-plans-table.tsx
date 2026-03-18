@@ -15,29 +15,31 @@ import { AlertDialog } from "@/components/alert-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { MembershipPlanFormDialog } from "@/features/memberships/membership-plan-form";
 import { deleteMembershipPlan } from "@/actions/membership-plans";
-import type { MembershipPlan } from "@prisma/client";
+import type { MembershipLimitRule, MembershipPlan } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Pencil, Trash2, CreditCard, Wallet } from "lucide-react";
 
 type Props = {
   tenantSlug: string;
-  plans: MembershipPlan[];
+  plans: Array<MembershipPlan & { limitRules: MembershipLimitRule[] }>;
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
 };
 
+type PlanWithRules = MembershipPlan & { limitRules: MembershipLimitRule[] };
+
 export function MembershipPlansTable({ tenantSlug, plans, canCreate, canUpdate, canDelete }: Props) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<MembershipPlan | null>(null);
-  const [planToDelete, setPlanToDelete] = useState<MembershipPlan | null>(null);
+  const [editing, setEditing] = useState<PlanWithRules | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<PlanWithRules | null>(null);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
 
   const refresh = () => router.refresh();
 
-  const columns: DataTableColumn<MembershipPlan>[] = [
+  const columns: DataTableColumn<PlanWithRules>[] = [
     { key: "name", header: "Nombre", render: (p) => <span className="font-medium text-foreground">{p.name}</span> },
     {
       key: "tier",
@@ -78,7 +80,7 @@ export function MembershipPlansTable({ tenantSlug, plans, canCreate, canUpdate, 
     },
   ];
 
-  async function handleDelete(p: MembershipPlan) {
+  async function handleDelete(p: PlanWithRules) {
     if (!canDelete) return;
     setPlanToDelete(p);
   }

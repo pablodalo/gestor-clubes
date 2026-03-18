@@ -44,9 +44,16 @@ export default async function MembershipsPage({ params, searchParams }: Props) {
     ];
   }
 
-  const plans = await prisma.membershipPlan.findMany({
+  const plansRaw = await prisma.membershipPlan.findMany({
     where,
-    orderBy: { name: "asc" },
+    include: { limitRules: true },
+  });
+
+  const plans = plansRaw.sort((a, b) => {
+    const aSort = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    const bSort = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    if (aSort !== bSort) return aSort - bSort;
+    return a.name.localeCompare(b.name);
   });
 
   return (
