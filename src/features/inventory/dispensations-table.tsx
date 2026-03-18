@@ -20,7 +20,8 @@ import { PackageMinus } from "lucide-react";
 type Row = Dispensation & {
   memberName: string;
   memberNumber: string;
-  strainName: string;
+  productCategory: string | null;
+  productStrainName: string | null;
 };
 
 type Props = {
@@ -35,14 +36,14 @@ export function DispensationsTable({ rows, canCreate, members, products }: Props
   const [open, setOpen] = useState(false);
 
   const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
+      const term = q.trim().toLowerCase();
     if (!term) return rows;
     return rows.filter((d) => {
       const hay = [
         d.memberNumber,
         d.memberName,
-        d.strainName,
-        d.category,
+          d.productCategory ?? "",
+          d.productStrainName ?? "",
         d.note ?? "",
       ]
         .join(" ")
@@ -54,8 +55,16 @@ export function DispensationsTable({ rows, canCreate, members, products }: Props
   const columns: DataTableColumn<Row>[] = [
     { key: "dispensedAt", header: "Fecha", render: (d) => new Date(d.dispensedAt).toLocaleDateString("es-AR") },
     { key: "memberNumber", header: "Socio", render: (d) => `${d.memberNumber} · ${d.memberName}` },
-    { key: "strainName", header: "Cepa", render: (d) => d.strainName },
-    { key: "category", header: "Tipo", render: (d) => d.category },
+    { key: "productStrainName", header: "Cepa", render: (d) => d.productStrainName ?? "—" },
+    {
+      key: "productCategory",
+      header: "Tipo",
+      render: (d) => {
+        const cat = d.productCategory;
+        if (!cat) return "—";
+        return cat === "plant_material" ? "plant_material" : cat === "extract" ? "extract" : cat;
+      },
+    },
     { key: "grams", header: "Gramos", render: (d) => d.grams.toString() },
   ];
 
@@ -64,8 +73,8 @@ export function DispensationsTable({ rows, canCreate, members, products }: Props
     dispensedAt: d.dispensedAt instanceof Date ? d.dispensedAt.toISOString() : String(d.dispensedAt),
     memberNumber: d.memberNumber,
     memberName: d.memberName,
-    strainName: d.strainName,
-    category: d.category,
+    strainName: d.productStrainName ?? "",
+    category: d.productCategory ?? "",
     grams: d.grams.toString(),
     note: d.note ?? "",
   }));

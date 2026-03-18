@@ -80,7 +80,7 @@ export default async function PortalSociosHomePage({ params }: Props) {
         memberId: member.id,
         dispensedAt: { gte: periodStart, lt: periodEnd },
       },
-      select: { category: true, grams: true },
+      select: { grams: true, product: { select: { category: true } } },
     }),
   ]);
 
@@ -89,7 +89,7 @@ export default async function PortalSociosHomePage({ params }: Props) {
     extract: new Prisma.Decimal(0),
   };
   for (const d of dispensationsInPeriod) {
-    const canon = canonicalCategory(d.category ?? undefined);
+    const canon = canonicalCategory(d.product?.category ?? undefined);
     if (!canon) continue;
     consumedMonthly[canon] = consumedMonthly[canon].add(d.grams);
   }

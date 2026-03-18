@@ -199,6 +199,21 @@ async function run() {
     } else {
       console.log("PR2+PR3 consolidación omitida: faltan columnas product.strain_id / dispensation.product_id.");
     }
+
+    // Fase B: backfill mínimo de product.strain_id y dispensations.product_id cuando queda NULL
+    if ((await productStrainIdExists()) && (await dispensationProductIdExists())) {
+      const statements = runSqlFile(
+        path.join(
+          migrationsDir,
+          "20260321000000_phaseB_backfill_product_strain_and_dispensation_product_id",
+          "migration.sql"
+        )
+      );
+      await executeStatements(statements, "[Fase B - backfill product/dispensation]");
+      console.log("Migración Fase B (backfill seguro) aplicada correctamente.");
+    } else {
+      console.log("Fase B omitida: faltan columnas product.strain_id / dispensation.product_id.");
+    }
   } catch (err) {
     // Si no se puede conectar a la base (build sin DB disponible), no rompemos el build:
     // Prisma lanza PrismaClientInitializationError con mensaje "Can't reach database server".

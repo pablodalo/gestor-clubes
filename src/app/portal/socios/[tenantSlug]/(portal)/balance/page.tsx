@@ -83,7 +83,11 @@ export default async function PortalBalancePage({ params }: Props) {
         memberId: m.id,
         dispensedAt: { gte: periodStart, lt: periodEnd },
       },
-      select: { category: true, grams: true, dispensedAt: true },
+      select: {
+        grams: true,
+        dispensedAt: true,
+        product: { select: { category: true } },
+      },
     }),
     getMemberBalanceAdjustmentsForPortal(tenantSlug),
   ]);
@@ -101,7 +105,7 @@ export default async function PortalBalancePage({ params }: Props) {
   };
 
   for (const d of dispensationsInPeriod) {
-    const canon = canonicalCategory(d.category ?? undefined);
+    const canon = canonicalCategory(d.product?.category ?? undefined);
     if (!canon) continue;
     consumedMonthly[canon] = consumedMonthly[canon].add(d.grams);
     if (d.dispensedAt >= dayStart && d.dispensedAt < dayEnd) {

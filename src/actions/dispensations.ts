@@ -155,8 +155,8 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
     },
     select: {
       grams: true,
-      category: true,
       dispensedAt: true,
+      product: { select: { category: true } },
     },
   });
 
@@ -170,8 +170,8 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
   };
 
   for (const d of dispensationsInPeriod) {
-    // categoría canónica desde Dispensation (compat: mapas legacy a canon)
-    const canon = canonicalCategory(d.category ?? undefined);
+    // Categoría canónica desde Product (única fuente real luego de consolidación).
+    const canon = canonicalCategory(d.product?.category ?? undefined);
     if (!canon) continue;
 
     consumedMonthly[canon] = consumedMonthly[canon].add(d.grams);

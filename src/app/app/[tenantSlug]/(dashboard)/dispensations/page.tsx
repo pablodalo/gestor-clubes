@@ -45,7 +45,10 @@ export default async function DispensationsPage({ params }: Props) {
     }),
     prisma.dispensation.findMany({
       where: { tenantId: tenant.id },
-      include: { member: true, strain: true },
+      include: {
+        member: true,
+        product: { select: { category: true, strain: { select: { name: true } } } },
+      },
       orderBy: { dispensedAt: "desc" },
       take: 50,
     }),
@@ -55,7 +58,8 @@ export default async function DispensationsPage({ params }: Props) {
     ...d,
     memberName: `${d.member.firstName} ${d.member.lastName}`,
     memberNumber: d.member.memberNumber,
-    strainName: d.strain.name,
+    productCategory: d.product?.category ?? null,
+    productStrainName: d.product?.strain?.name ?? null,
   }));
 
   return (
