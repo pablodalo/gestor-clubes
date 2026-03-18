@@ -188,6 +188,17 @@ async function run() {
     } else {
       console.log("PR1 - columns/tables ya existen, migración omitida.");
     }
+
+    // PR2+PR3 consolidación: canonicalizar categorías y backfill del ancla principal del consumo.
+    if ((await productStrainIdExists()) && (await dispensationProductIdExists())) {
+      const statements = runSqlFile(
+        path.join(migrationsDir, "20260320000000_consolidate_dispensation_product_category", "migration.sql")
+      );
+      await executeStatements(statements, "[PR2+PR3 consolidación - product/category/dispensation]");
+      console.log("Migración PR2+PR3 (consolidación de categorías + backfill product_id) aplicada correctamente.");
+    } else {
+      console.log("PR2+PR3 consolidación omitida: faltan columnas product.strain_id / dispensation.product_id.");
+    }
   } catch (err) {
     // Si no se puede conectar a la base (build sin DB disponible), no rompemos el build:
     // Prisma lanza PrismaClientInitializationError con mensaje "Can't reach database server".

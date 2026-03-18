@@ -71,6 +71,9 @@ model Tenant {
   cultivationControls CultivationControl[]
   cultivationTasks CultivationTask[]
   memberBalanceAdjustments MemberBalanceAdjustment[]
+
+  // Reglas de límites por categoría (Dispensación)
+  membershipLimitRules MembershipLimitRule[]
 }
 
 model TenantBranding {
@@ -682,6 +685,9 @@ model Product {
   updatedAt   DateTime @updatedAt
 
   orderItems SalesOrderItem[]
+
+  // Dispensaciones registradas para este producto.
+  dispensations Dispensation[]
 
   @@index([tenantId])
   @@index([tenantId, status])

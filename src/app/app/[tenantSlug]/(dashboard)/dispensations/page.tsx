@@ -24,14 +24,23 @@ export default async function DispensationsPage({ params }: Props) {
     );
   }
 
-  const [members, strains, dispensations] = await Promise.all([
+  const [members, products, dispensations] = await Promise.all([
     prisma.member.findMany({
       where: { tenantId: tenant.id, status: "active" },
       select: { id: true, firstName: true, lastName: true, memberNumber: true },
     }),
-    prisma.plantStrain.findMany({
-      where: { tenantId: tenant.id },
-      select: { id: true, name: true },
+    prisma.product.findMany({
+      where: {
+        tenantId: tenant.id,
+        category: { in: ["plant_material", "extract", "flores", "extractos"] },
+      },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        strainId: true,
+        strain: { select: { name: true } },
+      },
       orderBy: { name: "asc" },
     }),
     prisma.dispensation.findMany({
@@ -58,7 +67,10 @@ export default async function DispensationsPage({ params }: Props) {
           id: m.id,
           label: `${m.memberNumber} · ${m.firstName} ${m.lastName}`,
         }))}
-        strains={strains.map((s) => ({ id: s.id, label: s.name }))}
+        products={products.map((p) => ({
+          id: p.id,
+          label: `${p.name} · ${p.category} · ${p.strain?.name ?? "—"}`,
+        }))}
       />
     </div>
   );

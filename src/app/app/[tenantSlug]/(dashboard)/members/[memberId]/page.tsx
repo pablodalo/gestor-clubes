@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { MemberDetailTabs } from "@/features/members/member-detail-tabs";
 import { ImpersonateMemberButton } from "@/features/members/impersonate-member-button";
+import { Prisma } from "@prisma/client";
 
 type Props = {
   params: Promise<{ tenantSlug: string; memberId: string }>;
@@ -58,6 +59,126 @@ export default async function MemberProfilePage({ params }: Props) {
     }),
   ]);
 
+  const canonicalCategory = (
+    cat: string | null | undefined,
+  ): "plant_material" | "extract" | null => {
+    if (!cat) return null;
+    if (cat === "plant_material" || cat === "flores") return "plant_material";
+    if (cat === "extract" || cat === "extractos") return "extract";
+    return null;
+  };
+
+  const now = new Date();
+  const resolveMembershipPeriod = (member: {
+    membershipRecurring: boolean;
+    membershipRecurrenceDay: number | null;
+    membershipStartDate: Date | null;
+  }) => {
+    if (member.membershipRecurring && member.membershipRecurrenceDay) {
+      const day = member.membershipRecurrenceDay;
+      let start = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0, 0);
+      if (now < start) {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, day, 0, 0, 0, 0);
+      }
+      const end = new Date(start.getFullYear(), start.getMonth() + 1, day, 0, 0, 0, 0);
+      return { start, end };
+    }
+
+    let start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    if (member.membershipStartDate && member.membershipStartDate > start) {
+      start = new Date(member.membershipStartDate);
+    }
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+    return { start, end };
+  };
+
+  const dayBounds = () => {
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayStart.getDate() + 1);
+    return { dayStart, dayEnd };
+  };
+
+  const { start: periodStart, end: periodEnd } = resolveMembershipPeriod({
+    membershipRecurring: member.membershipRecurring,
+    membershipRecurrenceDay: member.membershipRecurrenceDay ?? null,
+    membershipStartDate: member.membershipStartDate ?? null,
+  });
+  const { dayStart, dayEnd } = dayBounds();
+
+  const [limitRules, dispensationsInPeriod] = await Promise.all([
+    prisma.membershipLimitRule.findMany({
+      where: {
+        tenantId: tenant.id,
+        membershipPlanId: member.membershipPlanId ?? undefined,
+        active: true,
+      },
+    }),
+    prisma.dispensation.findMany({
+      where: {
+        tenantId: tenant.id,
+        memberId: member.id,
+        dispensedAt: { gte: periodStart, lt: periodEnd },
+      },
+      select: { category: true, grams: true, dispensedAt: true },
+    }),
+  ]);
+
+  const consumedMonthly: Record<"plant_material" | "extract", Prisma.Decimal> = {
+    plant_material: new Prisma.Decimal(0),
+    extract: new Prisma.Decimal(0),
+  };
+  const consumedDaily: Record<"plant_material" | "extract", Prisma.Decimal> = {
+    plant_material: new Prisma.Decimal(0),
+    extract: new Prisma.Decimal(0),
+  };
+
+  for (const d of dispensationsInPeriod) {
+    const canon = canonicalCategory(d.category ?? undefined);
+    if (!canon) continue;
+    consumedMonthly[canon] = consumedMonthly[canon].add(d.grams);
+    if (d.dispensedAt >= dayStart && d.dispensedAt < dayEnd) {
+      consumedDaily[canon] = consumedDaily[canon].add(d.grams);
+    }
+  }
+
+  const plan = member.membershipPlanRel as any;
+  const usageByCategory = {
+    plant_material: (() => {
+      const rule = limitRules.find((r) => r.category === "plant_material" && r.active);
+      const monthlyLimitDec = rule?.monthlyLimit ?? plan?.monthlyLimit ?? null;
+      const dailyLimitDec = rule?.dailyLimit ?? plan?.dailyLimit ?? null;
+      const monthlyLimit = monthlyLimitDec != null ? Number(monthlyLimitDec.toString()) : null;
+      const dailyLimit = dailyLimitDec != null ? Number(dailyLimitDec.toString()) : null;
+      const consumedMonthlyNum = Number(consumedMonthly.plant_material.toString());
+      const consumedDailyNum = Number(consumedDaily.plant_material.toString());
+      return {
+        monthlyLimit,
+        dailyLimit,
+        consumedMonthly: consumedMonthlyNum,
+        consumedDaily: consumedDailyNum,
+        remainingMonthly: monthlyLimit != null ? monthlyLimit - consumedMonthlyNum : null,
+      };
+    })(),
+    extract: (() => {
+      const rule = limitRules.find((r) => r.category === "extract" && r.active);
+      const monthlyLimitDec = rule?.monthlyLimit ?? plan?.monthlyLimit ?? null;
+      const dailyLimitDec = rule?.dailyLimit ?? plan?.dailyLimit ?? null;
+      const monthlyLimit = monthlyLimitDec != null ? Number(monthlyLimitDec.toString()) : null;
+      const dailyLimit = dailyLimitDec != null ? Number(dailyLimitDec.toString()) : null;
+      const consumedMonthlyNum = Number(consumedMonthly.extract.toString());
+      const consumedDailyNum = Number(consumedDaily.extract.toString());
+      return {
+        monthlyLimit,
+        dailyLimit,
+        consumedMonthly: consumedMonthlyNum,
+        consumedDaily: consumedDailyNum,
+        remainingMonthly: monthlyLimit != null ? monthlyLimit - consumedMonthlyNum : null,
+      };
+    })(),
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -86,6 +207,7 @@ export default async function MemberProfilePage({ params }: Props) {
         tenantSlug={tenantSlug}
         member={member}
         canDeleteMovement={canDeleteMovement}
+        usageByCategory={usageByCategory}
         membershipPlan={
           member.membershipPlanRel
             ? {

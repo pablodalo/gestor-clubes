@@ -27,10 +27,10 @@ type Props = {
   rows: Row[];
   canCreate: boolean;
   members: { id: string; label: string }[];
-  strains: { id: string; label: string }[];
+  products: { id: string; label: string }[];
 };
 
-export function DispensationsTable({ rows, canCreate, members, strains }: Props) {
+export function DispensationsTable({ rows, canCreate, members, products }: Props) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -116,7 +116,7 @@ export function DispensationsTable({ rows, canCreate, members, strains }: Props)
           </DialogHeader>
           <DispensationForm
             members={members}
-            strains={strains}
+            products={products}
             onSuccess={() => setOpen(false)}
           />
         </DialogContent>

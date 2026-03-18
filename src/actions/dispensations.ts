@@ -10,27 +10,14 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 
 const createDispensationSchema = z.object({
-  // Fuente principal futura:
-  // - `productId` permite resolver canónico (category) y strain de forma determinística.
-  // Compatibilidad PR2:
-  // - si `productId` no viene, se permite el flujo viejo con `category` + `strainId`.
-  productId: z.string().min(1).optional(),
-
-  // Deprecated (PR1 compat): usar solo si no se envía `productId`.
-  strainId: z.string().min(1).optional(),
-  category: z.enum(["flores", "extractos"]).optional(),
+  // Nuevo flujo consolidado:
+  // - productId es obligatorio
+  // - categoría y strain se resuelven desde Product
+  productId: z.string().min(1),
   grams: z.string().min(1),
   memberId: z.string().min(1),
   notes: z.string().optional(),
-}).refine(
-  (v) => {
-    // Aceptar si viene productId (strain/cat se resuelven desde Product)
-    if (v.productId) return true;
-    // Si no hay productId, debe existir strainId + category legacy
-    return !!v.strainId && !!v.category;
-  },
-  { message: "ProductId requerido o (category + strainId) para compatibilidad" }
-);
+});
 
 async function getTenantContext(): Promise<{ tenantId: string; tenantSlug: string } | null> {
   const session = await getServerSession(authOptions);
@@ -58,7 +45,7 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
   const data = parsed.data;
 
   const now = new Date();
-  const grams = new Prisma.Decimal(data.grams.replace(",", "."));
+  const grams = new Prisma.Decimal(String(data.grams).replace(",", "."));
 
   const canonicalCategory = (cat: string | null | undefined): "plant_material" | "extract" | null => {
     if (!cat) return null;
@@ -122,34 +109,18 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
   }
 
   // 2) resolver productId y categoría canónica (y strain)
-  let resolvedProductId: string | null = null;
-  let resolvedStrainId: string;
-  let resolvedCanonicalCategory: "plant_material" | "extract";
+  const product = await prisma.product.findFirst({
+    where: { id: data.productId, tenantId: ctx.tenantId },
+    select: { id: true, category: true, strainId: true },
+  });
 
-  if (data.productId) {
-    const product = await prisma.product.findFirst({
-      where: { id: data.productId, tenantId: ctx.tenantId },
-      select: { id: true, category: true, strainId: true },
-    });
+  if (!product) return { error: "Producto no encontrado" };
+  const resolvedCanonicalCategory = canonicalCategory(product.category);
+  if (!resolvedCanonicalCategory) return { error: "Producto no dispensable (categoría)" };
+  if (!product.strainId) return { error: "Producto sin strain configurado" };
 
-    if (!product) return { error: "Producto no encontrado" };
-    const canon = canonicalCategory(product.category);
-    if (!canon) return { error: "Producto no dispensable (categoría)" };
-    if (!product.strainId) return { error: "Producto sin strain configurado" };
-
-    resolvedProductId = product.id;
-    resolvedStrainId = product.strainId;
-    resolvedCanonicalCategory = canon;
-  } else {
-    // Compatibilidad con payload viejo (deprecated): category + strainId.
-    if (!data.strainId || !data.category) return { error: "Datos inválidos" };
-    const canon = canonicalCategory(data.category);
-    if (!canon) return { error: "Producto no dispensable (categoría)" };
-
-    resolvedProductId = null;
-    resolvedStrainId = data.strainId;
-    resolvedCanonicalCategory = canon;
-  }
+  const resolvedProductId = product.id;
+  const resolvedStrainId = product.strainId;
 
   // 3) validar que el producto sea dispensable
   if (resolvedCanonicalCategory !== "plant_material" && resolvedCanonicalCategory !== "extract") {
@@ -185,7 +156,6 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
     select: {
       grams: true,
       category: true,
-      product: { select: { category: true } },
       dispensedAt: true,
     },
   });
@@ -200,8 +170,8 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
   };
 
   for (const d of dispensationsInPeriod) {
-    const canon =
-      canonicalCategory(d.product?.category ?? undefined) ?? canonicalCategory(d.category ?? undefined);
+    // categoría canónica desde Dispensation (compat: mapas legacy a canon)
+    const canon = canonicalCategory(d.category ?? undefined);
     if (!canon) continue;
 
     consumedMonthly[canon] = consumedMonthly[canon].add(d.grams);
@@ -255,7 +225,7 @@ export async function createDispensation(input: z.infer<typeof createDispensatio
         memberId: member.id,
         productId: resolvedProductId,
         strainId: resolvedStrainId,
-        category: legacyStockCategory,
+        category: resolvedCanonicalCategory,
         grams,
         note: data.notes || null,
       },

@@ -5,6 +5,8 @@ import { getMemberHistoryForPortal } from "@/actions/member-history";
 import { getStatusLabel, getStatusVariant } from "@/lib/status-badges";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 const formatDate = (value?: Date | null) => (value ? new Date(value).toLocaleDateString("es-AR") : "—");
 
@@ -21,6 +23,84 @@ export default async function PortalSociosHomePage({ params }: Props) {
   ]);
 
   const member = session.member;
+  const tenantId = session.tenant.id;
+
+  const canonicalCategory = (
+    cat: string | null | undefined,
+  ): "plant_material" | "extract" | null => {
+    if (!cat) return null;
+    if (cat === "plant_material" || cat === "flores") return "plant_material";
+    if (cat === "extract" || cat === "extractos") return "extract";
+    return null;
+  };
+
+  const now = new Date();
+  const resolveMembershipPeriod = (m: {
+    membershipRecurring: boolean;
+    membershipRecurrenceDay: number | null;
+    membershipStartDate: Date | null;
+  }) => {
+    if (m.membershipRecurring && m.membershipRecurrenceDay) {
+      const day = m.membershipRecurrenceDay;
+      let start = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0, 0);
+      if (now < start) {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, day, 0, 0, 0, 0);
+      }
+      const end = new Date(start.getFullYear(), start.getMonth() + 1, day, 0, 0, 0, 0);
+      return { start, end };
+    }
+
+    let start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    if (m.membershipStartDate && m.membershipStartDate > start) {
+      start = new Date(m.membershipStartDate);
+    }
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+    return { start, end };
+  };
+
+  const { start: periodStart, end: periodEnd } = resolveMembershipPeriod({
+    membershipRecurring: member.membershipRecurring,
+    membershipRecurrenceDay: member.membershipRecurrenceDay ?? null,
+    membershipStartDate: member.membershipStartDate ?? null,
+  });
+
+  const plan = (member as any).membershipPlanRel;
+
+  const [limitRules, dispensationsInPeriod] = await Promise.all([
+    prisma.membershipLimitRule.findMany({
+      where: {
+        tenantId,
+        membershipPlanId: member.membershipPlanId ?? undefined,
+        active: true,
+      },
+    }),
+    prisma.dispensation.findMany({
+      where: {
+        tenantId,
+        memberId: member.id,
+        dispensedAt: { gte: periodStart, lt: periodEnd },
+      },
+      select: { category: true, grams: true },
+    }),
+  ]);
+
+  const consumedMonthly: Record<"plant_material" | "extract", Prisma.Decimal> = {
+    plant_material: new Prisma.Decimal(0),
+    extract: new Prisma.Decimal(0),
+  };
+  for (const d of dispensationsInPeriod) {
+    const canon = canonicalCategory(d.category ?? undefined);
+    if (!canon) continue;
+    consumedMonthly[canon] = consumedMonthly[canon].add(d.grams);
+  }
+
+  const remainingByCategory = (cat: "plant_material" | "extract") => {
+    const rule = limitRules.find((r) => r.category === cat && r.active);
+    const monthlyLimitDec = rule?.monthlyLimit ?? plan?.monthlyLimit ?? null;
+    if (monthlyLimitDec == null) return null;
+    return Number(monthlyLimitDec.toString()) - Number(consumedMonthly[cat].toString());
+  };
+
   const notifications = notifResult.data ?? [];
   const history = historyResult.data ?? [];
   const lastNotifs = notifications.slice(0, 5);
@@ -59,7 +139,20 @@ export default async function PortalSociosHomePage({ params }: Props) {
             <CardTitle className="text-sm font-medium text-muted-foreground">Saldo restante</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold">{member.remainingBalance?.toString() ?? "0"}</p>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                Materia vegetal:{" "}
+                <span className="text-foreground font-medium">
+                  {remainingByCategory("plant_material")?.toFixed(2) ?? "—"}
+                </span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Extracto:{" "}
+                <span className="text-foreground font-medium">
+                  {remainingByCategory("extract")?.toFixed(2) ?? "—"}
+                </span>
+              </p>
+            </div>
           </CardContent>
         </Card>
         <Card>

@@ -101,6 +101,22 @@ type Props = {
     monthlyLimit?: { toString: () => string } | null;
     dailyLimit?: { toString: () => string } | null;
   } | null;
+  usageByCategory: {
+    plant_material: {
+      monthlyLimit: number | null;
+      dailyLimit: number | null;
+      consumedMonthly: number;
+      consumedDaily: number;
+      remainingMonthly: number | null;
+    };
+    extract: {
+      monthlyLimit: number | null;
+      dailyLimit: number | null;
+      consumedMonthly: number;
+      consumedDaily: number;
+      remainingMonthly: number | null;
+    };
+  };
   payments: PaymentRow[];
   account: { id: string; email: string; status: string } | null;
   notifications: NotifRow[];
@@ -113,6 +129,7 @@ export function MemberDetailTabs({
   member,
   canDeleteMovement = false,
   membershipPlan,
+  usageByCategory,
   payments,
   account,
   notifications,
@@ -151,13 +168,7 @@ export function MemberDetailTabs({
       })
     : balanceAdjustments;
 
-  // Tope desde plan de membresía (Límite mensual); fallback al valor del socio
-  const limitSource = membershipPlan?.monthlyLimit ?? member.monthlyLimit;
-  const monthlyLimitNum = Number(limitSource?.toString?.() ?? "0") || 0;
-  const remainingNum = Number(member.remainingBalance?.toString?.() ?? "0") || 0;
-  const consumedNum = Number(member.consumedThisPeriod?.toString?.() ?? "0") || 0;
-  const totalForBar = Math.max(monthlyLimitNum, remainingNum + consumedNum, 0.0001);
-  const consumedPct = Math.min(Math.max((consumedNum / totalForBar) * 100, 0), 100);
+  const categoryUsage = usageByCategory;
 
   const setOperativaField = async (field: "reserve" | "preorder" | "events" | "invite", next: boolean) => {
     setError("");
@@ -522,42 +533,64 @@ export function MemberDetailTabs({
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Uso de cupo
               </p>
-              <div className="rounded-md border bg-muted/30 px-3 py-2 space-y-1">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium text-foreground">Límite mensual (tope)</span>
-                  <span className="text-sm font-semibold tabular-nums">
-                    {limitSource != null ? limitSource.toString() : "—"}
-                  </span>
-                </div>
-                {membershipPlan?.monthlyLimit != null ? (
-                  <p className="text-[11px] text-muted-foreground">
-                    Según plan «{membershipPlan.name}»
-                  </p>
-                ) : member.monthlyLimit != null ? (
-                  <p className="text-[11px] text-muted-foreground">
-                    Valor del socio (no tomado del plan)
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">
-                    Sin tope configurado. Definí el <strong>Límite mensual</strong> en el plan de membresía (Membresías) o se usará el valor del socio.
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] text-muted-foreground">
-                  <span>Consumido este período</span>
-                  <span className="font-medium text-foreground">
-                    {monthlyLimitNum > 0
-                      ? `${consumedNum.toFixed(2)} / ${totalForBar.toFixed(2)}`
-                      : `${consumedNum.toFixed(2)} (sin tope)`}
-                  </span>
-                </div>
-                <div className="h-3 sm:h-4 w-full rounded-full bg-muted/70 overflow-hidden ring-1 ring-border">
-                  <div
-                    className="h-full bg-primary transition-all"
-                    style={{ width: `${consumedPct}%` }}
-                  />
-                </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    { cat: "plant_material" as const, title: "Materia vegetal" },
+                    { cat: "extract" as const, title: "Extracto" },
+                  ] as const
+                ).map(({ cat, title }) => {
+                  const u = categoryUsage[cat];
+                  const pct =
+                    u.monthlyLimit != null && u.monthlyLimit > 0
+                      ? Math.min(Math.max((u.consumedMonthly / u.monthlyLimit) * 100, 0), 100)
+                      : 100;
+
+                  return (
+                    <div key={cat} className="rounded-md border bg-muted/30 px-3 py-2 space-y-2">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <span className="text-sm font-medium text-foreground">{title}</span>
+                        <span className="text-sm font-semibold tabular-nums">
+                          {u.monthlyLimit != null ? u.monthlyLimit.toString() : "Sin tope"}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[11px] text-muted-foreground">
+                          <span>Consumido período</span>
+                          <span className="font-medium text-foreground">
+                            {u.monthlyLimit != null
+                              ? `${u.consumedMonthly.toFixed(2)} / ${u.monthlyLimit.toFixed(2)}`
+                              : `${u.consumedMonthly.toFixed(2)} (sin tope)`}
+                          </span>
+                        </div>
+                        <div className="h-3 sm:h-4 w-full rounded-full bg-muted/70 overflow-hidden ring-1 ring-border">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-1">
+                        <p className="text-[11px] text-muted-foreground">
+                          Saldo mensual:{" "}
+                          <span className="font-medium text-foreground">
+                            {u.remainingMonthly != null ? u.remainingMonthly.toFixed(2) : "—"}
+                          </span>
+                        </p>
+                      </div>
+
+                      {u.dailyLimit != null && (
+                        <div className="pt-1">
+                          <p className="text-[11px] text-muted-foreground">
+                            Hoy: {u.consumedDaily.toFixed(2)} / {u.dailyLimit.toFixed(2)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <OperativaToggle

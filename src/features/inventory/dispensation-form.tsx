@@ -11,12 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 type Option = { id: string; label: string };
 
 type Props = {
-  strains: Option[];
+  products: Option[];
   members: Option[];
   onSuccess?: () => void;
 };
 
-export function DispensationForm({ strains, members, onSuccess }: Props) {
+export function DispensationForm({ products, members, onSuccess }: Props) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,8 +27,7 @@ export function DispensationForm({ strains, members, onSuccess }: Props) {
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     const result = await createDispensation({
-      strainId: String(formData.get("strainId")),
-      category: formData.get("category") as "flores" | "extractos",
+      productId: String(formData.get("productId") ?? ""),
       grams: String(formData.get("grams")),
       memberId: String(formData.get("memberId") || ""),
       notes: String(formData.get("notes") || ""),
@@ -52,27 +51,18 @@ export function DispensationForm({ strains, members, onSuccess }: Props) {
         <form onSubmit={handleSubmit} className="grid gap-4">
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="grid gap-2">
-            <Label htmlFor="category">Categoría</Label>
+            <Label htmlFor="productId">Producto</Label>
             <select
-              id="category"
-              name="category"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value="flores">Flores</option>
-              <option value="extractos">Extractos</option>
-            </select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="strainId">Cepa</Label>
-            <select
-              id="strainId"
-              name="strainId"
+              id="productId"
+              name="productId"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               required
             >
               <option value="">Seleccionar</option>
-              {strains.map((s) => (
-                <option key={s.id} value={s.id}>{s.label}</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
               ))}
             </select>
           </div>
