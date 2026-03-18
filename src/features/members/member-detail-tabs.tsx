@@ -586,22 +586,7 @@ export function MemberDetailTabs({
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Límite mensual</p>
-                      <p className="text-lg font-semibold">
-                        {(membershipPlan?.monthlyLimit ?? member.monthlyLimit)?.toString() ?? "—"}
-                      </p>
-                      {membershipPlan?.monthlyLimit != null && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">Según plan «{membershipPlan.name}»</p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Consumido este período</p>
-                      <p className="text-lg font-semibold">{member.consumedThisPeriod?.toString() ?? "0"}</p>
-                    </div>
-                  </div>
-                  <form onSubmit={handleAdjustBalance} className="flex flex-wrap gap-4 items-end border-t pt-4">
+                  <form onSubmit={handleAdjustBalance} className="flex flex-wrap gap-4 items-end">
                     <div className="space-y-2">
                       <Label htmlFor="adjustAmount">Ajuste de saldo (+ o -)</Label>
                       <Input
