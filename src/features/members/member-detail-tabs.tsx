@@ -23,7 +23,6 @@ import {
   CreditCard,
   Settings,
   History,
-  Wallet,
   Bell,
   KeyRound,
 } from "lucide-react";
@@ -83,7 +82,7 @@ type AuditRow = { id: string; action: string; actorName: string | null; createdA
 
 const formatDate = (value?: Date | null) => (value ? new Date(value).toLocaleDateString("es-AR") : "—");
 
-type TabId = "datos" | "membresia" | "operativa" | "historial" | "saldo" | "notificaciones" | "cuenta";
+type TabId = "datos" | "membresia" | "operativa" | "historial" | "notificaciones" | "cuenta";
 
 type Props = {
   tenantSlug: string;
@@ -209,9 +208,8 @@ export function MemberDetailTabs({
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: "datos", label: "Datos", icon: <User className="h-4 w-4" /> },
     { id: "membresia", label: "Membresía", icon: <CreditCard className="h-4 w-4" /> },
-    { id: "operativa", label: "Config operativa", icon: <Settings className="h-4 w-4" /> },
+    { id: "operativa", label: "Cupo y permisos", icon: <Settings className="h-4 w-4" /> },
     { id: "historial", label: "Historial", icon: <History className="h-4 w-4" /> },
-    { id: "saldo", label: "Saldo / cupo", icon: <Wallet className="h-4 w-4" /> },
     { id: "notificaciones", label: "Notificaciones", icon: <Bell className="h-4 w-4" /> },
     { id: "cuenta", label: "Cuenta de acceso", icon: <KeyRound className="h-4 w-4" /> },
   ];
@@ -478,7 +476,10 @@ export function MemberDetailTabs({
       {tab === "operativa" && (
         <Card>
           <CardHeader>
-            <CardTitle>Configuración operativa</CardTitle>
+            <CardTitle>Cupo y permisos</CardTitle>
+            <p className="text-sm text-muted-foreground font-normal mt-1">
+              Uso de cupo, saldo, ajustes y permisos operativos del socio.
+            </p>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
@@ -573,6 +574,70 @@ export function MemberDetailTabs({
                 <p className="font-medium">{member.internalNotes}</p>
               </div>
             )}
+
+            {/* Saldo y ajustes (antes solapa Saldo/cupo) */}
+            <div className="sm:col-span-2 space-y-4 border-t pt-4 mt-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Saldo y movimientos
+              </p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Límite mensual</p>
+                  <p className="text-xl font-semibold">
+                    {(membershipPlan?.monthlyLimit ?? member.monthlyLimit)?.toString() ?? "—"}
+                  </p>
+                  {membershipPlan?.monthlyLimit != null && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Según plan «{membershipPlan.name}»</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Saldo restante</p>
+                  <p className="text-xl font-semibold">{member.remainingBalance?.toString() ?? "0"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Consumido este período</p>
+                  <p className="text-xl font-semibold">{member.consumedThisPeriod?.toString() ?? "0"}</p>
+                </div>
+              </div>
+              <form onSubmit={handleAdjustBalance} className="flex flex-wrap gap-4 items-end">
+                <div className="space-y-2">
+                  <Label htmlFor="adjustAmount">Ajuste de saldo (+ o -)</Label>
+                  <Input
+                    id="adjustAmount"
+                    type="number"
+                    step="0.01"
+                    value={adjustAmount}
+                    onChange={(e) => setAdjustAmount(e.target.value)}
+                    placeholder="Ej. 10 o -5"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="adjustNote">Nota (opcional)</Label>
+                  <Input
+                    id="adjustNote"
+                    value={adjustNote}
+                    onChange={(e) => setAdjustNote(e.target.value)}
+                    placeholder="Motivo del ajuste"
+                  />
+                </div>
+                <Button type="submit" disabled={loading}>Aplicar ajuste</Button>
+              </form>
+              <div>
+                <p className="text-sm font-medium mb-2">Últimos movimientos</p>
+                {balanceAdjustments.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No hay movimientos.</p>
+                ) : (
+                  <ul className="space-y-1 text-sm">
+                    {balanceAdjustments.map((a) => (
+                      <li key={a.id} className="flex justify-between">
+                        <span>{formatDate(a.createdAt)} · {a.type}</span>
+                        <span>{a.amount.toString()} {a.note ? `· ${a.note}` : ""}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -596,73 +661,6 @@ export function MemberDetailTabs({
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
-      )}
-
-      {tab === "saldo" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Saldo / cupo</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Límite mensual</p>
-                <p className="text-xl font-semibold">
-                  {(membershipPlan?.monthlyLimit ?? member.monthlyLimit)?.toString() ?? "—"}
-                </p>
-                {membershipPlan?.monthlyLimit != null && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Según plan «{membershipPlan.name}»</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Saldo restante</p>
-                <p className="text-xl font-semibold">{member.remainingBalance?.toString() ?? "0"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Consumido este período</p>
-                <p className="text-xl font-semibold">{member.consumedThisPeriod?.toString() ?? "0"}</p>
-              </div>
-            </div>
-            <form onSubmit={handleAdjustBalance} className="flex flex-wrap gap-4 items-end border-t pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="adjustAmount">Ajuste de saldo (+ o -)</Label>
-                <Input
-                  id="adjustAmount"
-                  type="number"
-                  step="0.01"
-                  value={adjustAmount}
-                  onChange={(e) => setAdjustAmount(e.target.value)}
-                  placeholder="Ej. 10 o -5"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="adjustNote">Nota (opcional)</Label>
-                <Input
-                  id="adjustNote"
-                  value={adjustNote}
-                  onChange={(e) => setAdjustNote(e.target.value)}
-                  placeholder="Motivo del ajuste"
-                />
-              </div>
-              <Button type="submit" disabled={loading}>Aplicar ajuste</Button>
-            </form>
-            <div className="border-t pt-4">
-              <p className="text-sm font-medium mb-2">Últimos movimientos</p>
-              {balanceAdjustments.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No hay movimientos.</p>
-              ) : (
-                <ul className="space-y-1 text-sm">
-                  {balanceAdjustments.map((a) => (
-                    <li key={a.id} className="flex justify-between">
-                      <span>{formatDate(a.createdAt)} · {a.type}</span>
-                      <span>{a.amount.toString()} {a.note ? `· ${a.note}` : ""}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           </CardContent>
         </Card>
       )}

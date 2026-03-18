@@ -72,7 +72,7 @@ export default async function MemberProfilePage({ params }: Props) {
         </div>
       </div>
       <p className="text-sm text-muted-foreground">
-        Usá las pestañas para ver y gestionar <strong>Datos</strong>, <strong>Membresía</strong>, <strong>Config. operativa</strong>, <strong>Historial</strong>, <strong>Saldo / cupo</strong>, <strong>Notificaciones</strong> y <strong>Cuenta de acceso</strong>. El socio ingresa al portal con su email y contraseña.
+        Usá las pestañas para ver y gestionar <strong>Datos</strong>, <strong>Membresía</strong>, <strong>Cupo y permisos</strong>, <strong>Historial</strong>, <strong>Notificaciones</strong> y <strong>Cuenta de acceso</strong>. El socio ingresa al portal con su email y contraseña.
       </p>
 
       <MemberDetailTabs
