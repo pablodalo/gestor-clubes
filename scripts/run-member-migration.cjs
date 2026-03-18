@@ -91,6 +91,33 @@ async function membershipPlanRenewalExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function productStrainIdExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'product' AND column_name = 'strain_id'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
+async function dispensationProductIdExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'dispensation' AND column_name = 'product_id'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
+async function membershipLimitRuleTableExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'membershiplimitrule'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function run() {
   if (!process.env.DATABASE_URL) {
     console.log("DATABASE_URL no definida, se omite run-member-migration");
@@ -145,6 +172,21 @@ async function run() {
       console.log("Migración renovación de membresías aplicada correctamente.");
     } else {
       console.log("MembershipPlan.requires_renewal ya existe, migración renovación omitida.");
+    }
+
+    // PR 1: Modelo base y compatibilidad para dispensación por productId + límites por categoría
+    if (
+      !(await productStrainIdExists()) ||
+      !(await dispensationProductIdExists()) ||
+      !(await membershipLimitRuleTableExists())
+    ) {
+      const statements = runSqlFile(
+        path.join(migrationsDir, "20260319093000_add_membership_limit_rules_product_strain_and_dispensation_product", "migration.sql")
+      );
+      await executeStatements(statements, "[PR1 - membershipLimitRules / product.dispensation]");
+      console.log("Migración PR1 (límites por categoría + product/dispensation) aplicada correctamente.");
+    } else {
+      console.log("PR1 - columns/tables ya existen, migración omitida.");
     }
   } catch (err) {
     // Si no se puede conectar a la base (build sin DB disponible), no rompemos el build:

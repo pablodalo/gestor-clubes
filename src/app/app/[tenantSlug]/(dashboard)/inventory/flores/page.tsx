@@ -42,7 +42,10 @@ export default async function InventoryFlowersPage({ params }: Props) {
   const [strains, stocks, products, lotLinks] = await Promise.all([
     prisma.plantStrain.findMany({ where: { tenantId: tenant.id }, orderBy: { name: "asc" } }),
     prisma.inventoryStock.findMany({ where: { tenantId: tenant.id, category: "flores" } }),
-    prisma.product.findMany({ where: { tenantId: tenant.id, category: "flores", status: "active" }, orderBy: { name: "asc" } }),
+    prisma.product.findMany({
+      where: { tenantId: tenant.id, category: { in: ["flores", "plant_material"] }, status: "active" },
+      orderBy: { name: "asc" },
+    }),
     prisma.cultivationLotStrain.findMany({
       where: { tenantId: tenant.id },
       include: { cultivationLot: true },

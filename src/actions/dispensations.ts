@@ -11,6 +11,7 @@ import { Prisma } from "@prisma/client";
 
 const createDispensationSchema = z.object({
   strainId: z.string().min(1),
+  // Deprecated (PR1 compat): en fases futuras, la fuente de verdad para categoría/strain será `productId`.
   category: z.enum(["flores", "extractos"]),
   grams: z.string().min(1),
   memberId: z.string().min(1),

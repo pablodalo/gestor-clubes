@@ -42,7 +42,10 @@ export default async function InventoryExtractsPage({ params }: Props) {
   const [strains, stocks, products, lotLinks] = await Promise.all([
     prisma.plantStrain.findMany({ where: { tenantId: tenant.id }, orderBy: { name: "asc" } }),
     prisma.inventoryStock.findMany({ where: { tenantId: tenant.id, category: "extractos" } }),
-    prisma.product.findMany({ where: { tenantId: tenant.id, category: "extractos", status: "active" }, orderBy: { name: "asc" } }),
+    prisma.product.findMany({
+      where: { tenantId: tenant.id, category: { in: ["extractos", "extract"] }, status: "active" },
+      orderBy: { name: "asc" },
+    }),
     prisma.cultivationLotStrain.findMany({
       where: { tenantId: tenant.id },
       include: { cultivationLot: true },

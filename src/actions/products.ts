@@ -11,7 +11,8 @@ import { Prisma } from "@prisma/client";
 
 const createProductSchema = z.object({
   name: z.string().min(1),
-  category: z.enum(["flores", "extractos", "accesorios"]),
+  // Compatibilidad: valores viejos (flores/extractos) y canónicos (plant_material/extract).
+  category: z.enum(["flores", "extractos", "accesorios", "plant_material", "extract"]),
   sku: z.string().optional(),
   unit: z.string().optional(),
   price: z.string().min(1),
@@ -46,11 +47,17 @@ export async function createProduct(input: z.infer<typeof createProductSchema>) 
   const data = parsed.data;
   const price = new Prisma.Decimal(data.price);
 
+  const category = (() => {
+    if (data.category === "flores") return "plant_material";
+    if (data.category === "extractos") return "extract";
+    return data.category;
+  })();
+
   const product = await prisma.product.create({
     data: {
       tenantId: ctx.tenantId,
       name: data.name,
-      category: data.category,
+      category,
       sku: data.sku || null,
       unit: data.unit || null,
       price,
