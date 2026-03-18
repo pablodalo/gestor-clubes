@@ -94,7 +94,7 @@ export default async function AuditPage({
           />
         }
       >
-        <AuditTable rows={rows} emptyMessage="Sin registros" icon={FileText} />
+        <AuditTable rows={rows} emptyMessage="Sin registros" />
         {totalPages > 1 && (
           <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
             <span>

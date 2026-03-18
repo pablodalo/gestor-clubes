@@ -1,7 +1,6 @@
 "use client";
 
 import { DataTable, type DataTableColumn } from "@/components/data-table";
-import type { LucideIcon } from "lucide-react";
 import { FileText } from "lucide-react";
 
 type Props = {
@@ -15,13 +14,11 @@ type Props = {
     createdAt: string; // ISO
   }>;
   emptyMessage?: string;
-  icon?: LucideIcon;
 };
 
 export function AuditTable({
   rows,
   emptyMessage = "Sin registros",
-  icon = FileText,
 }: Props) {
   type Row = (typeof rows)[number];
 
@@ -62,7 +59,11 @@ export function AuditTable({
       columns={columns}
       data={rows}
       keyExtractor={(r) => r.id}
-      emptyState={{ icon, title: emptyMessage, description: "No hay registros de auditoría." }}
+      emptyState={{
+        icon: FileText,
+        title: emptyMessage,
+        description: "No hay registros de auditoría.",
+      }}
     />
   );
 }
