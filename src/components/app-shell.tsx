@@ -45,6 +45,8 @@ import {
   User,
   UserCircle,
   Users,
+  AlertCircle,
+  CheckCircle2,
   X,
 } from "lucide-react";
 
@@ -270,6 +272,7 @@ export function AppShell({
   navigationLayout = "horizontal",
   logoUrl,
   appName,
+  health,
   children,
 }: {
   tenant: TenantContext;
@@ -281,6 +284,14 @@ export function AppShell({
   logoUrl?: string | null;
   /** Nombre de la app (branding). Fallback a tenant.name */
   appName?: string | null;
+  health?:
+    | {
+        ok: boolean;
+        env: Record<string, string>;
+        database: { ok: boolean; message?: string; tenantsCount?: number };
+        hint?: string | undefined;
+      }
+    | undefined;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -321,6 +332,41 @@ export function AppShell({
       {isPlatformViewer && (
         <div className="bg-primary/15 text-primary border-b border-primary/20 px-4 py-1.5 text-center text-sm">
           Vista superadmin · <Link href="/platform" className="font-medium underline underline-offset-2">Volver a Platform</Link>
+        </div>
+      )}
+
+      {isPlatformViewer && health && (
+        <div
+          className={[
+            "px-4 py-2 text-sm border-b",
+            health.ok ? "bg-green-500/10 border-green-500/20 text-green-700" : "bg-destructive/10 border-destructive/20 text-destructive",
+          ].join(" ")}
+        >
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-start gap-2">
+              {health.ok ? (
+                <CheckCircle2 className="h-4 w-4 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-4 w-4 mt-0.5" />
+              )}
+              <div className="min-w-0">
+                <span className="font-medium">
+                  {health.ok ? "Health OK" : "Health con problemas"}
+                </span>
+                <span className="text-muted-foreground ml-2">
+                  {health.database?.message ?? ""}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              {!health.ok && health.hint && <span className="text-xs text-muted-foreground">{health.hint}</span>}
+              {!health.ok && (
+                <Link href="/platform/errors" className="text-xs font-medium underline underline-offset-2 hover:no-underline">
+                  Ver errores
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
