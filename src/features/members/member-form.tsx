@@ -45,6 +45,15 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
   const toDateInput = (value?: Date | string | null) =>
     value ? new Date(value).toISOString().slice(0, 10) : "";
 
+  const parseMembershipRecurrenceDay = (raw: string): number | undefined => {
+    const v = raw.trim();
+    if (!v) return undefined;
+    const n = Number(v.replace(",", "."));
+    if (!Number.isFinite(n) || !Number.isInteger(n)) return undefined;
+    if (n < 1 || n > 28) return undefined;
+    return n;
+  };
+
   const editWithPlanId = edit as (Member & { membershipPlanId?: string | null }) | null;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -92,7 +101,9 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
 
       if (has("membershipPlanId")) payload.membershipPlanId = trim("membershipPlanId") || null;
       if (has("membershipRecurring")) payload.membershipRecurring = str("membershipRecurring") === "true";
-      if (has("membershipRecurrenceDay")) payload.membershipRecurrenceDay = Number(trim("membershipRecurrenceDay")) || undefined;
+      if (has("membershipRecurrenceDay")) {
+        payload.membershipRecurrenceDay = parseMembershipRecurrenceDay(trim("membershipRecurrenceDay"));
+      }
       if (has("membershipLastPaidAt")) payload.membershipLastPaidAt = optTrim("membershipLastPaidAt");
       if (has("membershipLastAmount")) payload.membershipLastAmount = optTrim("membershipLastAmount");
       if (has("membershipCurrency")) payload.membershipCurrency = optTrim("membershipCurrency");
@@ -133,7 +144,7 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
       reprocannActive: str("reprocannActive") === "active",
       membershipPlanId: trim("membershipPlanId") || null,
       membershipRecurring: str("membershipRecurring") === "true",
-      membershipRecurrenceDay: Number(trim("membershipRecurrenceDay")) || undefined,
+      membershipRecurrenceDay: parseMembershipRecurrenceDay(trim("membershipRecurrenceDay")),
       membershipLastPaidAt: optTrim("membershipLastPaidAt"),
       membershipLastAmount: optTrim("membershipLastAmount"),
       membershipCurrency: optTrim("membershipCurrency"),
@@ -373,6 +384,7 @@ export function MemberFormDialog({ tenantSlug, membershipPlans, open, onOpenChan
                       type="number"
                       min={1}
                       max={28}
+                      step={1}
                       defaultValue={edit?.membershipRecurrenceDay ?? ""}
                       placeholder="10"
                     />

@@ -45,6 +45,15 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
   const [status, setStatus] = useState<string>("active");
   const [validityType, setValidityType] = useState<string>("recurrent");
 
+  const parseRecurrenceDay = (raw: string): number | undefined => {
+    const v = raw.trim();
+    if (!v) return undefined;
+    const n = Number(v.replace(",", "."));
+    if (!Number.isFinite(n) || !Number.isInteger(n)) return undefined;
+    if (n < 1 || n > 28) return undefined;
+    return n;
+  };
+
   useEffect(() => {
     if (open) {
       const ext = edit as unknown as { tier?: string | null; validityType?: string };
@@ -69,9 +78,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
       description: (formData.get("description") as string).trim() || undefined,
       price: (formData.get("price") as string).trim() || undefined,
       currency: (formData.get("currency") as string).trim() || "ARS",
-      recurrenceDay: (formData.get("recurrenceDay") as string).trim()
-        ? Number(formData.get("recurrenceDay"))
-        : undefined,
+      recurrenceDay: parseRecurrenceDay(String(formData.get("recurrenceDay") ?? "")),
       monthlyLimit: (formData.get("monthlyLimit") as string).trim() || undefined,
       dailyLimit: (formData.get("dailyLimit") as string).trim() || undefined,
       validityType: (validityType || "recurrent") as "recurrent" | "fixed_end",
@@ -222,6 +229,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                         id="recurrenceDay"
                         name="recurrenceDay"
                         type="number"
+                        step={1}
                         min={1}
                         max={28}
                         defaultValue={edit?.recurrenceDay ?? ""}
