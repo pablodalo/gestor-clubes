@@ -1,0 +1,38 @@
+---
+description: Avisos y confirmaciones siempre en modales, nunca alert/confirm
+alwaysApply: true
+---
+
+# Avisos en modales
+
+Los mensajes de tipo aviso o confirmación deben mostrarse **siempre en modales** (componentes de diálogo), nunca con `alert()` ni `confirm()` del navegador.
+
+## Componentes a usar
+
+- **Aviso (solo informar):** `AlertDialog` (`@/components/alert-dialog`). Props: `open`, `onOpenChange`, `title`, `message`, `closeLabel` opcional.
+- **Confirmación (acción destructiva o reversible):** `ConfirmDialog` (`@/components/confirm-dialog`). Props: `open`, `onOpenChange`, `title`, `description`, `confirmLabel`, `destructive` (opcional), `onConfirm` (async). Muestra loading mientras corre `onConfirm` y cierra al terminar.
+
+## Patrón típico
+
+- Estado para el ítem a eliminar (ej. `planToDelete`, `userToDelete`).
+- Estado para aviso de error: `alertOpen`, `alertMessage` (title + message).
+- Al hacer clic en "Eliminar": setear el ítem (abre `ConfirmDialog`).
+- `doDelete()`: llamar a la API; si hay error → abrir `AlertDialog` con el mensaje; si no → refresh.
+- Al cerrar el confirm: setear ítem a `null`.
+
+## Ejemplo
+
+```tsx
+// ❌ Evitar
+if (!confirm("¿Eliminar?")) return;
+await deleteItem(id);
+if (result.error) alert(result.error);
+
+// ✅ Usar
+const [itemToDelete, setItemToDelete] = useState<Item | null>(null);
+const [alertOpen, setAlertOpen] = useState(false);
+// En el botón: onClick={() => setItemToDelete(item)}
+// ConfirmDialog con onConfirm={doDelete}
+// doDelete: API call → si error setAlertOpen(true), si no refresh()
+// AlertDialog para mostrar result.error
+```

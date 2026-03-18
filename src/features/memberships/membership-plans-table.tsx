@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { MembershipPlanFormDialog } from "@/features/memberships/membership-plan-form";
 import { deleteMembershipPlan } from "@/actions/membership-plans";
 import type { MembershipPlan } from "@prisma/client";
@@ -29,6 +31,9 @@ export function MembershipPlansTable({ tenantSlug, plans, canCreate, canUpdate, 
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MembershipPlan | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<MembershipPlan | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
 
   const refresh = () => router.refresh();
 
@@ -75,10 +80,18 @@ export function MembershipPlansTable({ tenantSlug, plans, canCreate, canUpdate, 
 
   async function handleDelete(p: MembershipPlan) {
     if (!canDelete) return;
-    if (!confirm(`¿Eliminar el plan «${p.name}»?`)) return;
-    const result = await deleteMembershipPlan(p.id);
-    if (result.error) alert(result.error);
-    else refresh();
+    setPlanToDelete(p);
+  }
+
+  async function doDelete() {
+    if (!planToDelete) return;
+    const result = await deleteMembershipPlan(planToDelete.id);
+    if (result.error) {
+      setAlertMessage({ title: "Error", message: result.error });
+      setAlertOpen(true);
+    } else {
+      refresh();
+    }
   }
 
   return (
@@ -141,6 +154,21 @@ export function MembershipPlansTable({ tenantSlug, plans, canCreate, canUpdate, 
         onOpenChange={setDialogOpen}
         onSuccess={refresh}
         edit={editing}
+      />
+      <ConfirmDialog
+        open={!!planToDelete}
+        onOpenChange={(open) => !open && setPlanToDelete(null)}
+        title="Eliminar plan"
+        description={planToDelete ? `¿Eliminar el plan «${planToDelete.name}»?` : ""}
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={doDelete}
+      />
+      <AlertDialog
+        open={alertOpen}
+        onOpenChange={setAlertOpen}
+        title={alertMessage.title}
+        message={alertMessage.message}
       />
     </>
   );

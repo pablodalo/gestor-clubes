@@ -13,6 +13,8 @@ import { DataTable, type DataTableColumn } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DeviceFormDialog } from "@/features/devices/device-form";
 import { deleteDevice } from "@/actions/devices";
 import type { Device } from "@prisma/client";
@@ -31,6 +33,9 @@ export function DevicesTable({ tenantSlug, devices, locationOptions, canCreate, 
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Device | null>(null);
+  const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
 
   const refresh = () => router.refresh();
 
@@ -41,12 +46,18 @@ export function DevicesTable({ tenantSlug, devices, locationOptions, canCreate, 
     { key: "status", header: "Estado", render: (d) => <Badge variant={getStatusVariant(d.status)}>{getStatusLabel(d.status) ?? d.status}</Badge> },
   ];
 
-  async function handleDelete(d: Device) {
+  function handleDelete(d: Device) {
     if (!canManage) return;
-    if (!confirm(`¿Eliminar el dispositivo «${d.name}»?`)) return;
-    const result = await deleteDevice(d.id);
-    if (result.error) alert(result.error);
-    else refresh();
+    setDeviceToDelete(d);
+  }
+
+  async function doDelete() {
+    if (!deviceToDelete) return;
+    const result = await deleteDevice(deviceToDelete.id);
+    if (result.error) {
+      setAlertMessage({ title: "Error", message: result.error });
+      setAlertOpen(true);
+    } else refresh();
   }
 
   const exportData = devices.map((d) => ({
@@ -96,7 +107,7 @@ export function DevicesTable({ tenantSlug, devices, locationOptions, canCreate, 
                         <Pencil className="h-4 w-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(d)} className="text-destructive">
+                      <DropdownMenuItem onClick={() => handleDelete(d)} className="text-destructive focus:text-destructive">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Eliminar
                       </DropdownMenuItem>
@@ -115,6 +126,16 @@ export function DevicesTable({ tenantSlug, devices, locationOptions, canCreate, 
         edit={editing}
         locationOptions={locationOptions}
       />
+      <ConfirmDialog
+        open={!!deviceToDelete}
+        onOpenChange={(open) => !open && setDeviceToDelete(null)}
+        title="Eliminar dispositivo"
+        description={deviceToDelete ? `¿Eliminar el dispositivo «${deviceToDelete.name}»?` : ""}
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={doDelete}
+      />
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen} title={alertMessage.title} message={alertMessage.message} />
     </>
   );
 }

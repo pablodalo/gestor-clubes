@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PlatformUserFormDialog } from "@/features/platform-users/platform-user-form";
 import { deletePlatformUser } from "@/actions/platform-users";
 import { PLATFORM_OWNER_ROLE, PLATFORM_PERMISSION_KEYS } from "@/config/platform-permissions";
@@ -40,6 +42,9 @@ export function PlatformUsersTable({ users }: { users: PlatformUserRow[] }) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<PlatformUserRow | null>(null);
+  const [userToDelete, setUserToDelete] = useState<PlatformUserRow | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
 
   const columns: DataTableColumn<PlatformUserRow>[] = [
     { key: "name", header: "Nombre", render: (u) => <span className="font-medium text-foreground">{u.name}</span> },
@@ -59,12 +64,18 @@ export function PlatformUsersTable({ users }: { users: PlatformUserRow[] }) {
     { key: "status", header: "Estado", render: (u) => <Badge variant={getStatusVariant(u.status)}>{getStatusLabel(u.status) ?? u.status}</Badge> },
   ];
 
-  async function handleDelete(u: PlatformUserRow) {
+  function handleDelete(u: PlatformUserRow) {
     if (u.role === PLATFORM_OWNER_ROLE) return;
-    if (!confirm(`¿Eliminar a ${u.name} (${u.email})?`)) return;
-    const result = await deletePlatformUser(u.id);
-    if (result.error) alert(result.error);
-    else router.refresh();
+    setUserToDelete(u);
+  }
+
+  async function doDelete() {
+    if (!userToDelete) return;
+    const result = await deletePlatformUser(userToDelete.id);
+    if (result.error) {
+      setAlertMessage({ title: "Error", message: result.error });
+      setAlertOpen(true);
+    } else router.refresh();
   }
 
   const exportData = users.map((u) => ({
@@ -122,6 +133,16 @@ export function PlatformUsersTable({ users }: { users: PlatformUserRow[] }) {
         />
       </ListPageLayout>
       <PlatformUserFormDialog open={dialogOpen} onOpenChange={setDialogOpen} onSuccess={() => router.refresh()} edit={editing} />
+      <ConfirmDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        title="Eliminar usuario"
+        description={userToDelete ? `¿Eliminar a ${userToDelete.name} (${userToDelete.email})?` : ""}
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={doDelete}
+      />
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen} title={alertMessage.title} message={alertMessage.message} />
     </>
   );
 }

@@ -14,6 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Supplier, SupplierOrder, SupplierOrderItem } from "@prisma/client";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { createSupplierOrder, deleteSupplierOrder, updateSupplierOrderStatus } from "@/actions/supplier-orders";
 import { Copy, Mail, MessageCircle, Plus, RefreshCcw } from "lucide-react";
 
@@ -342,16 +344,7 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
                       <Button type="button" variant="outline" size="sm" onClick={() => loadFromOrder(o)}>
                         Repetir
                       </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          if (!confirm("¿Eliminar este pedido?")) return;
-                          await deleteSupplierOrder({ orderId: o.id, supplierId: supplier.id });
-                          router.refresh();
-                        }}
-                      >
+                      <Button type="button" variant="outline" size="sm" onClick={() => setOrderToDelete(o)}>
                         Eliminar
                       </Button>
                     </div>
@@ -362,6 +355,23 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
           </Card>
         </div>
 
+      <ConfirmDialog
+        open={!!orderToDelete}
+        onOpenChange={(open) => !open && setOrderToDelete(null)}
+        title="Eliminar pedido"
+        description="¿Eliminar este pedido?"
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={async () => {
+          if (!orderToDelete) return;
+          const res = await deleteSupplierOrder({ orderId: orderToDelete.id, supplierId: supplier.id });
+          if (res.error) {
+            setAlertMessage({ title: "Error", message: res.error });
+            setAlertOpen(true);
+          } else router.refresh();
+        }}
+      />
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen} title={alertMessage.title} message={alertMessage.message} />
       <Dialog open={!!viewing} onOpenChange={(open) => !open && setViewing(null)}>
         <DialogContent>
           <DialogHeader>

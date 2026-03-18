@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { UserFormDialog } from "@/features/users/user-form";
 import { deleteTenantUser } from "@/actions/users";
 import type { User, Role } from "@prisma/client";
@@ -50,6 +52,9 @@ export function UsersTable({
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<UserWithRole | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -74,12 +79,18 @@ export function UsersTable({
     { key: "status", header: "Estado", render: (u) => <Badge variant={getStatusVariant(u.status)}>{getStatusLabel(u.status) ?? u.status}</Badge> },
   ];
 
-  async function handleDelete(u: UserWithRole) {
+  function handleDelete(u: UserWithRole) {
     if (!canDelete) return;
-    if (!confirm(`¿Eliminar al usuario ${u.name} (${u.email})? Esta acción no se puede deshacer.`)) return;
-    const result = await deleteTenantUser(u.id);
-    if (result.error) alert(result.error);
-    else refresh();
+    setUserToDelete(u);
+  }
+
+  async function doDelete() {
+    if (!userToDelete) return;
+    const result = await deleteTenantUser(userToDelete.id);
+    if (result.error) {
+      setAlertMessage({ title: "Error", message: result.error });
+      setAlertOpen(true);
+    } else refresh();
   }
 
   const exportData = filtered.map((u) => ({
@@ -189,6 +200,16 @@ export function UsersTable({
         edit={editing}
         roles={roles}
       />
+      <ConfirmDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        title="Eliminar usuario"
+        description={userToDelete ? `¿Eliminar al usuario ${userToDelete.name} (${userToDelete.email})? Esta acción no se puede deshacer.` : ""}
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={doDelete}
+      />
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen} title={alertMessage.title} message={alertMessage.message} />
     </>
   );
 }

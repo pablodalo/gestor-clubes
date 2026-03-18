@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { MemberFormDialog } from "@/features/members/member-form";
 import { deleteMember } from "@/actions/members";
 import type { Member } from "@prisma/client";
@@ -35,6 +37,9 @@ export function MembersTable({ tenantSlug, members, membershipPlans, canCreate, 
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
 
   const refresh = () => router.refresh();
 
@@ -65,12 +70,18 @@ export function MembersTable({ tenantSlug, members, membershipPlans, canCreate, 
     { key: "status", header: "Estado", render: (m) => <Badge variant={getStatusVariant(m.status)}>{getStatusLabel(m.status) ?? m.status}</Badge> },
   ];
 
-  async function handleDelete(m: Member) {
+  function handleDelete(m: Member) {
     if (!canDelete) return;
-    if (!confirm(`¿Eliminar al socio ${m.firstName} ${m.lastName} (${m.memberNumber})? Esta acción no se puede deshacer.`)) return;
-    const result = await deleteMember(m.id);
-    if (result.error) alert(result.error);
-    else refresh();
+    setMemberToDelete(m);
+  }
+
+  async function doDelete() {
+    if (!memberToDelete) return;
+    const result = await deleteMember(memberToDelete.id);
+    if (result.error) {
+      setAlertMessage({ title: "Error", message: result.error });
+      setAlertOpen(true);
+    } else refresh();
   }
 
   const exportData = members.map((m) => ({
@@ -156,6 +167,16 @@ export function MembersTable({ tenantSlug, members, membershipPlans, canCreate, 
         onSuccess={refresh}
         edit={editing}
       />
+      <ConfirmDialog
+        open={!!memberToDelete}
+        onOpenChange={(open) => !open && setMemberToDelete(null)}
+        title="Eliminar socio"
+        description={memberToDelete ? `¿Eliminar al socio ${memberToDelete.firstName} ${memberToDelete.lastName} (${memberToDelete.memberNumber})? Esta acción no se puede deshacer.` : ""}
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={doDelete}
+      />
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen} title={alertMessage.title} message={alertMessage.message} />
     </>
   );
 }

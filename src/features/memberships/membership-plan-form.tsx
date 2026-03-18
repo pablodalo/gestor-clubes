@@ -25,7 +25,6 @@ import {
   type CreateMembershipPlanInput,
 } from "@/actions/membership-plans";
 import type { MembershipPlan } from "@prisma/client";
-import { cn } from "@/lib/utils";
 
 const TIER_OPTIONS = [
   { value: "", label: "Sin tier" },
@@ -47,11 +46,14 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
   const [loading, setLoading] = useState(false);
   const [tier, setTier] = useState<string>("");
   const [status, setStatus] = useState<string>("active");
+  const [validityType, setValidityType] = useState<string>("recurrent");
 
   useEffect(() => {
     if (open) {
-      setTier((edit as unknown as { tier?: string | null })?.tier ?? "");
+      const ext = edit as unknown as { tier?: string | null; validityType?: string };
+      setTier(ext?.tier ?? "");
       setStatus(edit?.status ?? "active");
+      setValidityType(ext?.validityType ?? "recurrent");
     }
   }, [open, edit]);
 
@@ -73,7 +75,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         : undefined,
       monthlyLimit: (formData.get("monthlyLimit") as string).trim() || undefined,
       dailyLimit: (formData.get("dailyLimit") as string).trim() || undefined,
-      validityType: ((formData.get("validityType") as string) || "recurrent") as "recurrent" | "fixed_end",
+      validityType: (validityType || "recurrent") as "recurrent" | "fixed_end",
       validUntil: (formData.get("validUntil") as string)?.trim() || undefined,
       requiresRenewal: !!formData.get("requiresRenewal"),
       renewalEveryDays: (formData.get("renewalEveryDays") as string).trim() || undefined,
@@ -99,15 +101,20 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
     onSuccess();
   }
 
-  const inputClass = cn(
-    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-    "ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-  );
+  const editExt = edit as unknown as {
+    tier?: string | null;
+    monthlyLimit?: number | null;
+    dailyLimit?: number | null;
+    validityType?: string;
+    validUntil?: Date | null;
+    requiresRenewal?: boolean;
+    renewalEveryDays?: number | null;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-6">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4">
           <DialogTitle>{edit ? "Editar plan" : "Nuevo plan de membresía"}</DialogTitle>
           <DialogDescription>
             {edit ? "Modificá los datos del plan." : "Completá los datos del plan."}
@@ -115,14 +122,14 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
           {error && (
-            <p className="mb-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive flex-shrink-0">
+            <p className="mx-6 mb-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive flex-shrink-0">
               {error}
             </p>
           )}
-          <div className="overflow-y-auto flex-1 pr-1 space-y-5">
-            {/* Fila 1: Identidad */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
+          <div className="overflow-y-auto flex-1 px-6 pb-6">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+              {/* Identidad */}
+              <div className="col-span-2">
                 <Label htmlFor="name">Nombre del plan</Label>
                 <Input
                   id="name"
@@ -130,13 +137,13 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   required
                   defaultValue={edit?.name}
                   placeholder="Ej. Flores + Extractos"
-                  className="mt-1"
+                  className="mt-1.5"
                 />
               </div>
               <div>
                 <Label>Tier</Label>
                 <Select value={tier || "none"} onValueChange={(v) => setTier(v === "none" ? "" : v)}>
-                  <SelectTrigger className="mt-1 w-full">
+                  <SelectTrigger className="mt-1.5 w-full">
                     <SelectValue placeholder="Sin tier" />
                   </SelectTrigger>
                   <SelectContent>
@@ -148,21 +155,21 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   </SelectContent>
                 </Select>
               </div>
-              <div className="sm:col-span-2">
+              <div>
                 <Label htmlFor="description">Descripción (opcional)</Label>
                 <Input
                   id="description"
                   name="description"
                   defaultValue={edit?.description ?? ""}
-                  placeholder="Ej. Incluye 30g flores y 10g extractos/mes"
-                  className="mt-1"
+                  placeholder="Ej. 30g flores y 10g extractos/mes"
+                  className="mt-1.5"
                 />
               </div>
-            </div>
 
-            {/* Fila 2: Precio y cobro */}
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Precio y cobro</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Precio y cobro */}
+              <div className="col-span-2 pt-2 mt-2 border-t border-border">
+                <p className="text-sm font-medium text-foreground mb-3">Precio y cobro</p>
+              </div>
               <div>
                 <Label htmlFor="price">Precio</Label>
                 <Input
@@ -172,7 +179,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   step="0.01"
                   defaultValue={edit?.price != null ? String(edit.price) : ""}
                   placeholder="25000"
-                  className="mt-1"
+                  className="mt-1.5"
                 />
               </div>
               <div>
@@ -182,7 +189,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   name="currency"
                   defaultValue={edit?.currency ?? "ARS"}
                   placeholder="ARS"
-                  className="mt-1"
+                  className="mt-1.5"
                 />
               </div>
               <div>
@@ -195,14 +202,15 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   max={28}
                   defaultValue={edit?.recurrenceDay ?? ""}
                   placeholder="10"
-                  className="mt-1"
+                  className="mt-1.5"
                 />
               </div>
-            </div>
+              <div className="col-span-2" />
 
-            {/* Fila 3: Límites */}
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Límites de consumo</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Límites */}
+              <div className="col-span-2 pt-2 mt-2 border-t border-border">
+                <p className="text-sm font-medium text-foreground mb-3">Límites de consumo</p>
+              </div>
               <div>
                 <Label htmlFor="monthlyLimit">Límite mensual</Label>
                 <Input
@@ -210,13 +218,9 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   name="monthlyLimit"
                   type="number"
                   step="0.01"
-                  defaultValue={
-                    (edit as unknown as { monthlyLimit?: unknown })?.monthlyLimit != null
-                      ? String((edit as any).monthlyLimit)
-                      : ""
-                  }
+                  defaultValue={editExt?.monthlyLimit != null ? String(editExt.monthlyLimit) : ""}
                   placeholder="30"
-                  className="mt-1"
+                  className="mt-1.5"
                 />
               </div>
               <div>
@@ -226,33 +230,27 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   name="dailyLimit"
                   type="number"
                   step="0.01"
-                  defaultValue={
-                    (edit as unknown as { dailyLimit?: unknown })?.dailyLimit != null
-                      ? String((edit as any).dailyLimit)
-                      : ""
-                  }
+                  defaultValue={editExt?.dailyLimit != null ? String(editExt.dailyLimit) : ""}
                   placeholder="1"
-                  className="mt-1"
+                  className="mt-1.5"
                 />
               </div>
-            </div>
 
-            {/* Fila 4: Vigencia y renovación */}
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Vigencia y renovación</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Vigencia y renovación */}
+              <div className="col-span-2 pt-2 mt-2 border-t border-border">
+                <p className="text-sm font-medium text-foreground mb-3">Vigencia y renovación</p>
+              </div>
               <div>
-                <Label htmlFor="validityType">Tipo de vigencia</Label>
-                <select
-                  id="validityType"
-                  name="validityType"
-                  className={cn(inputClass, "mt-1")}
-                  defaultValue={
-                    (edit as unknown as { validityType?: string })?.validityType ?? "recurrent"
-                  }
-                >
-                  <option value="recurrent">Recurrente (sin fecha de fin)</option>
-                  <option value="fixed_end">Con fecha de caducidad</option>
-                </select>
+                <Label>Tipo de vigencia</Label>
+                <Select value={validityType} onValueChange={setValidityType}>
+                  <SelectTrigger className="mt-1.5 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recurrent">Recurrente (sin fecha de fin)</SelectItem>
+                    <SelectItem value="fixed_end">Con fecha de caducidad</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="validUntil">Fecha de caducidad</Label>
@@ -261,59 +259,53 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   name="validUntil"
                   type="date"
                   defaultValue={
-                    (edit as unknown as { validUntil?: Date | null })?.validUntil
-                      ? new Date((edit as any).validUntil).toISOString().slice(0, 10)
-                      : ""
+                    editExt?.validUntil ? new Date(editExt.validUntil).toISOString().slice(0, 10) : ""
                   }
-                  className="mt-1"
+                  className="mt-1.5"
                 />
               </div>
-              <div className="sm:col-span-2 flex flex-wrap items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
+              <div className="col-span-2 flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
                   <input
                     id="requiresRenewal"
                     name="requiresRenewal"
                     type="checkbox"
-                    className="h-4 w-4 rounded border-input"
-                    defaultChecked={
-                      (edit as unknown as { requiresRenewal?: boolean })?.requiresRenewal ?? false
-                    }
+                    className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    defaultChecked={editExt?.requiresRenewal ?? false}
                   />
-                  <span className="text-sm">Requiere renovación</span>
+                  Requiere renovación
                 </label>
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="renewalEveryDays" className="text-sm font-normal">Cada</Label>
+                  <Label htmlFor="renewalEveryDays" className="text-sm font-normal text-muted-foreground">Cada</Label>
                   <Input
                     id="renewalEveryDays"
                     name="renewalEveryDays"
                     type="number"
                     min={1}
                     className="w-20 h-9"
-                    defaultValue={
-                      (edit as unknown as { renewalEveryDays?: number | null })?.renewalEveryDays ?? ""
-                    }
+                    defaultValue={editExt?.renewalEveryDays ?? ""}
                     placeholder="30"
                   />
                   <span className="text-sm text-muted-foreground">días</span>
                 </div>
               </div>
-            </div>
 
-            {/* Estado */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-border/50">
-              <Label className="text-sm font-medium">Estado del plan</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="w-36">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Activo</SelectItem>
-                  <SelectItem value="inactive">Inactivo</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Estado */}
+              <div className="col-span-2 pt-2 mt-2 border-t border-border flex items-center justify-between">
+                <Label className="text-sm font-medium">Estado del plan</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Activo</SelectItem>
+                    <SelectItem value="inactive">Inactivo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-          <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
+          <DialogFooter className="flex-shrink-0 px-6 py-4 border-t bg-muted/30">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>

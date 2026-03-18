@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ListPageLayout } from "@/components/list-page-layout";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { deleteErrorLog, clearAllErrorLogs } from "@/actions/error-log";
 import { AlertTriangle, ChevronDown, ChevronRight, Trash2, XCircle } from "lucide-react";
 import type { ErrorLog as ErrorLogModel } from "@prisma/client";
@@ -78,6 +80,9 @@ export function ErrorLogList({ initialLogs }: Props) {
   const router = useRouter();
   const [logs, setLogs] = useState(initialLogs);
   const [clearing, setClearing] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
 
   const handleDelete = async (id: string) => {
     const res = await deleteErrorLog(id);
@@ -86,17 +91,23 @@ export function ErrorLogList({ initialLogs }: Props) {
     router.refresh();
   };
 
-  const handleClearAll = async () => {
-    if (!confirm("¿Borrar todos los registros de errores?")) return;
+  const handleClearAll = () => setClearConfirmOpen(true);
+
+  const doClearAll = async () => {
     setClearing(true);
     const res = await clearAllErrorLogs();
     setClearing(false);
-    if (res.error) return;
-    setLogs([]);
-    router.refresh();
+    if (res.error) {
+      setAlertMessage({ title: "Error", message: res.error });
+      setAlertOpen(true);
+    } else {
+      setLogs([]);
+      router.refresh();
+    }
   };
 
   return (
+    <>
     <ListPageLayout
       title="Log de errores"
       description="Excepciones capturadas en servidor y cliente. Expandí el stack para ver el detalle."
@@ -126,5 +137,16 @@ export function ErrorLogList({ initialLogs }: Props) {
         </div>
       )}
     </ListPageLayout>
+    <ConfirmDialog
+      open={clearConfirmOpen}
+      onOpenChange={setClearConfirmOpen}
+      title="Vaciar log de errores"
+      description="¿Borrar todos los registros de errores?"
+      confirmLabel="Vaciar todo"
+      destructive
+      onConfirm={doClearAll}
+    />
+    <AlertDialog open={alertOpen} onOpenChange={setAlertOpen} title={alertMessage.title} message={alertMessage.message} />
+    </>
   );
 }

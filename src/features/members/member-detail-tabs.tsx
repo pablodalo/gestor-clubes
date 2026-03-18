@@ -18,6 +18,8 @@ import {
 } from "@/actions/member-account";
 import { createMemberNotification } from "@/actions/member-notifications";
 import { adjustMemberBalance, deleteMemberBalanceAdjustment } from "@/actions/member-balance";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { updateMember } from "@/actions/members";
 import {
   User,
@@ -134,6 +136,9 @@ export function MemberDetailTabs({
   const [adjustNote, setAdjustNote] = useState("");
   const [deletingMovementId, setDeletingMovementId] = useState<string | null>(null);
   const [movementSearch, setMovementSearch] = useState("");
+  const [movementToDeleteId, setMovementToDeleteId] = useState<string | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
   const router = useRouter();
 
   const filteredBalanceAdjustments = movementSearch.trim()
@@ -313,7 +318,21 @@ export function MemberDetailTabs({
     }
   }
 
+  async function doDeleteMovement() {
+    if (!movementToDeleteId) return;
+    setDeletingMovementId(movementToDeleteId);
+    const res = await deleteMemberBalanceAdjustment(movementToDeleteId, member.id);
+    setDeletingMovementId(null);
+    if (res.error) {
+      setAlertMessage({ title: "Error", message: res.error });
+      setAlertOpen(true);
+    } else {
+      router.refresh();
+    }
+  }
+
   return (
+    <>
     <div className="space-y-4">
       <div className="rounded-lg border bg-muted/30 p-1">
         <p className="text-xs font-medium text-muted-foreground px-2 py-1 mb-2">Secciones del socio</p>
@@ -640,14 +659,7 @@ export function MemberDetailTabs({
                                 className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                                 aria-label="Eliminar movimiento"
                                 disabled={deletingMovementId === a.id}
-                                onClick={async () => {
-                                  if (!confirm("¿Eliminar este movimiento?")) return;
-                                  setDeletingMovementId(a.id);
-                                  const res = await deleteMemberBalanceAdjustment(a.id, member.id);
-                                  setDeletingMovementId(null);
-                                  if (res.error) setError(res.error);
-                                  else router.refresh();
-                                }}
+                                onClick={() => setMovementToDeleteId(a.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -812,5 +824,21 @@ export function MemberDetailTabs({
         </Card>
       )}
     </div>
+    <ConfirmDialog
+      open={!!movementToDeleteId}
+      onOpenChange={(open) => !open && setMovementToDeleteId(null)}
+      title="Eliminar movimiento"
+      description="¿Eliminar este movimiento? Esta acción no se puede deshacer."
+      confirmLabel="Eliminar"
+      destructive
+      onConfirm={doDeleteMovement}
+    />
+    <AlertDialog
+      open={alertOpen}
+      onOpenChange={setAlertOpen}
+      title={alertMessage.title}
+      message={alertMessage.message}
+    />
+    </>
   );
 }

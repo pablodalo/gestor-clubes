@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
+import { AlertDialog } from "@/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { LotFormDialog } from "@/features/lots/lot-form";
 import { deleteLot } from "@/actions/lots";
 import { Input } from "@/components/ui/input";
@@ -60,11 +62,17 @@ export function LotsTable({ tenantSlug, lots, locations, canCreate }: Props) {
     },
   ];
 
-  async function handleDelete(l: LotRow) {
-    if (!confirm(`¿Eliminar el lote «${l.code}»?`)) return;
-    const result = await deleteLot(l.id);
-    if (result.error) alert(result.error);
-    else refresh();
+  function handleDelete(l: LotRow) {
+    setLotToDelete(l);
+  }
+
+  async function doDelete() {
+    if (!lotToDelete) return;
+    const result = await deleteLot(lotToDelete.id);
+    if (result.error) {
+      setAlertMessage({ title: "Error", message: result.error });
+      setAlertOpen(true);
+    } else refresh();
   }
 
   const exportData = filtered.map((l) => ({
@@ -156,6 +164,16 @@ export function LotsTable({ tenantSlug, lots, locations, canCreate }: Props) {
         edit={editing}
         locations={locations}
       />
+      <ConfirmDialog
+        open={!!lotToDelete}
+        onOpenChange={(open) => !open && setLotToDelete(null)}
+        title="Eliminar lote"
+        description={lotToDelete ? `¿Eliminar el lote «${lotToDelete.code}»?` : ""}
+        confirmLabel="Eliminar"
+        destructive
+        onConfirm={doDelete}
+      />
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen} title={alertMessage.title} message={alertMessage.message} />
     </>
   );
 }
