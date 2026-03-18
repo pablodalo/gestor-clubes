@@ -14,6 +14,7 @@ import { ListPageLayout } from "@/components/list-page-layout";
 import { MembershipPlanFormDialog } from "@/features/memberships/membership-plan-form";
 import { deleteMembershipPlan } from "@/actions/membership-plans";
 import type { MembershipPlan } from "@prisma/client";
+import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Pencil, Trash2, CreditCard, Wallet } from "lucide-react";
 
 type Props = {
@@ -33,6 +34,19 @@ export function MembershipPlansTable({ tenantSlug, plans, canCreate, canUpdate, 
 
   const columns: DataTableColumn<MembershipPlan>[] = [
     { key: "name", header: "Nombre", render: (p) => <span className="font-medium text-foreground">{p.name}</span> },
+    {
+      key: "tier",
+      header: "Tier",
+      render: (p) => {
+        const t = (p as unknown as { tier?: string | null }).tier;
+        if (!t) return <span className="text-muted-foreground">—</span>;
+        return (
+          <Badge variant="secondary" className="font-normal">
+            {t}
+          </Badge>
+        );
+      },
+    },
     { key: "description", header: "Descripción", render: (p) => <span className="text-muted-foreground">{p.description ?? "—"}</span> },
     {
       key: "price",

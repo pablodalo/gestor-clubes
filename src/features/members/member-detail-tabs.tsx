@@ -133,7 +133,18 @@ export function MemberDetailTabs({
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustNote, setAdjustNote] = useState("");
   const [deletingMovementId, setDeletingMovementId] = useState<string | null>(null);
+  const [movementSearch, setMovementSearch] = useState("");
   const router = useRouter();
+
+  const filteredBalanceAdjustments = movementSearch.trim()
+    ? balanceAdjustments.filter((a) => {
+        const q = movementSearch.trim().toLowerCase();
+        const type = (a.type ?? "").toLowerCase();
+        const note = (a.note ?? "").toLowerCase();
+        const amount = a.amount?.toString() ?? "";
+        return type.includes(q) || note.includes(q) || amount.includes(q);
+      })
+    : balanceAdjustments;
 
   // Tope desde plan de membresía (Límite mensual); fallback al valor del socio
   const limitSource = membershipPlan?.monthlyLimit ?? member.monthlyLimit;
@@ -614,12 +625,23 @@ export function MemberDetailTabs({
                     <Button type="submit" disabled={loading}>Aplicar ajuste</Button>
                   </form>
                   <div className="border-t pt-4">
-                    <p className="text-sm font-medium mb-2">Últimos movimientos</p>
-                    {balanceAdjustments.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">No hay movimientos.</p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+                      <p className="text-sm font-medium">Últimos movimientos</p>
+                      <Input
+                        type="search"
+                        placeholder="Buscar por tipo, nota o monto..."
+                        value={movementSearch}
+                        onChange={(e) => setMovementSearch(e.target.value)}
+                        className="h-8 w-full sm:w-56 text-sm"
+                      />
+                    </div>
+                    {filteredBalanceAdjustments.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">
+                        {balanceAdjustments.length === 0 ? "No hay movimientos." : "Ningún movimiento coincide con la búsqueda."}
+                      </p>
                     ) : (
                       <ul className="space-y-1 text-sm">
-                        {balanceAdjustments.map((a) => (
+                        {filteredBalanceAdjustments.map((a) => (
                           <li key={a.id} className="flex items-center justify-between gap-2 py-1 border-b border-border/50 last:border-0">
                             <span className="min-w-0 flex-1">
                               <span>{formatDate(a.createdAt)} · {a.type}</span>

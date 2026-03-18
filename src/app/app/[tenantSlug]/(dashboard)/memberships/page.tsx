@@ -3,12 +3,17 @@ import { getTenantUserPermissions } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { prisma } from "@/lib/prisma";
 import { MembershipPlansTable } from "@/features/memberships/membership-plans-table";
+import { MembershipPlanSearchForm } from "@/features/memberships/membership-plan-search-form";
 import { NoPermissionMessage } from "@/components/no-permission";
 
-type Props = { params: Promise<{ tenantSlug: string }> };
+type Props = {
+  params: Promise<{ tenantSlug: string }>;
+  searchParams: Promise<{ q?: string; status?: string }>;
+};
 
-export default async function MembershipsPage({ params }: Props) {
+export default async function MembershipsPage({ params, searchParams }: Props) {
   const { tenantSlug } = await params;
+  const { q, status } = await searchParams;
   const tenant = await getTenantBySlug(tenantSlug);
   if (!tenant) return null;
 
@@ -27,13 +32,26 @@ export default async function MembershipsPage({ params }: Props) {
   const canUpdate = permissions === null || permissions.has(PERMISSION_KEYS.members_update);
   const canDelete = permissions === null || permissions.has(PERMISSION_KEYS.members_delete);
 
+  const where: { tenantId: string; status?: string; OR?: Array<Record<string, unknown>> } = {
+    tenantId: tenant.id,
+  };
+  if (status) where.status = status;
+  if (q && q.trim()) {
+    const term = q.trim();
+    where.OR = [
+      { name: { contains: term, mode: "insensitive" } },
+      { description: { contains: term, mode: "insensitive" } },
+    ];
+  }
+
   const plans = await prisma.membershipPlan.findMany({
-    where: { tenantId: tenant.id },
+    where,
     orderBy: { name: "asc" },
   });
 
   return (
     <div className="space-y-6">
+      <MembershipPlanSearchForm tenantSlug={tenantSlug} initialQ={q} initialStatus={status} />
       <MembershipPlansTable
         tenantSlug={tenantSlug}
         plans={plans}

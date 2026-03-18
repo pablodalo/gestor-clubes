@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +25,14 @@ import {
   type CreateMembershipPlanInput,
 } from "@/actions/membership-plans";
 import type { MembershipPlan } from "@prisma/client";
+import { cn } from "@/lib/utils";
+
+const TIER_OPTIONS = [
+  { value: "", label: "Sin tier" },
+  { value: "BASICO", label: "BASICO" },
+  { value: "STANDARD", label: "STANDARD" },
+  { value: "PREMIUM", label: "PREMIUM" },
+] as const;
 
 type Props = {
   tenantSlug: string;
@@ -30,6 +45,15 @@ type Props = {
 export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuccess, edit }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [tier, setTier] = useState<string>("");
+  const [status, setStatus] = useState<string>("active");
+
+  useEffect(() => {
+    if (open) {
+      setTier((edit as unknown as { tier?: string | null })?.tier ?? "");
+      setStatus(edit?.status ?? "active");
+    }
+  }, [open, edit]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,7 +64,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
 
     const payload: CreateMembershipPlanInput = {
       name: (formData.get("name") as string).trim(),
-      tier: (formData.get("tier") as string).trim() || undefined,
+      tier: tier.trim() || undefined,
       description: (formData.get("description") as string).trim() || undefined,
       price: (formData.get("price") as string).trim() || undefined,
       currency: (formData.get("currency") as string).trim() || "ARS",
@@ -53,7 +77,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
       validUntil: (formData.get("validUntil") as string)?.trim() || undefined,
       requiresRenewal: !!formData.get("requiresRenewal"),
       renewalEveryDays: (formData.get("renewalEveryDays") as string).trim() || undefined,
-      status: (formData.get("status") as "active" | "inactive") || "active",
+      status: (status as "active" | "inactive") || "active",
     };
 
     if (edit) {
@@ -92,8 +116,8 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
           )}
           <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-1">
             {/* 1. Identidad */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Identidad</h3>
+            <section className={cn("space-y-3 rounded-lg border border-border/50 bg-muted/5 p-4")}>
+              <h3 className="text-sm font-semibold text-foreground border-b border-border/50 pb-2">Identidad</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2 space-y-2">
                   <Label htmlFor="name">Nombre del plan</Label>
@@ -106,13 +130,19 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tier">Tier (opcional)</Label>
-                  <Input
-                    id="tier"
-                    name="tier"
-                    defaultValue={(edit as unknown as { tier?: string | null })?.tier ?? ""}
-                    placeholder="Ej. básico / premium"
-                  />
+                  <Label>Tier</Label>
+                  <Select value={tier || "none"} onValueChange={(v) => setTier(v === "none" ? "" : v)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sin tier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIER_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value || "none"} value={opt.value || "none"}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="sm:col-span-2 space-y-2">
                   <Label htmlFor="description">Descripción (opcional)</Label>
@@ -127,8 +157,8 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
             </section>
 
             {/* 2. Precio y cobro */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Precio y cobro</h3>
+            <section className={cn("space-y-3 rounded-lg border border-border/50 bg-muted/5 p-4")}>
+              <h3 className="text-sm font-semibold text-foreground border-b border-border/50 pb-2">Precio y cobro</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="price">Precio (opcional)</Label>
@@ -166,8 +196,8 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
             </section>
 
             {/* 3. Límites de consumo */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Límites de consumo</h3>
+            <section className={cn("space-y-3 rounded-lg border border-border/50 bg-muted/5 p-4")}>
+              <h3 className="text-sm font-semibold text-foreground border-b border-border/50 pb-2">Límites de consumo</h3>
               <p className="text-xs text-muted-foreground">
                 El límite mensual del plan se usa como tope en la config. operativa del socio.
               </p>
@@ -206,15 +236,18 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
             </section>
 
             {/* 4. Vigencia */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Vigencia</h3>
+            <section className={cn("space-y-3 rounded-lg border border-border/50 bg-muted/5 p-4")}>
+              <h3 className="text-sm font-semibold text-foreground border-b border-border/50 pb-2">Vigencia</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="validityType">Tipo de vigencia</Label>
                   <select
                     id="validityType"
                     name="validityType"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    className={cn(
+                      "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                      "ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    )}
                     defaultValue={
                       (edit as unknown as { validityType?: string })?.validityType ?? "recurrent"
                     }
@@ -240,8 +273,8 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
             </section>
 
             {/* 5. Renovación */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Renovación</h3>
+            <section className={cn("space-y-3 rounded-lg border border-border/50 bg-muted/5 p-4")}>
+              <h3 className="text-sm font-semibold text-foreground border-b border-border/50 pb-2">Renovación</h3>
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2">
                   <input
@@ -275,19 +308,19 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
             </section>
 
             {/* 6. Estado del plan */}
-            <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground border-b pb-1">Estado</h3>
+            <section className={cn("space-y-3 rounded-lg border border-border/50 bg-muted/5 p-4")}>
+              <h3 className="text-sm font-semibold text-foreground border-b border-border/50 pb-2">Estado</h3>
               <div className="max-w-[200px]">
-                <Label htmlFor="status">Plan activo / inactivo</Label>
-                <select
-                  id="status"
-                  name="status"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1"
-                  defaultValue={edit?.status ?? "active"}
-                >
-                  <option value="active">Activo</option>
-                  <option value="inactive">Inactivo</option>
-                </select>
+                <Label>Plan activo / inactivo</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Activo</SelectItem>
+                    <SelectItem value="inactive">Inactivo</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </section>
           </div>
