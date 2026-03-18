@@ -27,12 +27,8 @@ import {
 } from "@/actions/membership-plans";
 import type { MembershipPlan } from "@prisma/client";
 
-const TIER_OPTIONS = [
-  { value: "", label: "Sin tier" },
-  { value: "BASICO", label: "BASICO" },
-  { value: "STANDARD", label: "STANDARD" },
-  { value: "PREMIUM", label: "PREMIUM" },
-] as const;
+const TIER_OPTIONS = ["BASICO", "STANDARD", "PREMIUM"] as const;
+type TierOption = (typeof TIER_OPTIONS)[number];
 
 type Props = {
   tenantSlug: string;
@@ -45,14 +41,16 @@ type Props = {
 export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuccess, edit }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tier, setTier] = useState<string>("BASICO");
+  const [tier, setTier] = useState<TierOption>("BASICO");
   const [status, setStatus] = useState<string>("active");
   const [validityType, setValidityType] = useState<string>("recurrent");
 
   useEffect(() => {
     if (open) {
       const ext = edit as unknown as { tier?: string | null; validityType?: string };
-      setTier(ext?.tier ?? "BASICO");
+      const nextTier =
+        ext?.tier && (TIER_OPTIONS as readonly string[]).includes(ext.tier) ? (ext.tier as TierOption) : "BASICO";
+      setTier(nextTier);
       setStatus(edit?.status ?? "active");
       setValidityType(ext?.validityType ?? "recurrent");
     }
@@ -67,7 +65,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
 
     const payload: CreateMembershipPlanInput = {
       name: (formData.get("name") as string).trim(),
-      tier: tier.trim() || undefined,
+      tier,
       description: (formData.get("description") as string).trim() || undefined,
       price: (formData.get("price") as string).trim() || undefined,
       currency: (formData.get("currency") as string).trim() || "ARS",
@@ -153,18 +151,22 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Tier</Label>
-                      <Select value={tier || "none"} onValueChange={(v) => setTier(v === "none" ? "" : v)}>
-                        <SelectTrigger className={fieldClass + " w-full"}>
-                          <SelectValue placeholder="Sin tier" />
-                        </SelectTrigger>
-                        <SelectContent>
+                      <div className={fieldClass}>
+                        <div className="inline-flex flex-wrap gap-2 rounded-lg border border-input bg-background p-1">
                           {TIER_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value || "none"} value={opt.value || "none"}>
-                              {opt.label}
-                            </SelectItem>
+                            <Button
+                              key={opt}
+                              type="button"
+                              size="sm"
+                              variant={tier === opt ? "default" : "ghost"}
+                              className={tier === opt ? "" : "text-muted-foreground"}
+                              onClick={() => setTier(opt)}
+                            >
+                              {opt}
+                            </Button>
                           ))}
-                        </SelectContent>
-                      </Select>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="description">Descripción (opcional)</Label>
