@@ -109,6 +109,15 @@ async function dispensationProductIdExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function memberConsumedThisPeriodExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'member' AND column_name = 'consumed_this_period'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function membershipLimitRuleTableExists() {
   const r = await prisma.$queryRawUnsafe(`
     SELECT 1 FROM information_schema.tables
@@ -213,6 +222,17 @@ async function run() {
       console.log("Migración Fase B (backfill seguro) aplicada correctamente.");
     } else {
       console.log("Fase B omitida: faltan columnas product.strain_id / dispensation.product_id.");
+    }
+
+    // Fase 3: cleanup del modelo (Member.consumedThisPeriod)
+    if (await memberConsumedThisPeriodExists()) {
+      const statements = runSqlFile(
+        path.join(migrationsDir, "20260322000000_drop_member_consumed_this_period", "migration.sql")
+      );
+      await executeStatements(statements, "[Fase 3 - drop Member.consumedThisPeriod]");
+      console.log("Migración Fase 3 (drop consumed_this_period) aplicada correctamente.");
+    } else {
+      console.log("Fase 3 omitida: consumed_this_period no existe en DB.");
     }
   } catch (err) {
     // Si no se puede conectar a la base (build sin DB disponible), no rompemos el build:

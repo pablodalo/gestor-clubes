@@ -69,8 +69,6 @@ type MemberData = {
   membershipCurrency: string | null;
   monthlyLimit: { toString: () => string } | null;
   dailyLimit: { toString: () => string } | null;
-  remainingBalance: { toString: () => string } | null;
-  consumedThisPeriod: { toString: () => string } | null;
   canReserveProducts: boolean;
   canPreorder: boolean;
   canAccessEvents: boolean;

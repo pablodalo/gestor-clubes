@@ -189,7 +189,6 @@ export async function createMember(input: CreateMemberInput) {
       monthlyLimit: plan?.monthlyLimit ?? monthlyLimit,
       dailyLimit: plan?.dailyLimit ?? dailyLimit,
       remainingBalance,
-      consumedThisPeriod: new Prisma.Decimal(0),
       canReserveProducts: data.canReserveProducts ?? true,
       canPreorder: data.canPreorder ?? false,
       canAccessEvents: data.canAccessEvents ?? true,
