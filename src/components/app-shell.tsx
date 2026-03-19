@@ -93,7 +93,7 @@ function buildNavGroups(
           {
             label: "Administración Plataforma",
             items: [
-              { href: "/platform/users", label: t.users, icon: Users },
+              { href: `/app/${slug}/users`, label: t.users, permission: "users.read", icon: Users },
               { href: "/platform/audit", label: "Reportes", icon: BarChart2 },
               { href: `/app/${slug}/tickets`, label: t.tickets, permission: "tickets.read", icon: Ticket },
             ],
