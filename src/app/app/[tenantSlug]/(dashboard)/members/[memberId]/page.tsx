@@ -220,6 +220,8 @@ export default async function MemberProfilePage({ params }: Props) {
           member.membershipPlanRel
             ? {
                 name: member.membershipPlanRel.name,
+                validityType: member.membershipPlanRel.validityType,
+                validUntil: member.membershipPlanRel.validUntil,
                 price: (member.membershipPlanRel as any).price ?? null,
                 currency: member.membershipPlanRel.currency,
                 monthlyLimit: (member.membershipPlanRel as any).monthlyLimit ?? null,

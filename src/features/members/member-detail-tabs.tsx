@@ -93,6 +93,8 @@ type Props = {
   canDeleteMovement?: boolean;
   membershipPlan?: {
     name: string;
+    validityType?: string;
+    validUntil?: Date | null;
     price?: { toString: () => string } | null;
     currency?: string;
     monthlyLimit?: { toString: () => string } | null;
@@ -484,7 +486,12 @@ export function MemberDetailTabs({
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Vencimiento</p>
-              <p className="font-medium">{formatDate(member.membershipEndDate)}</p>
+              <p className="font-medium">
+                {formatDate(
+                  member.membershipEndDate ??
+                    (membershipPlan?.validityType === "fixed_end" ? membershipPlan.validUntil ?? null : null)
+                )}
+              </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Próxima renovación</p>
