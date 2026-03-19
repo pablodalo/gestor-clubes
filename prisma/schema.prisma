@@ -33,6 +33,7 @@ model Tenant {
   timezone  String   @default("America/Argentina/Buenos_Aires")
   locale    String   @default("es-AR")
   currency  String   @default("ARS")
+  companyType String @default("club") @map("company_type") // club | grow | cultivador
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -8,7 +8,16 @@ import { cn } from "@/lib/utils";
 import type { TenantBranding } from "@prisma/client";
 import { Layout, Palette, Settings } from "lucide-react";
 
-type Tenant = { id: string; name: string; slug: string; status: string; timezone?: string; locale?: string; currency?: string };
+type Tenant = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  timezone?: string;
+  locale?: string;
+  currency?: string;
+  companyType?: "club" | "grow" | "cultivador";
+};
 
 type Props = {
   tenant: Tenant;

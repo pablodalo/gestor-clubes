@@ -137,6 +137,16 @@ async function memberConsumedThisPeriodExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function tenantCompanyTypeExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'tenant' AND column_name = 'company_type'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function membershipPlanSortOrderExists() {
   const r = await prisma.$queryRawUnsafe(`
     SELECT 1 FROM information_schema.columns
@@ -198,6 +208,16 @@ async function run() {
   }
   try {
     const migrationsDir = path.join(__dirname, "..", "prisma", "migrations");
+
+    if (!(await tenantCompanyTypeExists())) {
+      const statements = runSqlFile(
+        path.join(migrationsDir, "20260325000000_tenant_company_type", "migration.sql")
+      );
+      await executeStatements(statements, "[tenants - company_type]");
+      console.log("Migración tenant company_type aplicada correctamente.");
+    } else {
+      console.log("Tenant.company_type ya existe, migración omitida.");
+    }
 
     if (!(await memberAddressExists())) {
       const statements = runSqlFile(path.join(migrationsDir, "20260317000000_add_member_socios_module", "migration.sql"));

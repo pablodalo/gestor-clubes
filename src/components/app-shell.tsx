@@ -55,10 +55,20 @@ type NavItem = { href: string; label: string; permission?: string; icon: LucideI
 function buildNavGroups(
   slug: string,
   locale: string | undefined,
-  opts?: { isPlatformViewer?: boolean }
+  opts?: { isPlatformViewer?: boolean; companyType?: "club" | "grow" | "cultivador" }
 ): { label: string | null; items: NavItem[] }[] {
   const t = getTranslations(locale);
   const isPlatformViewer = !!opts?.isPlatformViewer;
+  const companyTypeLabel = (() => {
+    const ct = opts?.companyType;
+    if (ct === "club" || ct === "grow" || ct === "cultivador") return ct;
+    return null;
+  })();
+  const gestionLabel = isPlatformViewer
+    ? "Gestion"
+    : companyTypeLabel
+      ? `Gestion (${companyTypeLabel})`
+      : "Gestion";
   return [
     { label: null, items: [{ href: `/app/${slug}`, label: t.dashboard, icon: LayoutDashboard }] },
     {
@@ -72,7 +82,7 @@ function buildNavGroups(
       ],
     },
     {
-      label: "Gestion",
+      label: gestionLabel,
       items: [
         {
           href: `/app/${slug}/compliance`,
@@ -310,7 +320,7 @@ export function AppShell({
   const openProfile = () => setProfileDialogOpen(true);
   const t = getTranslations(tenant.locale);
 
-  const groups = buildNavGroups(tenant.slug, tenant.locale, { isPlatformViewer })
+  const groups = buildNavGroups(tenant.slug, tenant.locale, { isPlatformViewer, companyType: tenant.companyType })
     .map((g) => ({ ...g, items: g.items.filter((item) => allowed(item.permission)) }))
     .filter((g) => g.items.length > 0);
 

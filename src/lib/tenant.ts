@@ -8,6 +8,7 @@ export type TenantContext = {
   status: string;
   locale: string;
   currency: string;
+  companyType?: "club" | "grow" | "cultivador";
 };
 
 /**
@@ -17,7 +18,7 @@ export async function getTenantBySlug(slug: string): Promise<TenantContext | nul
   try {
     const tenant = await prisma.tenant.findFirst({
       where: { slug, status: "active" },
-      select: { id: true, slug: true, name: true, status: true, locale: true, currency: true },
+      select: { id: true, slug: true, name: true, status: true, locale: true, currency: true, companyType: true },
     });
     return tenant;
   } catch (err) {
@@ -33,7 +34,7 @@ export async function getTenantById(id: string): Promise<TenantContext | null> {
   try {
     const tenant = await prisma.tenant.findFirst({
       where: { id, status: "active" },
-      select: { id: true, slug: true, name: true, status: true, locale: true, currency: true },
+      select: { id: true, slug: true, name: true, status: true, locale: true, currency: true, companyType: true },
     });
     return tenant;
   } catch (err) {

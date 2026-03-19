@@ -24,6 +24,7 @@ const createTenantSchema = z.object({
   timezone: z.string().default("America/Argentina/Buenos_Aires"),
   locale: z.string().default("es-AR"),
   currency: z.string().default("ARS"),
+  companyType: z.enum(["club", "grow", "cultivador"]).default("club"),
 });
 
 export type CreateTenantInput = z.input<typeof createTenantSchema>;
@@ -51,6 +52,7 @@ export async function createTenant(input: CreateTenantInput) {
       timezone: parsed.data.timezone,
       locale: parsed.data.locale,
       currency: parsed.data.currency,
+      companyType: parsed.data.companyType,
     },
   });
 
@@ -140,6 +142,7 @@ const updateTenantSchema = z.object({
   timezone: z.string().optional(),
   locale: z.string().optional(),
   currency: z.string().optional(),
+  companyType: z.enum(["club", "grow", "cultivador"]).optional(),
 });
 
 export async function updateTenant(tenantId: string, input: z.infer<typeof updateTenantSchema>) {

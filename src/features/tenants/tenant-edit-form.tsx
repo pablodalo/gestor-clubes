@@ -9,7 +9,16 @@ import { Label } from "@/components/ui/label";
 import { updateTenant } from "@/actions/tenants";
 import { TIMEZONES } from "@/lib/timezones";
 
-type Tenant = { id: string; name: string; slug: string; status: string; timezone?: string; locale?: string; currency?: string };
+type Tenant = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  timezone?: string;
+  locale?: string;
+  currency?: string;
+  companyType?: "club" | "grow" | "cultivador";
+};
 
 type Props = {
   tenant: Tenant;
@@ -33,6 +42,7 @@ export function TenantEditForm({ tenant }: Props) {
       timezone: (formData.get("timezone") as string) || undefined,
       locale: (formData.get("locale") as string) || undefined,
       currency: (formData.get("currency") as string) || undefined,
+      companyType: (formData.get("companyType") as "club" | "grow" | "cultivador") || undefined,
     });
     setLoading(false);
     if (result.error) {
@@ -84,6 +94,19 @@ export function TenantEditForm({ tenant }: Props) {
             <option value="active">Activo</option>
             <option value="suspended">Suspendido</option>
             <option value="trial">Prueba</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="companyType">Tipo de compañía</Label>
+          <select
+            id="companyType"
+            name="companyType"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            defaultValue={tenant.companyType ?? "club"}
+          >
+            <option value="club">club</option>
+            <option value="grow">grow</option>
+            <option value="cultivador">cultivador</option>
           </select>
         </div>
         <div className="space-y-2">
