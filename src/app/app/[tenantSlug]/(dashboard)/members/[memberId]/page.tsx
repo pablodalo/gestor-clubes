@@ -153,6 +153,7 @@ export default async function MemberProfilePage({ params }: Props) {
       const rule = limitRules.find((r) => r.category === "plant_material" && r.active);
       const monthlyLimitDec = rule?.monthlyLimit ?? plan?.monthlyLimit ?? null;
       const dailyLimitDec = rule?.dailyLimit ?? plan?.dailyLimit ?? null;
+      const unit = (rule?.unit as string | null | undefined) ?? "g";
       const monthlyLimit = monthlyLimitDec != null ? Number(monthlyLimitDec.toString()) : null;
       const dailyLimit = dailyLimitDec != null ? Number(dailyLimitDec.toString()) : null;
       const consumedMonthlyNum = Number(consumedMonthly.plant_material.toString());
@@ -160,6 +161,7 @@ export default async function MemberProfilePage({ params }: Props) {
       return {
         monthlyLimit,
         dailyLimit,
+        unit,
         consumedMonthly: consumedMonthlyNum,
         consumedDaily: consumedDailyNum,
         remainingMonthly: monthlyLimit != null ? monthlyLimit - consumedMonthlyNum : null,
@@ -169,6 +171,7 @@ export default async function MemberProfilePage({ params }: Props) {
       const rule = limitRules.find((r) => r.category === "extract" && r.active);
       const monthlyLimitDec = rule?.monthlyLimit ?? plan?.monthlyLimit ?? null;
       const dailyLimitDec = rule?.dailyLimit ?? plan?.dailyLimit ?? null;
+      const unit = (rule?.unit as string | null | undefined) ?? "g";
       const monthlyLimit = monthlyLimitDec != null ? Number(monthlyLimitDec.toString()) : null;
       const dailyLimit = dailyLimitDec != null ? Number(dailyLimitDec.toString()) : null;
       const consumedMonthlyNum = Number(consumedMonthly.extract.toString());
@@ -176,6 +179,7 @@ export default async function MemberProfilePage({ params }: Props) {
       return {
         monthlyLimit,
         dailyLimit,
+        unit,
         consumedMonthly: consumedMonthlyNum,
         consumedDaily: consumedDailyNum,
         remainingMonthly: monthlyLimit != null ? monthlyLimit - consumedMonthlyNum : null,
@@ -216,7 +220,6 @@ export default async function MemberProfilePage({ params }: Props) {
           member.membershipPlanRel
             ? {
                 name: member.membershipPlanRel.name,
-                tier: member.membershipPlanRel.tier ?? null,
                 price: (member.membershipPlanRel as any).price ?? null,
                 currency: member.membershipPlanRel.currency,
                 monthlyLimit: (member.membershipPlanRel as any).monthlyLimit ?? null,

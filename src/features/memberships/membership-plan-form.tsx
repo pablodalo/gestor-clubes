@@ -40,17 +40,18 @@ type Props = {
 export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuccess, edit }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tier, setTier] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<string>("");
   const [status, setStatus] = useState<string>("active");
   const [validityType, setValidityType] = useState<string>("recurrent");
 
   const [plantMonthlyLimit, setPlantMonthlyLimit] = useState<string>("");
   const [plantDailyLimit, setPlantDailyLimit] = useState<string>("");
+  const [plantUnit, setPlantUnit] = useState<string>("g");
   const [plantActive, setPlantActive] = useState<boolean>(true);
 
   const [extractMonthlyLimit, setExtractMonthlyLimit] = useState<string>("");
   const [extractDailyLimit, setExtractDailyLimit] = useState<string>("");
+  const [extractUnit, setExtractUnit] = useState<string>("g");
   const [extractActive, setExtractActive] = useState<boolean>(true);
 
   const parseRecurrenceDay = (raw: string): number | undefined => {
@@ -85,7 +86,6 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         | (PlanWithRules & { validityType?: string; monthlyLimit?: number | null; dailyLimit?: number | null })
         | null;
 
-      setTier(ext?.tier ?? "");
       setSortOrder(ext?.sortOrder != null ? String(ext.sortOrder) : "");
       setStatus(ext?.status ?? "active");
       setValidityType(ext?.validityType ?? "recurrent");
@@ -100,6 +100,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
       setPlantActive(plantRule?.active ?? true);
       setPlantMonthlyLimit(plantRule?.monthlyLimit != null ? String(plantRule.monthlyLimit) : plantFallbackMonthly);
       setPlantDailyLimit(plantRule?.dailyLimit != null ? String(plantRule.dailyLimit) : plantFallbackDaily);
+      setPlantUnit(plantRule?.unit ?? "g");
 
       // Para extract, mantenemos fallback desde los campos globales del plan por compatibilidad transitoria.
       const extractFallbackMonthly = ext?.monthlyLimit != null ? String(ext.monthlyLimit) : "";
@@ -112,6 +113,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
       setExtractDailyLimit(
         extractRule?.dailyLimit != null ? String(extractRule.dailyLimit) : extractFallbackDaily
       );
+      setExtractUnit(extractRule?.unit ?? "g");
     }
   }, [open, edit]);
 
@@ -132,7 +134,6 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
 
     const payload: CreateMembershipPlanInput = {
       name: (formData.get("name") as string).trim(),
-      tier: tier.trim() || undefined,
       description: (formData.get("description") as string).trim() || undefined,
       price: normalizeDecimalString(String(formData.get("price") ?? "")),
       currency: (formData.get("currency") as string).trim() || "ARS",
@@ -145,11 +146,13 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
         plant_material: {
           monthlyLimit: normalizeDecimalString(plantMonthlyLimit),
           dailyLimit: normalizeDecimalString(plantDailyLimit),
+          unit: plantUnit,
           active: plantActive,
         },
         extract: {
           monthlyLimit: normalizeDecimalString(extractMonthlyLimit),
           dailyLimit: normalizeDecimalString(extractDailyLimit),
+          unit: extractUnit,
           active: extractActive,
         },
       },
@@ -183,7 +186,6 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
   }
 
   const editExt = edit as unknown as {
-    tier?: string | null;
     monthlyLimit?: number | null;
     dailyLimit?: number | null;
     validityType?: string;
@@ -227,18 +229,7 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                       className={fieldClass}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="tier">Tier (opcional)</Label>
-                      <Input
-                        id="tier"
-                        name="tier"
-                        value={tier}
-                        onChange={(e) => setTier(e.target.value)}
-                        placeholder="Ej. BASICO / STANDARD / PREMIUM"
-                        className={fieldClass}
-                      />
-                    </div>
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label htmlFor="description">Descripción (opcional)</Label>
                       <Input
@@ -357,6 +348,19 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                             className={fieldClass}
                           />
                         </div>
+                        <div className="col-span-2">
+                          <Label>Unidad</Label>
+                          <Select value={plantUnit} onValueChange={setPlantUnit}>
+                            <SelectTrigger className={fieldClass + " w-full"}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="g">g</SelectItem>
+                              <SelectItem value="ml">ml</SelectItem>
+                              <SelectItem value="unit">unidad</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                       <div>
                         <Label>Activa</Label>
@@ -404,6 +408,19 @@ export function MembershipPlanFormDialog({ tenantSlug, open, onOpenChange, onSuc
                             placeholder="1"
                             className={fieldClass}
                           />
+                        </div>
+                        <div className="col-span-2">
+                          <Label>Unidad</Label>
+                          <Select value={extractUnit} onValueChange={setExtractUnit}>
+                            <SelectTrigger className={fieldClass + " w-full"}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="g">g</SelectItem>
+                              <SelectItem value="ml">ml</SelectItem>
+                              <SelectItem value="unit">unidad</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       <div>

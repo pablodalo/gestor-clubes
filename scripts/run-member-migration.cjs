@@ -173,6 +173,15 @@ async function activeMembershipPlansMissingCategoryLimitRulesExists() {
   return Array.isArray(r) && r.length > 0;
 }
 
+async function membershipLimitRuleUnitExists() {
+  const r = await prisma.$queryRawUnsafe(`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND LOWER(table_name) = 'membershiplimitrule' AND column_name = 'unit'
+    LIMIT 1
+  `);
+  return Array.isArray(r) && r.length > 0;
+}
+
 async function membershipLimitRuleTableExists() {
   const r = await prisma.$queryRawUnsafe(`
     SELECT 1 FROM information_schema.tables
@@ -270,6 +279,22 @@ async function run() {
       console.log("Migración plan sortOrder/backfill aplicada correctamente.");
     } else {
       console.log("plan sortOrder/backfill: ya ok (migración omitida).");
+    }
+
+    // Fase Membership: agregar unit + drop tier (cleanup de modelo viejo).
+    // Se ejecuta si falta la columna `MembershipLimitRule.unit` o si aún existe `MembershipPlan.tier`.
+    if (!(await membershipLimitRuleUnitExists()) || (await membershipPlanTierExists())) {
+      const statements = runSqlFile(
+        path.join(
+          migrationsDir,
+          "20260319000000_membership_unit_and_drop_tier",
+          "migration.sql"
+        )
+      );
+      await executeStatements(statements, "[Fase membership unit / drop tier]");
+      console.log("Migración unit/tier aplicada correctamente.");
+    } else {
+      console.log("membership unit / drop tier: ya ok (migración omitida).");
     }
 
     // PR2+PR3 consolidación: canonicalizar categorías y backfill del ancla principal del consumo.

@@ -93,7 +93,6 @@ type Props = {
   canDeleteMovement?: boolean;
   membershipPlan?: {
     name: string;
-    tier: string | null;
     price?: { toString: () => string } | null;
     currency?: string;
     monthlyLimit?: { toString: () => string } | null;
@@ -103,6 +102,7 @@ type Props = {
     plant_material: {
       monthlyLimit: number | null;
       dailyLimit: number | null;
+      unit: string;
       consumedMonthly: number;
       consumedDaily: number;
       remainingMonthly: number | null;
@@ -110,6 +110,7 @@ type Props = {
     extract: {
       monthlyLimit: number | null;
       dailyLimit: number | null;
+      unit: string;
       consumedMonthly: number;
       consumedDaily: number;
       remainingMonthly: number | null;
@@ -470,9 +471,6 @@ export function MemberDetailTabs({
             <div>
               <p className="text-xs text-muted-foreground">Tipo / Plan</p>
               <p className="font-medium">{member.membershipType ?? membershipPlan?.name ?? member.membershipPlan ?? "—"}</p>
-              {membershipPlan?.tier ? (
-                <p className="text-xs text-muted-foreground mt-1">Tier: <span className="font-medium text-foreground">{membershipPlan.tier}</span></p>
-              ) : null}
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Estado membresía</p>
@@ -549,7 +547,9 @@ export function MemberDetailTabs({
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <span className="text-sm font-medium text-foreground">{title}</span>
                         <span className="text-sm font-semibold tabular-nums">
-                          {u.monthlyLimit != null ? u.monthlyLimit.toString() : "Sin tope"}
+                          {u.monthlyLimit != null
+                            ? `${u.monthlyLimit.toString()} ${u.unit}`
+                            : "Sin tope"}
                         </span>
                       </div>
 
@@ -558,8 +558,8 @@ export function MemberDetailTabs({
                           <span>Consumido período</span>
                           <span className="font-medium text-foreground">
                             {u.monthlyLimit != null
-                              ? `${u.consumedMonthly.toFixed(2)} / ${u.monthlyLimit.toFixed(2)}`
-                              : `${u.consumedMonthly.toFixed(2)} (sin tope)`}
+                              ? `${u.consumedMonthly.toFixed(2)} / ${u.monthlyLimit.toFixed(2)} ${u.unit}`
+                              : `${u.consumedMonthly.toFixed(2)} ${u.unit} (sin tope)`}
                           </span>
                         </div>
                         <div className="h-3 sm:h-4 w-full rounded-full bg-muted/70 overflow-hidden ring-1 ring-border">
@@ -574,7 +574,7 @@ export function MemberDetailTabs({
                         <p className="text-[11px] text-muted-foreground">
                           Saldo mensual:{" "}
                           <span className="font-medium text-foreground">
-                            {u.remainingMonthly != null ? u.remainingMonthly.toFixed(2) : "—"}
+                            {u.remainingMonthly != null ? `${u.remainingMonthly.toFixed(2)} ${u.unit}` : "—"}
                           </span>
                         </p>
                       </div>
@@ -582,7 +582,7 @@ export function MemberDetailTabs({
                       {u.dailyLimit != null && (
                         <div className="pt-1">
                           <p className="text-[11px] text-muted-foreground">
-                            Hoy: {u.consumedDaily.toFixed(2)} / {u.dailyLimit.toFixed(2)}
+                            Hoy: {u.consumedDaily.toFixed(2)} / {u.dailyLimit.toFixed(2)} {u.unit}
                           </p>
                         </div>
                       )}
