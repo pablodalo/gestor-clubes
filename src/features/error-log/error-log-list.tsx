@@ -126,7 +126,7 @@ export function ErrorLogList({ initialLogs }: Props) {
           <p className="font-medium">Sin registros</p>
           <p className="text-sm mt-1">Los errores aparecerán aquí cuando ocurran.</p>
           <p className="text-xs mt-3 max-w-md mx-auto">
-            Si en producción ves solo &quot;message is omitted&quot;, el detalle está en Vercel → Logs (buscá [GESTOR] o el digest). También se persisten unhandledRejection y onRequestError (Next 15+).
+            Si en producción ves solo &quot;message is omitted&quot;, el detalle está en Vercel → Logs (buscá [cultiOS] o el digest). También se persisten unhandledRejection y onRequestError (Next 15+).
           </p>
         </div>
       ) : (

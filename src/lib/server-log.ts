@@ -2,10 +2,10 @@ import { recordErrorInDb } from "@/lib/error-log-db";
 
 /**
  * Logger para servidor. En Vercel aparece en Runtime Logs / Function Logs.
- * Buscar por "[GESTOR]" para filtrar.
+ * Buscar por "[cultiOS]" para filtrar.
  * También persiste en la tabla ErrorLog para verlos en /platform/errors.
  */
-const PREFIX = "[GESTOR]";
+const PREFIX = "[cultiOS]";
 
 export function logError(context: string, error: unknown, path?: string): void {
   const message = error instanceof Error ? error.message : String(error);

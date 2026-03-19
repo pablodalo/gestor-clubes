@@ -81,9 +81,9 @@ export function LoginFormUnified() {
           </div>
           <div className="flex items-center gap-2">
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground text-lg font-semibold">
-              GC
+              CO
             </span>
-            <CardTitle className="text-2xl tracking-tight">Gestor Clubes</CardTitle>
+            <CardTitle className="text-2xl tracking-tight">cultiOS</CardTitle>
           </div>
           <CardDescription className="text-muted-foreground">
             Ingresá con tu email y contraseña. El sistema detecta si entrás como administrador, panel del club o socio.

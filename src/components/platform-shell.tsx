@@ -29,9 +29,9 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-8">
             <Link href="/platform" className="flex items-center gap-2 text-foreground font-semibold">
               <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
-                GC
+                CO
               </span>
-              <span className="hidden sm:inline">Gestor Clubes</span>
+              <span className="hidden sm:inline">cultiOS</span>
             </Link>
             <nav className="flex items-center gap-1">
               {nav.map((item) => (

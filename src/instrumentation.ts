@@ -3,7 +3,7 @@
  * para loguear y persistir el error real en ErrorLog.
  */
 
-const PREFIX = "[GESTOR]";
+const PREFIX = "[cultiOS]";
 
 function serializeError(err: unknown): { message: string; stack?: string; digest?: string } {
   if (err instanceof Error) {

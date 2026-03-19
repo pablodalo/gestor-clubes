@@ -1,9 +1,9 @@
-# Gestor Clubes
+# cultiOS
 
 SaaS multi-tenant white-label para operar múltiples clubes desde una sola base de código.
 
-**Repo:** https://github.com/pablodalo/gestor-clubes  
-**Vercel:** https://gestor-clubes.vercel.app
+**Repo:** https://github.com/mraviscioni-svg/cutliOS  
+**Vercel:** https://cutlios.vercel.app
 
 Última actualización: código en rama `main`.
 
@@ -39,8 +39,8 @@ SaaS multi-tenant white-label para operar múltiples clubes desde una sola base 
 1. **Clonar y dependencias**
 
 ```bash
-git clone https://github.com/pablodalo/gestor-clubes.git
-cd gestor-clubes
+git clone https://github.com/mraviscioni-svg/cutliOS.git
+cd cutliOS
 npm install
 ```
 
@@ -94,13 +94,13 @@ Abrir http://localhost:3000.
 **Guía paso a paso:** ver **[DEPLOY.md](./DEPLOY.md)**.
 
 1. **Conectar el repo**  
-   En [Vercel](https://vercel.com): Import Project → GitHub → elegir `gestor-clubes`. Cada push a `main` despliega automáticamente.
+   En [Vercel](https://vercel.com): Import Project → GitHub → elegir `cutliOS`. Cada push a `main` despliega automáticamente.
 
 2. **Variables de entorno en Vercel**  
    En el proyecto → Settings → Environment Variables:
 
    - `DATABASE_URL`: URL de PostgreSQL (Vercel Postgres, Neon, Supabase, etc.)
-   - `NEXTAUTH_URL`: `https://gestor-clubes.vercel.app` (o tu dominio)
+   - `NEXTAUTH_URL`: `https://cutlios.vercel.app` (o tu dominio)
    - `NEXTAUTH_SECRET`: mismo valor que en local (o uno nuevo de 32+ caracteres)
 
 3. **PostgreSQL en Vercel**  

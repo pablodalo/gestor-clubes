@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     await recordErrorInDb({ message, digest, context, path, stack });
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("[GESTOR] POST /api/error-log", e);
+    console.error("[cultiOS] POST /api/error-log", e);
     return NextResponse.json({ ok: false, error: "Invalid request" }, { status: 400 });
   }
 }

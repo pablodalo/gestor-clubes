@@ -1,4 +1,4 @@
-# Auditoría funcional – Gestor Clubes vs definición funcional
+# Auditoría funcional – cultiOS vs definición funcional
 
 ## Tabla resumen por módulo
 

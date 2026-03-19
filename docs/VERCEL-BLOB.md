@@ -4,10 +4,10 @@ En local, el logo del branding se guarda en `public/uploads/`. En Vercel el file
 
 ## Cómo crear el Blob en Vercel
 
-1. Entrá al [Dashboard de Vercel](https://vercel.com) y abrí el proyecto **gestor-clubes**.
+1. Entrá al [Dashboard de Vercel](https://vercel.com) y abrí el proyecto **cutliOS**.
 2. En el menú lateral: **Storage** → **Create Database** (o **Add Storage**).
 3. Elegí **Blob**.
-4. Nombre del store: por ejemplo `gestor-clubes-blob`.
+4. Nombre del store: por ejemplo `cutlios-blob`.
 5. **Access**: elegí **Public** si querés que las URLs de los logos sean accesibles sin autenticación (recomendado para logos en el header).
 6. Crear. Vercel va a crear el store y añadir la variable de entorno **`BLOB_READ_WRITE_TOKEN`** al proyecto.
 7. Para usarla en local: en la raíz del repo ejecutá `vercel env pull` (o copiá el token desde Project Settings → Environment Variables y ponelo en `.env.local`).

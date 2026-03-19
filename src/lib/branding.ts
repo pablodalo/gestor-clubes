@@ -21,8 +21,8 @@ export type TenantBrandingData = {
 };
 
 const DEFAULT_BRANDING: TenantBrandingData = {
-  appName: "Gestor Clubes",
-  shortName: "GC",
+  appName: "cultiOS",
+  shortName: "CO",
   logoUrl: null,
   iconUrl: null,
   faviconUrl: null,

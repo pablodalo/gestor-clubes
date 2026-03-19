@@ -18,7 +18,7 @@ const montserrat = Montserrat({
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Gestor Clubes",
+  title: "cultiOS",
   description: "SaaS multi-tenant para gestión de clubes",
 };
 

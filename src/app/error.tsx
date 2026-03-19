@@ -18,9 +18,9 @@ export default function Error({
     const msg = error?.message ?? "Unknown error";
     const digest = error?.digest ?? "—";
     const stack = error?.stack;
-    console.error("[GESTOR] [error.tsx] Server-side exception:", msg, "Digest:", digest);
-    if (stack) console.error("[GESTOR] [error.tsx] stack:", stack);
-    if (error?.cause) console.error("[GESTOR] [error.tsx] cause:", error.cause);
+    console.error("[cultiOS] [error.tsx] Server-side exception:", msg, "Digest:", digest);
+    if (stack) console.error("[cultiOS] [error.tsx] stack:", stack);
+    if (error?.cause) console.error("[cultiOS] [error.tsx] cause:", error.cause);
     fetch("/api/error-log", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -44,7 +44,7 @@ export default function Error({
       <p className="text-muted-foreground text-sm max-w-md mb-2">
         {isGenericMessage ? (
           <>
-            En producción Next.js oculta el mensaje real. Para ver el detalle: (1) entrá a <strong>/platform/errors</strong> (como admin) y buscá el registro con el digest de abajo; (2) en Vercel → Deployments → Logs buscá <strong>[GESTOR]</strong> o el digest en el momento del error.
+            En producción Next.js oculta el mensaje real. Para ver el detalle: (1) entrá a <strong>/platform/errors</strong> (como admin) y buscá el registro con el digest de abajo; (2) en Vercel → Deployments → Logs buscá <strong>[cultiOS]</strong> o el digest en el momento del error.
           </>
         ) : (
           <>

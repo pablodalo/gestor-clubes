@@ -1,4 +1,4 @@
-# Auditoría del sistema multi-tenant — Gestor Clubes
+# Auditoría del sistema multi-tenant — cultiOS
 
 **Fecha:** 2025-03  
 **Objetivo:** Validar si el tenant de gestión de clubes está funcionalmente completo y correctamente aislado por `tenant_id`.

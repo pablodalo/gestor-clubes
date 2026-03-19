@@ -13,7 +13,7 @@ Asegurate de tener estas tres (Neon suele crear `POSTGRES_URL` o `DATABASE_URL`)
 | Variable | Valor | Entorno |
 |----------|--------|---------|
 | `DATABASE_URL` | La connection string de Neon (si la integración creó `POSTGRES_URL`, copiá ese valor acá como `DATABASE_URL`) | Production (y Preview si querés) |
-| `NEXTAUTH_URL` | `https://gestor-clubes.vercel.app` (o tu dominio en Vercel) | Production |
+| `NEXTAUTH_URL` | `https://cutlios.vercel.app` (o tu dominio en Vercel) | Production |
 | `NEXTAUTH_SECRET` | Una cadena aleatoria de 32+ caracteres | Production |
 
 - Para generar `NEXTAUTH_SECRET`: en PowerShell `[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])` o en cualquier terminal: `openssl rand -base64 32`.
@@ -25,7 +25,7 @@ Asegurate de tener estas tres (Neon suele crear `POSTGRES_URL` o `DATABASE_URL`)
 En tu PC, desde la carpeta del proyecto:
 
 ```powershell
-cd c:\Users\marcelo.raviscioni\Desktop\gestor-clubes
+cd c:\Users\marcelo.raviscioni\Desktop\cutliOS
 
 git status
 git add .
@@ -96,7 +96,7 @@ npx prisma db seed
 
 ## 4. Probar el deploy
 
-1. Entrá a la URL del proyecto en Vercel (ej. `https://gestor-clubes.vercel.app`).
+1. Entrá a la URL del proyecto en Vercel (ej. `https://cutlios.vercel.app`).
 2. Probá:
    - **/** → página de inicio.
    - **/platform/login** → admin@gestorclubes.com / Admin123!
@@ -114,7 +114,7 @@ Si algo falla, revisá **Deployments** en Vercel → último deploy → **Buildi
 
 Abrí en el navegador (reemplazá por la URL de tu proyecto):
 
-**https://gestor-clubes.vercel.app/api/health**
+**https://cutlios.vercel.app/api/health**
 
 Ese endpoint devuelve en un solo request:
 

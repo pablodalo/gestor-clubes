@@ -30,12 +30,12 @@ export async function recordErrorInDb(payload: ErrorLogPayload): Promise<void> {
     if (code === "P2021" && !p2021Warned) {
       p2021Warned = true;
       console.warn(
-        "[GESTOR] ErrorLog: la tabla no existe. Ejecutá una vez: npx prisma db push (con DATABASE_URL de producción)."
+        "[cultiOS] ErrorLog: la tabla no existe. Ejecutá una vez: npx prisma db push (con DATABASE_URL de producción)."
       );
       return;
     }
     if (code !== "P2021") {
-      console.error("[GESTOR] recordErrorInDb failed", e);
+      console.error("[cultiOS] recordErrorInDb failed", e);
     }
   }
 }

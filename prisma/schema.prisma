@@ -1,4 +1,4 @@
-// Gestor Clubes - Multi-tenant SaaS
+// cultiOS - Multi-tenant SaaS
 // Todas las tablas de negocio tienen tenantId. Platform users y Tenant son globales.
 
 generator client {

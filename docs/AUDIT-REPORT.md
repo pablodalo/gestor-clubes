@@ -1,4 +1,4 @@
-# Auditoría técnica, funcional, visual y de arquitectura — Gestor Clubes
+# Auditoría técnica, funcional, visual y de arquitectura — cultiOS
 
 **Fecha:** 2025-03  
 **Alcance:** SaaS multi-tenant white-label, calidad enterprise y revendible.
