@@ -55,7 +55,7 @@ type NavItem = { href: string; label: string; permission?: string; icon: LucideI
 function buildNavGroups(
   slug: string,
   locale: string | undefined,
-  opts?: { isPlatformViewer?: boolean; companyType?: "club" | "grow" | "cultivador" }
+  opts?: { isPlatformViewer?: boolean; companyType?: string | null }
 ): { label: string | null; items: NavItem[] }[] {
   const t = getTranslations(locale);
   const isPlatformViewer = !!opts?.isPlatformViewer;

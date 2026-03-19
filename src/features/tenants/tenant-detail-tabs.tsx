@@ -16,7 +16,7 @@ type Tenant = {
   timezone?: string;
   locale?: string;
   currency?: string;
-  companyType?: "club" | "grow" | "cultivador";
+  companyType?: string | null;
 };
 
 type Props = {
