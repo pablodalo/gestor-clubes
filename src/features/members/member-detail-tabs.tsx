@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getMembershipBadgeClassName } from "@/lib/membership-badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -472,7 +473,14 @@ export function MemberDetailTabs({
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs text-muted-foreground">Tipo / Plan</p>
-              <p className="font-medium">{member.membershipType ?? membershipPlan?.name ?? member.membershipPlan ?? "—"}</p>
+              <Badge
+                variant="outline"
+                className={getMembershipBadgeClassName(
+                  member.membershipType ?? membershipPlan?.name ?? member.membershipPlan ?? "—"
+                )}
+              >
+                {member.membershipType ?? membershipPlan?.name ?? member.membershipPlan ?? "—"}
+              </Badge>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Estado membresía</p>

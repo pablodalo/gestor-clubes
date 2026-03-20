@@ -33,20 +33,16 @@ export default async function RevenuePage({ params }: Props) {
     where: { tenantId: tenant.id, status: "active" },
     select: {
       id: true,
-      firstName: true,
-      lastName: true,
       membershipRecurring: true,
       membershipRecurrenceDay: true,
-      membershipLastPaidAt: true,
       membershipLastAmount: true,
       membershipCurrency: true,
-      membershipPlan: true,
     },
   });
 
   const payments = await prisma.membershipPayment.findMany({
     where: { tenantId: tenant.id },
-    select: { amount: true, currency: true, paidAt: true },
+    select: { amount: true, currency: true, paidAt: true, memberId: true },
     orderBy: { paidAt: "asc" },
   });
 
@@ -98,10 +94,12 @@ export default async function RevenuePage({ params }: Props) {
     if (totalCobradoAnual === 0 && projectedMonthly > 0 && !isFuture) {
       cobrado = Math.round(projectedMonthly * (0.7 + (m / 12) * 0.25));
     }
+    const pendiente = Math.max(0, projectedMonthly - cobrado);
     yearAnnual.push({
       month: monthNamesShort[m],
       monthIndex: m,
       cobrado,
+      pendiente: isFuture ? 0 : pendiente,
       proyectado: projectedMonthly,
       label: `${monthNamesShort[m]} ${currentYear}`,
       isFuture,
@@ -177,7 +175,14 @@ export default async function RevenuePage({ params }: Props) {
         </CardContent>
       </Card>
 
-      <RevenueCharts currency={currency} yearAnnual={yearAnnual} currentYear={currentYear} />
+      <RevenueCharts
+        currency={currency}
+        yearAnnual={yearAnnual}
+        currentYear={currentYear}
+        payments={payments}
+        recurringMembers={recurringMembers}
+        toNumber={toNumber}
+      />
     </div>
   );
 }

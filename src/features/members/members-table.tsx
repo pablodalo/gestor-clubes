@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { ListPageLayout } from "@/components/list-page-layout";
 import { ExportButtons } from "@/components/export-buttons";
 import { getStatusVariant, getStatusLabel } from "@/lib/status-badges";
+import { getMembershipPlanLabel } from "@/lib/membership-label";
+import { getMembershipBadgeClassName } from "@/lib/membership-badge";
 import { AlertDialog } from "@/components/alert-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { MemberFormDialog } from "@/features/members/member-form";
@@ -24,9 +26,11 @@ import { MoreHorizontal, Pencil, Trash2, UserPlus, Users, Eye } from "lucide-rea
 
 type MembershipPlanOption = { id: string; name: string };
 
+type MemberWithPlan = Member & { membershipPlanRel?: { name: string } | null };
+
 type Props = {
   tenantSlug: string;
-  members: Member[];
+  members: MemberWithPlan[];
   membershipPlans: MembershipPlanOption[];
   canCreate: boolean;
   canUpdate: boolean;
@@ -43,7 +47,7 @@ export function MembersTable({ tenantSlug, members, membershipPlans, canCreate, 
 
   const refresh = () => router.refresh();
 
-  const columns: DataTableColumn<Member>[] = [
+  const columns: DataTableColumn<MemberWithPlan>[] = [
     { key: "memberNumber", header: "Nº", render: (m) => <span className="font-mono text-foreground">{m.memberNumber}</span> },
     {
       key: "firstName",
@@ -58,6 +62,18 @@ export function MembersTable({ tenantSlug, members, membershipPlans, canCreate, 
       ),
     },
     { key: "email", header: "Email", render: (m) => <span className="text-muted-foreground">{m.email ?? "—"}</span> },
+    {
+      key: "membership",
+      header: "Membresía",
+      render: (m) => {
+        const label = getMembershipPlanLabel(m);
+        return (
+          <Badge variant="outline" className={getMembershipBadgeClassName(label)}>
+            {label}
+          </Badge>
+        );
+      },
+    },
     {
       key: "reprocannActive",
       header: "Reprocann",
@@ -90,6 +106,7 @@ export function MembersTable({ tenantSlug, members, membershipPlans, canCreate, 
     firstName: m.firstName,
     lastName: m.lastName,
     email: m.email ?? "",
+    membership: getMembershipPlanLabel(m),
     reprocannActive: m.reprocannActive ? "Activo" : "Inactivo",
     status: m.status,
   }));

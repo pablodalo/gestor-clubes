@@ -1,6 +1,7 @@
 import { getMemberAndTenantFromSession } from "@/lib/portal-session";
 import { getStatusLabel, getStatusVariant } from "@/lib/status-badges";
 import { getMembershipPlanLabel } from "@/lib/membership-label";
+import { getMembershipBadgeClassName } from "@/lib/membership-badge";
 import { Badge } from "@/components/ui/badge";
 import { PortalProfileClient } from "./profile-client";
 
@@ -85,7 +86,12 @@ export default async function PortalProfilePage({ params }: Props) {
                   {statusLabel}
                 </Badge>
                 <span className="text-muted-foreground">·</span>
-                <span>{membershipLabel}</span>
+                <Badge
+                  variant="outline"
+                  className={getMembershipBadgeClassName(membershipLabel)}
+                >
+                  {membershipLabel}
+                </Badge>
               </span>
             }
           />

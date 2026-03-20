@@ -52,6 +52,7 @@ export default async function MembersPage({ params, searchParams }: Props) {
       where,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       take: 200,
+      include: { membershipPlanRel: { select: { name: true } } },
     }),
     prisma.membershipPlan.findMany({
       where: { tenantId: tenant.id },
