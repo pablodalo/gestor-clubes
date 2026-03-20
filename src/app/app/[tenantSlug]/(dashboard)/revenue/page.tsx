@@ -40,18 +40,30 @@ export default async function RevenuePage({ params }: Props) {
     },
   });
 
-  const payments = await prisma.membershipPayment.findMany({
+  const paymentsRaw = await prisma.membershipPayment.findMany({
     where: { tenantId: tenant.id },
     select: { amount: true, currency: true, paidAt: true, memberId: true },
     orderBy: { paidAt: "asc" },
   });
+  const payments = paymentsRaw.map((p) => ({
+    amount: Number(p.amount ?? 0),
+    currency: p.currency ?? "ARS",
+    paidAt: p.paidAt ? p.paidAt.toISOString() : null,
+    memberId: p.memberId ?? undefined,
+  }));
 
   const currencySet = new Set(members.map((m) => m.membershipCurrency || "ARS"));
   const currency = currencySet.size === 1 ? (currencySet.values().next().value as string) : "ARS";
   const toNumber = (value: unknown) => Number(value ?? 0);
 
-  const recurringMembers = members.filter((m) => m.membershipRecurring);
-  const projectedMonthly = recurringMembers.reduce(
+  const recurringMembersRaw = members.filter((m) => m.membershipRecurring);
+  const recurringMembers = recurringMembersRaw.map((m) => ({
+    id: m.id,
+    membershipRecurrenceDay: m.membershipRecurrenceDay,
+    membershipLastAmount: Number(m.membershipLastAmount ?? 0),
+    membershipCurrency: m.membershipCurrency ?? null,
+  }));
+  const projectedMonthly = recurringMembersRaw.reduce(
     (sum, m) => sum + toNumber(m.membershipLastAmount),
     0
   );
@@ -67,7 +79,7 @@ export default async function RevenuePage({ params }: Props) {
     return sum + toNumber(p.amount);
   }, 0);
 
-  const dueSoonMembers = recurringMembers.filter((m) => {
+  const dueSoonMembers = recurringMembersRaw.filter((m) => {
     if (!m.membershipRecurrenceDay) return false;
     const day = m.membershipRecurrenceDay;
     const today = now.getDate();
@@ -181,7 +193,6 @@ export default async function RevenuePage({ params }: Props) {
         currentYear={currentYear}
         payments={payments}
         recurringMembers={recurringMembers}
-        toNumber={toNumber}
       />
     </div>
   );

@@ -31,11 +31,11 @@ export type YearAnnualItem = {
   isFuture: boolean;
 };
 
-type PaymentRow = { amount: unknown; currency: string; paidAt: Date | null; memberId?: string };
+type PaymentRow = { amount: number; currency: string; paidAt: string | null; memberId?: string };
 type RecurringMember = {
   id: string;
   membershipRecurrenceDay: number | null;
-  membershipLastAmount: unknown;
+  membershipLastAmount: number;
   membershipCurrency: string | null;
 };
 
@@ -45,7 +45,6 @@ type Props = {
   currentYear: number;
   payments?: PaymentRow[];
   recurringMembers?: RecurringMember[];
-  toNumber?: (v: unknown) => number;
 };
 
 const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -67,7 +66,6 @@ export function RevenueCharts({
   currentYear,
   payments = [],
   recurringMembers = [],
-  toNumber = (v) => Number(v ?? 0),
 }: Props) {
   const [expandedMonth, setExpandedMonth] = useState<number | null>(null);
 
@@ -83,7 +81,7 @@ export function RevenueCharts({
       const cobrado = payments.reduce((acc, p) => {
         const paidAt = p.paidAt ? new Date(p.paidAt) : null;
         if (!paidAt || paidAt.getDate() !== d || paidAt.getMonth() !== expandedMonth || paidAt.getFullYear() !== currentYear) return acc;
-        return acc + toNumber(p.amount);
+        return acc + p.amount;
       }, 0);
       const pendiente = recurringMembers.reduce((acc, m) => {
         if (m.membershipRecurrenceDay !== d) return acc;
@@ -97,7 +95,7 @@ export function RevenueCharts({
           );
         });
         if (paidThisMonth) return acc;
-        return acc + toNumber(m.membershipLastAmount);
+        return acc + m.membershipLastAmount;
       }, 0);
       daily.push({
         day: d,
@@ -108,7 +106,7 @@ export function RevenueCharts({
       });
     }
     return daily;
-  }, [expandedMonth, currentYear, payments, recurringMembers, toNumber]);
+  }, [expandedMonth, currentYear, payments, recurringMembers]);
 
   const summary = useMemo(() => {
     if (expandedMonth == null) return { cobrado: 0, pendiente: 0, proyectado: 0 };
