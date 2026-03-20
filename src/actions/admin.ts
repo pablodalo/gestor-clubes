@@ -82,6 +82,48 @@ export async function createSupplier(input: z.infer<typeof createSupplierSchema>
   return { ok: true };
 }
 
+const updateSupplierSchema = z.object({
+  supplierId: z.string().min(1),
+  name: z.string().min(1),
+  email: z.string().min(1),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  suppliesProvided: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export async function updateSupplier(input: z.infer<typeof updateSupplierSchema>) {
+  try {
+    await requirePermission(PERMISSION_KEYS.suppliers_manage);
+  } catch {
+    return { error: "No tenés permiso para editar proveedores" };
+  }
+
+  const ctx = await getTenantContext();
+  if (!ctx) return { error: "No autorizado" };
+
+  const parsed = updateSupplierSchema.safeParse(input);
+  if (!parsed.success) return { error: "Datos inválidos" };
+
+  const updated = await prisma.supplier.updateMany({
+    where: { id: parsed.data.supplierId, tenantId: ctx.tenantId },
+    data: {
+      name: parsed.data.name,
+      email: parsed.data.email.trim() || null,
+      phone: parsed.data.phone?.trim() || null,
+      address: parsed.data.address?.trim() || null,
+      suppliesProvided: parsed.data.suppliesProvided?.trim() || null,
+      notes: parsed.data.notes?.trim() || null,
+    },
+  });
+
+  if (updated.count === 0) return { error: "Proveedor no encontrado" };
+
+  revalidatePath(`/app/${ctx.tenantSlug}/suppliers`);
+  revalidatePath(`/app/${ctx.tenantSlug}/suppliers/${parsed.data.supplierId}`);
+  return { ok: true };
+}
+
 export async function createSupplyItem(input: z.infer<typeof createSupplySchema>) {
   try {
     await requirePermission(PERMISSION_KEYS.supplies_manage);

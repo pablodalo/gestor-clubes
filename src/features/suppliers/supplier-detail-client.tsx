@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,8 @@ import type { Supplier, SupplierOrder, SupplierOrderItem } from "@prisma/client"
 import { AlertDialog } from "@/components/alert-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { createSupplierOrder, deleteSupplierOrder, updateSupplierOrderStatus } from "@/actions/supplier-orders";
-import { Copy, Mail, MessageCircle, Plus, RefreshCcw } from "lucide-react";
+import { updateSupplier } from "@/actions/admin";
+import { Copy, Mail, MessageCircle, Pencil, Plus, RefreshCcw } from "lucide-react";
 
 type OrderWithItems = SupplierOrder & { items: SupplierOrderItem[] };
 
@@ -26,6 +27,7 @@ type Props = {
   currency: string;
   supplier: Supplier;
   orders: OrderWithItems[];
+  canManage?: boolean;
 };
 
 type DraftItem = { name: string; quantity: number };
@@ -41,12 +43,19 @@ function normalizePhoneForWhatsapp(raw?: string | null) {
   if (!raw) return null;
   const digits = raw.replace(/[^\d]/g, "");
   if (!digits) return null;
-  // Si ya viene con prefijo (ej 54...), usamos tal cual.
   if (digits.length >= 10) return digits;
   return null;
 }
 
-export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }: Props) {
+export function SupplierDetailClient({
+  tenantSlug,
+  currency: _currency,
+  supplier,
+  orders,
+  canManage = false,
+}: Props) {
+  void _currency;
+  void tenantSlug;
   const router = useRouter();
   const lastOrder = orders[0] ?? null;
   const activeOrder = orders.find((o) => o.status !== "delivered") ?? null;
@@ -54,7 +63,27 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
   const [orderToDelete, setOrderToDelete] = useState<OrderWithItems | null>(null);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: "Aviso", message: "" });
-  const generatorId = "generador";
+
+  const [generatorOpen, setGeneratorOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  const [editName, setEditName] = useState(supplier.name);
+  const [editEmail, setEditEmail] = useState(supplier.email ?? "");
+  const [editPhone, setEditPhone] = useState(supplier.phone ?? "");
+  const [editAddress, setEditAddress] = useState(supplier.address ?? "");
+  const [editSupplies, setEditSupplies] = useState(supplier.suppliesProvided ?? "");
+  const [editNotes, setEditNotes] = useState(supplier.notes ?? "");
+
+  useEffect(() => {
+    setEditName(supplier.name);
+    setEditEmail(supplier.email ?? "");
+    setEditPhone(supplier.phone ?? "");
+    setEditAddress(supplier.address ?? "");
+    setEditSupplies(supplier.suppliesProvided ?? "");
+    setEditNotes(supplier.notes ?? "");
+  }, [supplier]);
 
   const [draftItems, setDraftItems] = useState<DraftItem[]>(() => {
     const base = (lastOrder?.items ?? []).map((it) => ({
@@ -68,9 +97,19 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
   const [error, setError] = useState("");
 
   const selectedItems = useMemo(
-    () => draftItems.filter((i) => i.name.trim() && i.quantity > 0).map((i) => ({ name: i.name.trim(), quantity: i.quantity })),
+    () =>
+      draftItems
+        .filter((i) => i.name.trim() && i.quantity > 0)
+        .map((i) => ({ name: i.name.trim(), quantity: i.quantity })),
     [draftItems]
   );
+
+  function openNewOrderDialog() {
+    setDraftItems([{ name: "", quantity: 1 }]);
+    setGenerated("");
+    setError("");
+    setGeneratorOpen(true);
+  }
 
   async function handleGenerate() {
     setGenerated(buildMessage(selectedItems));
@@ -95,12 +134,8 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
       o.messageSnapshot ??
         buildMessage(o.items.map((it) => ({ name: it.name, quantity: Number(it.quantity ?? 0) })))
     );
-
-    // Scroll al generador para acelerar el flujo
-    requestAnimationFrame(() => {
-      const el = document.getElementById(generatorId);
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    setError("");
+    setGeneratorOpen(true);
   }
 
   function loadLastOrder() {
@@ -126,6 +161,29 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
       setError((res as { error: string }).error);
       return;
     }
+    setGeneratorOpen(false);
+    router.refresh();
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setEditError("");
+    setEditSaving(true);
+    const res = await updateSupplier({
+      supplierId: supplier.id,
+      name: editName.trim(),
+      email: editEmail.trim(),
+      phone: editPhone.trim(),
+      address: editAddress.trim(),
+      suppliesProvided: editSupplies.trim(),
+      notes: editNotes.trim(),
+    });
+    setEditSaving(false);
+    if ((res as { error?: string }).error) {
+      setEditError((res as { error: string }).error);
+      return;
+    }
+    setEditOpen(false);
     router.refresh();
   }
 
@@ -134,229 +192,288 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
 
   return (
     <div className="space-y-6">
-      {/* BLOQUE 1: Header resumen */}
+      {/* Datos del proveedor */}
       <Card>
         <CardContent className="py-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-center">
-            <div>
-              <p className="text-xs text-muted-foreground">Mail</p>
-              <p className="font-medium truncate">{supplier.email ?? "—"}</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Mail</p>
+                <p className="font-medium truncate">{supplier.email ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Teléfono</p>
+                <p className="font-medium truncate">{supplier.phone ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Estado</p>
+                <p className="font-medium">{headerState}</p>
+              </div>
+              <div className="lg:text-right">
+                <p className="text-xs text-muted-foreground">Próxima entrega</p>
+                <p className="font-medium">{eta ?? "—"}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Teléfono</p>
-              <p className="font-medium truncate">{supplier.phone ?? "—"}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Estado</p>
-              <p className="font-medium">{headerState}</p>
-            </div>
-            <div className="lg:text-right">
-              <p className="text-xs text-muted-foreground">ETA</p>
-              <p className="font-medium">{eta ?? "—"}</p>
-            </div>
+            {canManage && (
+              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <div className="space-y-6">
-          {/* BLOQUE 2: Pedido activo */}
-          {activeOrder && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Pedido activo</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(activeOrder.date).toLocaleDateString("es-AR")} · Estado: {activeOrder.status}
+      {/* Pedido activo */}
+      {activeOrder && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Pedido activo</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {new Date(activeOrder.date).toLocaleDateString("es-AR")} · Estado: {activeOrder.status}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  await updateSupplierOrderStatus({
+                    orderId: activeOrder.id,
+                    supplierId: supplier.id,
+                    status: "delivered",
+                  });
+                  router.refresh();
+                }}
+              >
+                Marcar como entregado
+              </Button>
+              <select
+                value={activeOrder.status}
+                onChange={async (e) => {
+                  await updateSupplierOrderStatus({
+                    orderId: activeOrder.id,
+                    supplierId: supplier.id,
+                    status: e.target.value as "draft" | "sent" | "in_progress" | "delivered",
+                  });
+                  router.refresh();
+                }}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="draft">Borrador</option>
+                <option value="sent">Enviado</option>
+                <option value="in_progress">En progreso</option>
+                <option value="delivered">Entregado</option>
+              </select>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="rounded-lg border bg-muted/20 p-3">
+              <ul className="text-sm space-y-1">
+                {activeOrder.items.map((it) => (
+                  <li key={it.id} className="flex items-center justify-between gap-4">
+                    <span className="truncate">{it.name}</span>
+                    <span className="tabular-nums text-muted-foreground">x {Number(it.quantity ?? 0)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {eta && <p className="text-sm text-muted-foreground">ETA: {eta}</p>}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Historial + CTA nuevo pedido */}
+      <Card>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-4">
+          <CardTitle className="text-base font-semibold">Historial de pedidos</CardTitle>
+          <Button type="button" size="sm" onClick={openNewOrderDialog}>
+            Nuevo pedido
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {orders.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay pedidos todavía.</p>
+          ) : (
+            orders.map((o) => (
+              <div key={o.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{new Date(o.date).toLocaleDateString("es-AR")}</p>
+                  <p className={o.status !== "delivered" ? "text-xs font-medium" : "text-xs text-muted-foreground"}>
+                    {o.status !== "delivered" ? "Activo" : o.status}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={async () => {
-                      await updateSupplierOrderStatus({
-                        orderId: activeOrder.id,
-                        supplierId: supplier.id,
-                        status: "delivered",
-                      });
-                      router.refresh();
-                    }}
-                  >
-                    Marcar como entregado
+                  <Button type="button" variant="outline" size="sm" onClick={() => setViewing(o)}>
+                    Ver
                   </Button>
-                  <select
-                    value={activeOrder.status}
-                    onChange={async (e) => {
-                      await updateSupplierOrderStatus({
-                        orderId: activeOrder.id,
-                        supplierId: supplier.id,
-                        status: e.target.value as any,
-                      });
-                      router.refresh();
-                    }}
-                    className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                  >
-                    <option value="draft">Borrador</option>
-                    <option value="sent">Enviado</option>
-                    <option value="in_progress">En progreso</option>
-                    <option value="delivered">Entregado</option>
-                  </select>
+                  <Button type="button" variant="outline" size="sm" onClick={() => loadFromOrder(o)}>
+                    Repetir
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setOrderToDelete(o)}>
+                    Eliminar
+                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="rounded-lg border bg-muted/20 p-3">
-                  <ul className="text-sm space-y-1">
-                    {activeOrder.items.map((it) => (
-                      <li key={it.id} className="flex items-center justify-between gap-4">
-                        <span className="truncate">{it.name}</span>
-                        <span className="tabular-nums text-muted-foreground">x {Number(it.quantity ?? 0)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                {eta && <p className="text-sm text-muted-foreground">ETA: {eta}</p>}
-              </CardContent>
-            </Card>
+              </div>
+            ))
           )}
+        </CardContent>
+      </Card>
 
-          {/* BLOQUE 3: Generador de pedido (simple) */}
-          <Card id={generatorId}>
-            <CardHeader>
-              <CardTitle>Generador de pedido</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {error && <p className="text-sm text-destructive">{error}</p>}
+      {/* Editar proveedor */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar proveedor</DialogTitle>
+            <DialogDescription>Actualizá los datos de contacto y notas.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="grid gap-4">
+            {editError && <p className="text-sm text-destructive">{editError}</p>}
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">Nombre</Label>
+              <Input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input id="edit-email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-phone">Teléfono</Label>
+              <Input id="edit-phone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-address">Dirección</Label>
+              <Input id="edit-address" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-supplies">Qué suministra</Label>
+              <Input id="edit-supplies" value={editSupplies} onChange={(e) => setEditSupplies(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-notes">Notas</Label>
+              <Input id="edit-notes" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={editSaving}>
+                {editSaving ? "Guardando…" : "Guardar"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-              <div className="space-y-2">
-                {draftItems.map((it, idx) => (
-                  <div key={`${idx}`} className="flex items-center gap-3">
-                    <Input
-                      value={it.name}
-                      onChange={(e) => {
-                        const next = [...draftItems];
-                        next[idx] = { ...next[idx], name: e.target.value };
-                        setDraftItems(next);
-                      }}
-                      className="flex-1"
-                      placeholder="Producto"
-                    />
-                    <Input
-                      value={it.quantity}
-                      onChange={(e) => {
-                        const qty = Number(e.target.value);
-                        const next = [...draftItems];
-                        next[idx] = { ...next[idx], quantity: Number.isFinite(qty) ? qty : 0 };
-                        setDraftItems(next);
-                      }}
-                      className="w-24"
-                      type="number"
-                      min={0}
-                      step={1}
-                    />
-                  </div>
-                ))}
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" onClick={() => setDraftItems([...draftItems, { name: "", quantity: 1 }])}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar ítem
-                  </Button>
-                  <Button type="button" variant="outline" onClick={loadLastOrder} disabled={!lastOrder}>
-                    Cargar último pedido
-                  </Button>
-                  <Button type="button" variant="outline" onClick={handleGenerate}>
-                    <RefreshCcw className="h-4 w-4 mr-2" />
-                    Generar texto
-                  </Button>
+      {/* Generador de pedido (modal) */}
+      <Dialog open={generatorOpen} onOpenChange={setGeneratorOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nuevo pedido</DialogTitle>
+            <DialogDescription>Armá el pedido y envialo por mail o WhatsApp, o guardalo como borrador.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
+            <div className="space-y-2">
+              {draftItems.map((it, idx) => (
+                <div key={`${idx}`} className="flex items-center gap-3">
+                  <Input
+                    value={it.name}
+                    onChange={(e) => {
+                      const next = [...draftItems];
+                      next[idx] = { ...next[idx], name: e.target.value };
+                      setDraftItems(next);
+                    }}
+                    className="flex-1"
+                    placeholder="Producto"
+                  />
+                  <Input
+                    value={it.quantity}
+                    onChange={(e) => {
+                      const qty = Number(e.target.value);
+                      const next = [...draftItems];
+                      next[idx] = { ...next[idx], quantity: Number.isFinite(qty) ? qty : 0 };
+                      setDraftItems(next);
+                    }}
+                    className="w-24"
+                    type="number"
+                    min={0}
+                    step={1}
+                  />
                 </div>
+              ))}
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setDraftItems([...draftItems, { name: "", quantity: 1 }])}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar ítem
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={loadLastOrder} disabled={!lastOrder}>
+                  Cargar último pedido
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={handleGenerate}>
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Generar texto
+                </Button>
               </div>
+            </div>
 
-              <div className="grid gap-2">
-                <Label>Mensaje</Label>
-                <textarea
-                  className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={generated}
-                  onChange={(e) => setGenerated(e.target.value)}
-                  placeholder="Hola! Te paso pedido…"
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" onClick={handleCopy} disabled={!generated && selectedItems.length === 0}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar
-                  </Button>
-                  {supplier.email?.trim() && (
-                    <Button
-                      asChild
-                      type="button"
-                      variant="outline"
-                      disabled={!generated && selectedItems.length === 0}
-                    >
-                      <a
-                        href={`mailto:${(supplier.email ?? "").trim()}?subject=${encodeURIComponent(
-                          `Pedido - ${supplier.name}`
-                        )}&body=${encodeURIComponent(generated || buildMessage(selectedItems))}`}
-                      >
-                        <Mail className="h-4 w-4 mr-2" />
-                        Mail
-                      </a>
-                    </Button>
-                  )}
+            <div className="grid gap-2">
+              <Label>Mensaje</Label>
+              <textarea
+                className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={generated}
+                onChange={(e) => setGenerated(e.target.value)}
+                placeholder="Hola! Te paso pedido…"
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={handleCopy} disabled={!generated && selectedItems.length === 0}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copiar
+                </Button>
+                {supplier.email?.trim() && (
                   <Button
+                    asChild
                     type="button"
                     variant="outline"
-                    disabled={!normalizePhoneForWhatsapp(supplier.phone) || (!generated && selectedItems.length === 0)}
-                    onClick={() => {
-                      const body = generated || buildMessage(selectedItems);
-                      const phone = normalizePhoneForWhatsapp(supplier.phone);
-                      if (!phone) return;
-                      const href = `https://wa.me/${phone}?text=${encodeURIComponent(body)}`;
-                      window.open(href, "_blank", "noopener,noreferrer");
-                    }}
+                    size="sm"
+                    disabled={!generated && selectedItems.length === 0}
                   >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    WhatsApp
+                    <a
+                      href={`mailto:${(supplier.email ?? "").trim()}?subject=${encodeURIComponent(
+                        `Pedido - ${supplier.name}`
+                      )}&body=${encodeURIComponent(generated || buildMessage(selectedItems))}`}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Mail
+                    </a>
                   </Button>
-                  <Button type="button" onClick={saveOrderSnapshot}>
-                    Guardar pedido
-                  </Button>
-                </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!normalizePhoneForWhatsapp(supplier.phone) || (!generated && selectedItems.length === 0)}
+                  onClick={() => {
+                    const body = generated || buildMessage(selectedItems);
+                    const phone = normalizePhoneForWhatsapp(supplier.phone);
+                    if (!phone) return;
+                    const href = `https://wa.me/${phone}?text=${encodeURIComponent(body)}`;
+                    window.open(href, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  WhatsApp
+                </Button>
+                <Button type="button" size="sm" onClick={saveOrderSnapshot}>
+                  Guardar pedido
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* BLOQUE 4: Historial de pedidos */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Historial de pedidos</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {orders.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay pedidos todavía.</p>
-              ) : (
-                orders.map((o) => (
-                  <div key={o.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">{new Date(o.date).toLocaleDateString("es-AR")}</p>
-                      <p className={o.status !== "delivered" ? "text-xs font-medium" : "text-xs text-muted-foreground"}>
-                        {o.status !== "delivered" ? "Activo" : o.status}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => setViewing(o)}>
-                        Ver
-                      </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => loadFromOrder(o)}>
-                        Repetir
-                      </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => setOrderToDelete(o)}>
-                        Eliminar
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={!!orderToDelete}
@@ -400,7 +517,10 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
                 <textarea
                   readOnly
                   className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={viewing.messageSnapshot ?? buildMessage(viewing.items.map((it) => ({ name: it.name, quantity: Number(it.quantity ?? 0) })))}
+                  value={
+                    viewing.messageSnapshot ??
+                    buildMessage(viewing.items.map((it) => ({ name: it.name, quantity: Number(it.quantity ?? 0) })))
+                  }
                 />
               </div>
             </div>
@@ -410,4 +530,3 @@ export function SupplierDetailClient({ tenantSlug, currency, supplier, orders }:
     </div>
   );
 }
-

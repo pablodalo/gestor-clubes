@@ -17,6 +17,7 @@ export default async function SupplierDetailPage({ params }: Props) {
 
   const permissions = await getTenantUserPermissions();
   const canRead = permissions === null || permissions.has(PERMISSION_KEYS.suppliers_read);
+  const canManage = permissions === null || permissions.has(PERMISSION_KEYS.suppliers_manage);
   if (!canRead) {
     return (
       <div className="space-y-6">
@@ -62,6 +63,7 @@ export default async function SupplierDetailPage({ params }: Props) {
         currency={tenant.currency ?? "ARS"}
         supplier={supplier}
         orders={orders}
+        canManage={canManage}
       />
     </div>
   );
