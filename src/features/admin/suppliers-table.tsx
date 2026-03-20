@@ -17,7 +17,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SupplierForm } from "@/features/admin/supplier-form";
-import { Truck, Building2, Search } from "lucide-react";
+import { MessageCircle, Truck, Building2, Search } from "lucide-react";
+
+/** Mismo criterio que en detalle de proveedor (wa.me). */
+function normalizePhoneForWhatsapp(raw?: string | null) {
+  if (!raw) return null;
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  if (digits.length >= 10) return digits;
+  return null;
+}
 
 type Row = Supplier & {
   suppliesCount?: number;
@@ -62,13 +71,13 @@ export function SuppliersTable({
     {
       key: "name",
       header: "Proveedor",
-      className: "w-[34%]",
+      className: "w-[33%]",
       render: (s) => <span className="font-medium text-foreground truncate block">{s.name}</span>,
     },
     {
       key: "suppliesProvided",
       header: "Categoría",
-      className: "w-[34%]",
+      className: "w-[33%]",
       render: (s) => <span className="text-muted-foreground truncate block">{s.suppliesProvided ?? "—"}</span>,
     },
     {
@@ -85,10 +94,31 @@ export function SuppliersTable({
     {
       key: "estado",
       header: "Estado",
-      className: "w-[16%]",
+      className: "w-[18%]",
       render: (s) => {
         const estado = getEstado(s);
-        return <Badge variant={estado.variant}>{estado.label}</Badge>;
+        const wa = normalizePhoneForWhatsapp(s.phone);
+        const waHref = wa ? `https://wa.me/${wa}` : null;
+        return (
+          <div className="flex items-center gap-2 min-w-0">
+            <Badge variant={estado.variant} className="shrink-0">
+              {estado.label}
+            </Badge>
+            {waHref ? (
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex shrink-0 rounded-md p-1 text-[#25D366] hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Abrir WhatsApp con ${s.name}`}
+                title="WhatsApp"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden />
+              </a>
+            ) : null}
+          </div>
+        );
       },
       sortable: false,
     },
