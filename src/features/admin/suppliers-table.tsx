@@ -17,7 +17,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SupplierForm } from "@/features/admin/supplier-form";
-import { MessageCircle, Truck, Building2, Search } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
+import { Truck, Building2, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /** Mismo criterio que en detalle de proveedor (wa.me). */
 function normalizePhoneForWhatsapp(raw?: string | null) {
@@ -59,12 +61,51 @@ export function SuppliersTable({
 
   const getEstado = (s: Row) => {
     const st = (s.activeLastOrder ?? s.lastOrder)?.status ?? null;
-    if (!st) return { label: "Sin pedidos", variant: "secondary" as const };
-    if (st === "draft") return { label: "Borrador", variant: "secondary" as const };
-    if (st === "sent") return { label: "Enviado", variant: "default" as const };
-    if (st === "in_progress") return { label: "En progreso", variant: "warning" as const };
-    if (st === "delivered") return { label: "Entregado", variant: "success" as const };
-    return { label: st, variant: "outline" as const };
+    if (!st) {
+      return {
+        label: "Sin pedidos",
+        variant: "secondary" as const,
+        className:
+          "border-transparent bg-muted/50 text-muted-foreground font-normal shadow-none",
+      };
+    }
+    if (st === "draft") {
+      return {
+        label: "Borrador",
+        variant: "secondary" as const,
+        className:
+          "border-slate-200/80 bg-slate-100/90 text-slate-700 shadow-none dark:border-slate-600/60 dark:bg-slate-800/70 dark:text-slate-200",
+      };
+    }
+    if (st === "sent") {
+      return {
+        label: "Enviado",
+        variant: "secondary" as const,
+        className:
+          "border-sky-200/90 bg-sky-50 text-sky-900 shadow-none dark:border-sky-800/80 dark:bg-sky-950/45 dark:text-sky-200",
+      };
+    }
+    if (st === "in_progress") {
+      return {
+        label: "En progreso",
+        variant: "warning" as const,
+        className:
+          "border-amber-200/90 bg-amber-50 text-amber-950 shadow-none dark:border-amber-800/70 dark:bg-amber-950/40 dark:text-amber-100",
+      };
+    }
+    if (st === "delivered") {
+      return {
+        label: "Entregado",
+        variant: "success" as const,
+        className:
+          "border-emerald-200/90 bg-emerald-50 text-emerald-900 shadow-none dark:border-emerald-800/70 dark:bg-emerald-950/40 dark:text-emerald-100",
+      };
+    }
+    return {
+      label: st,
+      variant: "outline" as const,
+      className: "border-border/80 bg-background text-foreground font-normal",
+    };
   };
 
   const columns: DataTableColumn<Row>[] = [
@@ -100,23 +141,34 @@ export function SuppliersTable({
         const wa = normalizePhoneForWhatsapp(s.phone);
         const waHref = wa ? `https://wa.me/${wa}` : null;
         return (
-          <div className="flex items-center gap-2 min-w-0">
-            <Badge variant={estado.variant} className="shrink-0">
+          <div className="grid w-full max-w-[14rem] grid-cols-[minmax(0,1fr)_2.25rem] items-center gap-1.5 sm:max-w-none">
+            <Badge
+              variant={estado.variant}
+              className={cn(
+                "min-w-0 max-w-full justify-self-start truncate border font-medium tabular-nums",
+                estado.className
+              )}
+              title={estado.label}
+            >
               {estado.label}
             </Badge>
-            {waHref ? (
-              <a
-                href={waHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex shrink-0 rounded-md p-1 text-[#25D366] hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`Abrir WhatsApp con ${s.name}`}
-                title="WhatsApp"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden />
-              </a>
-            ) : null}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center justify-self-end">
+              {waHref ? (
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#25D366] transition-colors hover:bg-[#25D366]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  aria-label={`Abrir WhatsApp con ${s.name}`}
+                  title="WhatsApp"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <WhatsAppIcon className="h-[18px] w-[18px]" />
+                </a>
+              ) : (
+                <span className="inline-block h-9 w-9" aria-hidden />
+              )}
+            </div>
           </div>
         );
       },

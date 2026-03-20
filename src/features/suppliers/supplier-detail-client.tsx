@@ -19,7 +19,8 @@ import { AlertDialog } from "@/components/alert-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { createSupplierOrder, deleteSupplierOrder, updateSupplierOrderStatus } from "@/actions/supplier-orders";
 import { updateSupplier } from "@/actions/admin";
-import { Copy, Mail, MessageCircle, Pencil, Plus, RefreshCcw } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
+import { Copy, Mail, Pencil, Plus, RefreshCcw } from "lucide-react";
 
 type OrderWithItems = SupplierOrder & { items: SupplierOrderItem[] };
 
@@ -506,7 +507,7 @@ export function SupplierDetailClient({
                     window.open(href, "_blank", "noopener,noreferrer");
                   }}
                 >
-                  <MessageCircle className="h-4 w-4 mr-2" />
+                  <WhatsAppIcon className="mr-2 h-4 w-4 text-[#25D366]" />
                   WhatsApp
                 </Button>
                 <Button type="button" size="sm" onClick={saveOrderSnapshot}>
