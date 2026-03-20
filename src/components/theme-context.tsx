@@ -15,9 +15,16 @@ type ThemeContextValue = {
 
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
+/** Nodo DOM donde vive el tema del tenant (para portales de modales = mismo look & feel). */
+const TenantThemePortalContext = React.createContext<HTMLElement | null>(null);
+
 export function useThemeToggle() {
   const ctx = React.useContext(ThemeContext);
   return ctx;
+}
+
+export function useTenantThemePortal() {
+  return React.useContext(TenantThemePortalContext);
 }
 
 type ThemeProviderProps = {
@@ -54,11 +61,15 @@ export function ThemeProvider({ children, branding, defaultDark = false }: Theme
 
   const tenantKey = branding?.shortName?.toLowerCase();
 
+  const [themeRootEl, setThemeRootEl] = React.useState<HTMLDivElement | null>(null);
+
   return (
     <ThemeContext.Provider value={{ theme: resolved, setTheme }}>
-      <div className={rootClass} style={styleObj} data-tenant={tenantKey}>
-        {children}
-      </div>
+      <TenantThemePortalContext.Provider value={themeRootEl}>
+        <div ref={setThemeRootEl} className={rootClass} style={styleObj} data-tenant={tenantKey}>
+          {children}
+        </div>
+      </TenantThemePortalContext.Provider>
     </ThemeContext.Provider>
   );
 }

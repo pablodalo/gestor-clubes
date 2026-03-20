@@ -22,6 +22,12 @@ const createOrderSchema = z.object({
   items: z.array(orderItemSchema).min(1),
 });
 
+function addOrderAuthorMeta(message: string | undefined, authorName: string) {
+  const base = (message ?? "").trim();
+  const safeAuthor = authorName.trim() || "Usuario";
+  return `[[author:${safeAuthor}]]\n${base}`;
+}
+
 export async function createSupplierOrder(input: z.infer<typeof createOrderSchema>) {
   try {
     await requirePermission(PERMISSION_KEYS.suppliers_manage);
@@ -52,7 +58,7 @@ export async function createSupplierOrder(input: z.infer<typeof createOrderSchem
       date,
       status: data.status ?? "draft",
       total,
-      messageSnapshot: data.messageSnapshot || null,
+      messageSnapshot: addOrderAuthorMeta(data.messageSnapshot, ctx.name || ctx.email),
       items: {
         create: data.items.map((it) => ({
           name: it.name,

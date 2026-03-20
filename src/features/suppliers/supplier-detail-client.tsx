@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,26 @@ function normalizePhoneForWhatsapp(raw?: string | null) {
   if (!digits) return null;
   if (digits.length >= 10) return digits;
   return null;
+}
+
+function parseOrderSnapshot(snapshot?: string | null) {
+  if (!snapshot) return { author: null as string | null, message: null as string | null };
+  const match = snapshot.match(/^\[\[author:(.+?)\]\]\s*\n?/);
+  if (!match) return { author: null as string | null, message: snapshot };
+  const author = match[1]?.trim() || null;
+  const message = snapshot.replace(/^\[\[author:.+?\]\]\s*\n?/, "");
+  return { author, message };
+}
+
+/** Etiquetas en español para estados de pedido guardados en DB. */
+function orderStatusLabel(status: string) {
+  const map: Record<string, string> = {
+    draft: "Borrador",
+    sent: "Enviado",
+    in_progress: "En progreso",
+    delivered: "Entregado",
+  };
+  return map[status] ?? status;
 }
 
 export function SupplierDetailClient({
@@ -124,6 +145,7 @@ export function SupplierDetailClient({
   }
 
   function loadFromOrder(o: OrderWithItems) {
+    const parsed = parseOrderSnapshot(o.messageSnapshot);
     setDraftItems(
       o.items.map((it) => ({
         name: it.name,
@@ -131,7 +153,7 @@ export function SupplierDetailClient({
       }))
     );
     setGenerated(
-      o.messageSnapshot ??
+      parsed.message ??
         buildMessage(o.items.map((it) => ({ name: it.name, quantity: Number(it.quantity ?? 0) })))
     );
     setError("");
@@ -189,35 +211,43 @@ export function SupplierDetailClient({
 
   const headerState = activeOrder ? "Pedido en proceso" : "Sin pedidos activos";
   const eta = supplier.nextDeliveryAt ? new Date(supplier.nextDeliveryAt).toLocaleDateString("es-AR") : null;
+  const activeOrderAuthor = activeOrder ? parseOrderSnapshot(activeOrder.messageSnapshot).author : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Datos del proveedor */}
-      <Card>
-        <CardContent className="py-4">
+      <Card className="border-border/60 shadow-sm">
+        <CardContent className="py-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Mail</p>
-                <p className="font-medium truncate">{supplier.email ?? "—"}</p>
+            <div className="grid flex-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Mail</p>
+                <p className="text-sm font-medium leading-snug break-all">{supplier.email ?? "—"}</p>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Teléfono</p>
-                <p className="font-medium truncate">{supplier.phone ?? "—"}</p>
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Teléfono</p>
+                <p className="text-sm font-medium leading-snug">{supplier.phone ?? "—"}</p>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Estado</p>
-                <p className="font-medium">{headerState}</p>
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estado</p>
+                <p className="text-sm font-medium">{headerState}</p>
               </div>
-              <div className="lg:text-right">
-                <p className="text-xs text-muted-foreground">Próxima entrega</p>
-                <p className="font-medium">{eta ?? "—"}</p>
+              <div className="space-y-0.5 lg:text-right">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Próxima entrega</p>
+                <p className="text-sm font-medium">{eta ?? "—"}</p>
               </div>
             </div>
             {canManage && (
-              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setEditOpen(true)}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Editar
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0 h-9 w-9"
+                aria-label="Editar datos del proveedor"
+                title="Editar datos del proveedor"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -226,12 +256,13 @@ export function SupplierDetailClient({
 
       {/* Pedido activo */}
       {activeOrder && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Pedido activo</CardTitle>
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
+            <div className="space-y-1">
+              <CardTitle className="text-base">Pedido activo</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {new Date(activeOrder.date).toLocaleDateString("es-AR")} · Estado: {activeOrder.status}
+                {new Date(activeOrder.date).toLocaleDateString("es-AR")}
+                {activeOrderAuthor ? ` · Hecho por: ${activeOrderAuthor}` : ` · ${orderStatusLabel(activeOrder.status)}`}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -268,63 +299,75 @@ export function SupplierDetailClient({
               </select>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="rounded-lg border bg-muted/20 p-3">
-              <ul className="text-sm space-y-1">
+          <CardContent className="space-y-3 pt-0">
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+              <ul className="space-y-1.5 text-sm">
                 {activeOrder.items.map((it) => (
                   <li key={it.id} className="flex items-center justify-between gap-4">
                     <span className="truncate">{it.name}</span>
-                    <span className="tabular-nums text-muted-foreground">x {Number(it.quantity ?? 0)}</span>
+                    <span className="tabular-nums text-muted-foreground">× {Number(it.quantity ?? 0)}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            {eta && <p className="text-sm text-muted-foreground">ETA: {eta}</p>}
+            {eta && <p className="text-xs text-muted-foreground">Entrega estimada: {eta}</p>}
           </CardContent>
         </Card>
       )}
 
       {/* Historial + CTA nuevo pedido */}
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-4">
-          <CardTitle className="text-base font-semibold">Historial de pedidos</CardTitle>
-          <Button type="button" size="sm" onClick={openNewOrderDialog}>
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0 pb-3">
+          <div>
+            <CardTitle className="text-base font-semibold">Historial de pedidos</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Pedidos anteriores y su estado</p>
+          </div>
+          <Button type="button" size="sm" className="shrink-0" onClick={openNewOrderDialog}>
             Nuevo pedido
           </Button>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-2 pt-0">
           {orders.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay pedidos todavía.</p>
+            <p className="text-sm text-muted-foreground py-2">No hay pedidos todavía.</p>
           ) : (
-            orders.map((o) => (
-              <div key={o.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{new Date(o.date).toLocaleDateString("es-AR")}</p>
-                  <p className={o.status !== "delivered" ? "text-xs font-medium" : "text-xs text-muted-foreground"}>
-                    {o.status !== "delivered" ? "Activo" : o.status}
-                  </p>
+            orders.map((o) => {
+              const isActive = o.status !== "delivered";
+              const statusText = isActive ? "Activo" : orderStatusLabel(o.status);
+              return (
+                <div
+                  key={o.id}
+                  className="flex flex-col gap-3 rounded-xl border border-border/50 bg-card/50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="text-sm font-medium tabular-nums">
+                      {new Date(o.date).toLocaleDateString("es-AR")}
+                    </span>
+                    <Badge variant={isActive ? "warning" : "secondary"} className="font-normal">
+                      {statusText}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setViewing(o)}>
+                      Ver
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => loadFromOrder(o)}>
+                      Repetir
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setOrderToDelete(o)}>
+                      Eliminar
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setViewing(o)}>
-                    Ver
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => loadFromOrder(o)}>
-                    Repetir
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setOrderToDelete(o)}>
-                    Eliminar
-                  </Button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </CardContent>
       </Card>
 
       {/* Editar proveedor */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md gap-5">
+          <DialogHeader className="space-y-2 text-left">
             <DialogTitle>Editar proveedor</DialogTitle>
             <DialogDescription>Actualizá los datos de contacto y notas.</DialogDescription>
           </DialogHeader>
@@ -368,8 +411,8 @@ export function SupplierDetailClient({
 
       {/* Generador de pedido (modal) */}
       <Dialog open={generatorOpen} onOpenChange={setGeneratorOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg gap-5">
+          <DialogHeader className="space-y-2 text-left">
             <DialogTitle>Nuevo pedido</DialogTitle>
             <DialogDescription>Armá el pedido y envialo por mail o WhatsApp, o guardalo como borrador.</DialogDescription>
           </DialogHeader>
@@ -493,15 +536,22 @@ export function SupplierDetailClient({
       />
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen} title={alertMessage.title} message={alertMessage.message} />
       <Dialog open={!!viewing} onOpenChange={(open) => !open && setViewing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Pedido</DialogTitle>
+        <DialogContent className="sm:max-w-md gap-5">
+          <DialogHeader className="space-y-2 text-left">
+            <DialogTitle>Detalle del pedido</DialogTitle>
             <DialogDescription>
-              {viewing ? `${new Date(viewing.date).toLocaleDateString("es-AR")} · ${viewing.status}` : ""}
+              {viewing
+                ? `${new Date(viewing.date).toLocaleDateString("es-AR")} · ${orderStatusLabel(viewing.status)}`
+                : ""}
             </DialogDescription>
           </DialogHeader>
           {viewing ? (
             <div className="space-y-4">
+              {parseOrderSnapshot(viewing.messageSnapshot).author && (
+                <p className="text-[11px] text-muted-foreground">
+                  Hecho por: {parseOrderSnapshot(viewing.messageSnapshot).author}
+                </p>
+              )}
               <div className="rounded-lg border bg-muted/20 p-3">
                 <ul className="text-sm space-y-1">
                   {viewing.items.map((it) => (
@@ -518,7 +568,7 @@ export function SupplierDetailClient({
                   readOnly
                   className="min-h-[140px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={
-                    viewing.messageSnapshot ??
+                    parseOrderSnapshot(viewing.messageSnapshot).message ??
                     buildMessage(viewing.items.map((it) => ({ name: it.name, quantity: Number(it.quantity ?? 0) })))
                   }
                 />
