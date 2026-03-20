@@ -3,6 +3,7 @@ import { getMemberAndTenantFromSession } from "@/lib/portal-session";
 import { getMemberNotificationsForPortal } from "@/actions/member-notifications";
 import { getMemberHistoryForPortal } from "@/actions/member-history";
 import { getStatusLabel, getStatusVariant } from "@/lib/status-badges";
+import { getMembershipPlanLabel } from "@/lib/membership-label";
 import { Badge } from "@/components/ui/badge";
 import {
   FileDown,
@@ -106,12 +107,14 @@ export default async function PortalSociosHomePage({ params }: Props) {
           <Badge variant={getStatusVariant(member.status)} className="text-xs font-medium">
             {getStatusLabel(member.status) ?? member.status}
           </Badge>
-          <Badge
-            variant={getStatusVariant(member.membershipStatus ?? "")}
-            className="text-xs font-medium"
-          >
-            Membresía: {getStatusLabel(member.membershipStatus ?? "") ?? member.membershipStatus ?? "—"}
-          </Badge>
+          <span className="text-sm text-muted-foreground">
+            Membresía:{" "}
+            <span className="font-medium text-foreground">
+              {member.membershipStatus === "pending"
+                ? "Pendiente"
+                : getMembershipPlanLabel(member)}
+            </span>
+          </span>
           {balanceInfo?.vegetal != null && (
             <span className="text-sm text-muted-foreground">
               Saldo: <span className="font-medium text-foreground">{balanceInfo.vegetal}g</span>

@@ -1,6 +1,8 @@
 import { getMemberAndTenantFromSession } from "@/lib/portal-session";
 import { getStatusLabel, getStatusVariant } from "@/lib/status-badges";
+import { getMembershipPlanLabel } from "@/lib/membership-label";
 import { Badge } from "@/components/ui/badge";
+import { PortalProfileClient } from "./profile-client";
 
 const formatDate = (value?: Date | null) =>
   value ? new Date(value).toLocaleDateString("es-AR") : "—";
@@ -37,13 +39,36 @@ export default async function PortalProfilePage({ params }: Props) {
     );
   }
 
+  const membershipLabel =
+    member.membershipStatus === "pending"
+      ? "Pendiente"
+      : getMembershipPlanLabel(member);
+  const statusLabel = getStatusLabel(member.status) ?? member.status;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Mi perfil</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Tus datos en {session.tenant.name}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Mi perfil</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Tus datos en {session.tenant.name}
+          </p>
+        </div>
+        <PortalProfileClient
+          tenantSlug={tenantSlug}
+          member={{
+            firstName: member.firstName,
+            lastName: member.lastName,
+            email: member.email ?? "",
+            phone: member.phone ?? "",
+            address: member.address ?? "",
+            city: member.city ?? "",
+            stateOrProvince: member.stateOrProvince ?? "",
+            country: member.country ?? "",
+            emergencyContactName: member.emergencyContactName ?? "",
+            emergencyContactPhone: member.emergencyContactPhone ?? "",
+          }}
+        />
       </div>
 
       <div className="rounded-xl border border-border/60 bg-card/50 overflow-hidden">
@@ -53,19 +78,23 @@ export default async function PortalProfilePage({ params }: Props) {
             value={<span className="font-mono font-medium">{member.memberNumber}</span>}
           />
           <Field
+            label="Membresía / Estado"
+            value={
+              <span className="flex flex-wrap items-center gap-2">
+                <Badge variant={getStatusVariant(member.status)} className="text-xs">
+                  {statusLabel}
+                </Badge>
+                <span className="text-muted-foreground">·</span>
+                <span>{membershipLabel}</span>
+              </span>
+            }
+          />
+          <Field
             label="Nombre"
             value={`${member.firstName} ${member.lastName}`}
           />
           <Field label="Email" value={member.email ?? "—"} />
           <Field label="Teléfono" value={member.phone ?? "—"} />
-          <Field
-            label="Estado"
-            value={
-              <Badge variant={getStatusVariant(member.status)} className="text-xs">
-                {getStatusLabel(member.status) ?? member.status}
-              </Badge>
-            }
-          />
           <Field
             label="Documento"
             value={

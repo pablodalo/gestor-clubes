@@ -4,8 +4,11 @@
 -- 2) Backfill de Dispensation.product_id SOLO si queda un candidato único
 --    (evita ambigüedad si existen múltiples productos por cepa/categoría).
 
--- 1) Mejorar Product.strain_id (solo cuando es NULL)
-WITH normalized_products AS (
+-- 1) Mejorar Product.strain_id (solo cuando es NULL, si existe la columna)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Product' AND column_name = 'strain_id') THEN
+    WITH normalized_products AS (
   SELECT
     p."id" AS product_id,
     p."tenantId" AS tenant_id,
@@ -30,30 +33,42 @@ matches AS (
     ON s.tenant_id = p.tenant_id
    AND s.norm_name = p.norm_name
 )
-UPDATE "Product" pr
-SET "strain_id" = m.strain_id
-FROM matches m
-WHERE pr."id" = m.product_id
-  AND m.match_count = 1
-  AND pr."strain_id" IS NULL;
+    UPDATE "Product" pr
+    SET "strain_id" = m.strain_id
+    FROM matches m
+    WHERE pr."id" = m.product_id
+      AND m.match_count = 1
+      AND pr."strain_id" IS NULL;
+  END IF;
+END
+$$;
 
 -- 2) Backfill Dispensation.product_id cuando sea resolvible de forma única
-WITH candidates AS (
-  SELECT
-    d."id" AS dispensation_id,
-    p."id" AS product_id,
-    count(*) OVER (PARTITION BY d."id") AS candidate_count
-  FROM "Dispensation" d
-  JOIN "Product" p
-    ON p."tenantId" = d."tenantId"
-   AND p."category" = d."category"
-   AND p."strain_id" = d."strainId"
-  WHERE d."product_id" IS NULL
-)
-UPDATE "Dispensation" d
-SET "product_id" = c.product_id
-FROM candidates c
-WHERE d."id" = c.dispensation_id
-  AND c.candidate_count = 1
-  AND d."product_id" IS NULL;
+-- Solo si Dispensation tiene columnas category y strainId (modelo viejo)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Dispensation' AND column_name = 'category')
+     AND (EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Dispensation' AND column_name = 'strainId')
+          OR EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Dispensation' AND column_name = 'strain_id')) THEN
+    WITH candidates AS (
+      SELECT
+        d."id" AS dispensation_id,
+        p."id" AS product_id,
+        count(*) OVER (PARTITION BY d."id") AS candidate_count
+      FROM "Dispensation" d
+      JOIN "Product" p
+        ON p."tenantId" = d."tenantId"
+       AND p."category" = d."category"
+       AND p."strain_id" = d."strainId"
+      WHERE d."product_id" IS NULL
+    )
+    UPDATE "Dispensation" d
+    SET "product_id" = c.product_id
+    FROM candidates c
+    WHERE d."id" = c.dispensation_id
+      AND c.candidate_count = 1
+      AND d."product_id" IS NULL;
+  END IF;
+END
+$$;
 

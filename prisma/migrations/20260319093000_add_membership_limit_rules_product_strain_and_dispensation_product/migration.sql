@@ -3,18 +3,30 @@
 -- Product.strainId (FK a PlantStrain) - nullable para compatibilidad
 ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "strain_id" TEXT;
 
-ALTER TABLE "Product"
-  ADD CONSTRAINT "Product_strain_id_fkey"
-  FOREIGN KEY ("strain_id") REFERENCES "PlantStrain"("id")
-  ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Product_strain_id_fkey') THEN
+    ALTER TABLE "Product"
+      ADD CONSTRAINT "Product_strain_id_fkey"
+      FOREIGN KEY ("strain_id") REFERENCES "PlantStrain"("id")
+      ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END
+$$;
 
 -- Dispensation.productId (FK a Product) - nullable para compatibilidad
 ALTER TABLE "Dispensation" ADD COLUMN IF NOT EXISTS "product_id" TEXT;
 
-ALTER TABLE "Dispensation"
-  ADD CONSTRAINT "Dispensation_product_id_fkey"
-  FOREIGN KEY ("product_id") REFERENCES "Product"("id")
-  ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Dispensation_product_id_fkey') THEN
+    ALTER TABLE "Dispensation"
+      ADD CONSTRAINT "Dispensation_product_id_fkey"
+      FOREIGN KEY ("product_id") REFERENCES "Product"("id")
+      ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END
+$$;
 
 -- MembershipLimitRule por categoría (asociada a MembershipPlan)
 CREATE TABLE IF NOT EXISTS "MembershipLimitRule" (

@@ -7,6 +7,7 @@ import { createAuditLog } from "@/server/audit";
 import { requirePermission } from "@/lib/rbac";
 import { PERMISSION_KEYS } from "@/config/permissions";
 import { getTenantSession } from "@/lib/server-context";
+import { getMemberAndTenantFromSession } from "@/lib/portal-session";
 import { z } from "zod";
 
 const createMemberSchema = z.object({
@@ -397,5 +398,69 @@ export async function deleteMember(memberId: string) {
   });
 
   revalidatePath(`/app/${ctx.tenantSlug}/members`);
+  return { ok: true };
+}
+
+const memberProfileForPortalSchema = z.object({
+  firstName: z.string().min(1, "Nombre requerido"),
+  lastName: z.string().min(1, "Apellido requerido"),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  stateOrProvince: z.string().optional(),
+  country: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+});
+
+export type MemberProfileForPortalInput = z.infer<typeof memberProfileForPortalSchema>;
+
+/** El socio edita su propio perfil desde el portal. Solo campos permitidos. */
+export async function updateMemberProfileForPortal(
+  tenantSlug: string,
+  input: MemberProfileForPortalInput
+) {
+  const session = await getMemberAndTenantFromSession(tenantSlug);
+  if (!session) return { error: "No autorizado" };
+
+  const parsed = memberProfileForPortalSchema.safeParse(input);
+  if (!parsed.success) {
+    const msg = parsed.error.issues[0]?.message;
+    return { error: msg ?? "Datos inválidos" };
+  }
+
+  const data = parsed.data;
+  const toStr = (v: unknown) => (v == null || String(v).trim() === "" ? null : String(v).trim());
+
+  await prisma.member.update({
+    where: { id: session.member.id },
+    data: {
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+      email: toStr(data.email),
+      phone: toStr(data.phone),
+      address: toStr(data.address),
+      city: toStr(data.city),
+      stateOrProvince: toStr(data.stateOrProvince),
+      country: toStr(data.country),
+      emergencyContactName: toStr(data.emergencyContactName),
+      emergencyContactPhone: toStr(data.emergencyContactPhone),
+    },
+  });
+
+  await createAuditLog({
+    tenantId: session.tenant.id,
+    actorType: "member",
+    actorId: session.member.id,
+    actorName: `${session.member.firstName} ${session.member.lastName}`.trim() || undefined,
+    action: "member.update_profile",
+    entityName: "Member",
+    entityId: session.member.id,
+    origin: "actions/members",
+  });
+
+  revalidatePath(`/portal/socios/${tenantSlug}`);
+  revalidatePath(`/portal/socios/${tenantSlug}/profile`);
   return { ok: true };
 }

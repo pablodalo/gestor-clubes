@@ -162,6 +162,7 @@ async function main() {
   const membershipPlansDemo = [
     { name: "Básico", description: "30 g flores / mes", price: 25000, recurrenceDay: 10 },
     { name: "Premium", description: "30 g flores + 10 g extractos / mes", price: 45000, recurrenceDay: 10 },
+    { name: "Premium -1", description: "Plan premium nivel 1", price: 45000, recurrenceDay: 10 },
   ];
   for (const plan of membershipPlansDemo) {
     await prisma.membershipPlan.upsert({
@@ -197,7 +198,13 @@ async function main() {
       },
     });
   }
-  console.log("Membership plans: Básico, Premium (por tenant)");
+  const planBasico1 = await prisma.membershipPlan.findUnique({
+    where: { tenantId_name: { tenantId: tenant1.id, name: "Básico" } },
+  });
+  const planPremium12 = await prisma.membershipPlan.findUnique({
+    where: { tenantId_name: { tenantId: tenant2.id, name: "Premium -1" } },
+  });
+  console.log("Membership plans: Básico, Premium, Premium -1 (por tenant)");
 
   const OPERADOR_PERMISSION_KEYS = [
     "members.read", "members.create", "members.update",
@@ -342,6 +349,8 @@ async function main() {
     });
 
     const memberNumber = `SOC-${tenant.slug.slice(0, 2).toUpperCase()}-001`;
+    const planForMember =
+      tenant.id === tenant1.id ? planBasico1 : planPremium12;
     const member1 = await prisma.member.upsert({
       where: { tenantId_memberNumber: { tenantId: tenant.id, memberNumber } },
       update: {
@@ -356,7 +365,9 @@ async function main() {
         reprocannStartDate: new Date("2024-01-15"),
         reprocannEndDate: new Date("2025-01-15"),
         reprocannActive: true,
+        membershipPlanId: planForMember?.id ?? null,
         membershipPlan: "Flores + Extractos",
+        membershipStatus: "active",
         membershipRecurring: true,
         membershipRecurrenceDay: 10,
         membershipLastPaidAt: new Date("2024-12-01"),
@@ -377,7 +388,9 @@ async function main() {
         reprocannStartDate: new Date("2024-01-15"),
         reprocannEndDate: new Date("2025-01-15"),
         reprocannActive: true,
+        membershipPlanId: planForMember?.id ?? null,
         membershipPlan: "Flores + Extractos",
+        membershipStatus: "active",
         membershipRecurring: true,
         membershipRecurrenceDay: 10,
         membershipLastPaidAt: new Date("2024-12-01"),
@@ -397,6 +410,48 @@ async function main() {
       },
     });
     console.log(`Member: ${member1.email}`);
+
+    if (tenant.slug === "the-dab-club") {
+      const planBasico2 = await prisma.membershipPlan.findUnique({
+        where: { tenantId_name: { tenantId: tenant2.id, name: "Básico" } },
+      });
+      const memberCarla = await prisma.member.upsert({
+        where: { tenantId_memberNumber: { tenantId: tenant.id, memberNumber: "TDC-002" } },
+        update: {
+          membershipPlanId: planBasico2?.id ?? null,
+          membershipStatus: "active",
+        },
+        create: {
+          tenantId: tenant.id,
+          memberNumber: "TDC-002",
+          firstName: "Carla",
+          lastName: "Dominguez",
+          email: "carla@the-dab-club.com",
+          status: "active",
+          documentType: "DNI",
+          documentNumber: "27123456",
+          membershipPlanId: planBasico2?.id ?? null,
+          membershipPlan: "Básico",
+          membershipStatus: "active",
+          membershipRecurring: true,
+          membershipRecurrenceDay: 10,
+          membershipLastPaidAt: new Date("2024-12-01"),
+          membershipLastAmount: 25000,
+          membershipCurrency: "ARS",
+        },
+      });
+      await prisma.memberAccount.upsert({
+        where: { memberId: memberCarla.id },
+        update: {},
+        create: {
+          memberId: memberCarla.id,
+          email: memberCarla.email!,
+          passwordHash: await hash("Socio123!", 10),
+          status: "active",
+        },
+      });
+      console.log(`Member: ${memberCarla.email} (Básico)`);
+    }
 
     if (tenant.slug === "club-ejemplo") {
       const extraMembers = [
