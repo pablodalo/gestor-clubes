@@ -79,7 +79,7 @@ export default async function PortalProfilePage({ params }: Props) {
             value={<span className="font-mono font-medium">{member.memberNumber}</span>}
           />
           <Field
-            label="Membresía - Estado"
+            label="Membresía / Estado"
             value={
               <span className="flex flex-wrap items-center gap-2">
                 <Badge
