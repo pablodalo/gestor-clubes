@@ -1,29 +1,49 @@
-import { getTenantBySlug } from "@/lib/tenant";
-import { getMemberAndTenantFromSession } from "@/lib/portal-session";
+import { getMemberHistoryForPortal } from "@/actions/member-history";
+
+const formatDate = (value?: Date | null) =>
+  value
+    ? new Date(value).toLocaleDateString("es-AR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
 
 type Props = { params: Promise<{ tenantSlug: string }> };
 
-export default async function PortalSociosMovementsPage({ params }: Props) {
+export default async function PortalMovementsPage({ params }: Props) {
   const { tenantSlug } = await params;
-  const tenant = await getTenantBySlug(tenantSlug);
-  if (!tenant) return null;
-
-  const sessionData = await getMemberAndTenantFromSession(tenantSlug);
+  const { data: logs } = await getMemberHistoryForPortal(tenantSlug);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Mis movimientos</h1>
-        <p className="text-muted-foreground mt-1">Historial de movimientos asociados a tu cuenta.</p>
+        <h1 className="text-xl font-bold text-foreground">Movimientos</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Historial de actividad en tu cuenta
+        </p>
       </div>
-      {sessionData ? (
-        <div className="rounded-lg border bg-card p-6 text-center text-muted-foreground">
-          <p>Por el momento no hay movimientos vinculados a tu cuenta de socio.</p>
-          <p className="text-sm mt-2">Cuando el club registre movimientos asociados a tu perfil, aparecerán aquí.</p>
-        </div>
-      ) : (
-        <p className="text-muted-foreground">No se pudo cargar la sesión.</p>
-      )}
+
+      <ul className="space-y-2">
+        {!logs || logs.length === 0 ? (
+          <li className="rounded-xl border border-dashed border-border/60 py-12 text-center text-sm text-muted-foreground">
+            No hay movimientos registrados.
+          </li>
+        ) : (
+          logs.map((log) => (
+            <li
+              key={log.id}
+              className="flex flex-col gap-1 rounded-xl border border-border/40 bg-card/50 px-4 py-3"
+            >
+              <span className="font-medium text-foreground">{log.action}</span>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{formatDate(log.createdAt)}</span>
+                {log.actorName && <span>· {log.actorName}</span>}
+              </div>
+            </li>
+          ))
+        )}
+      </ul>
     </div>
   );
 }

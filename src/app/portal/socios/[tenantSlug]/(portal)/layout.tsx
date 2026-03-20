@@ -1,11 +1,9 @@
-import { getServerSession } from "next-auth";
-import { portalAuthOptions } from "@/lib/auth";
 import { getTenantBySlug } from "@/lib/tenant";
 import { getTenantBranding } from "@/lib/branding";
 import { notFound } from "next/navigation";
-import { PortalShell } from "@/components/portal-shell";
+import { PortalAppShell } from "@/components/portal-app-shell";
 import { logError } from "@/lib/server-log";
-import { getMemberNotificationsForPortal } from "@/actions/member-notifications";
+import { getMemberAndTenantFromSession } from "@/lib/portal-session";
 
 type Props = {
   children: React.ReactNode;
@@ -18,15 +16,11 @@ export default async function PortalSociosDashboardLayout({ children, params }: 
     const tenant = await getTenantBySlug(tenantSlug);
     if (!tenant) notFound();
 
-    const session = await getServerSession(portalAuthOptions);
-    const ctx = (session as unknown as { context?: string })?.context;
-    const isMember =
-      ctx === "member" && (session as unknown as { tenantSlug?: string }).tenantSlug === tenantSlug;
-
-    if (!isMember) {
+    const session = await getMemberAndTenantFromSession(tenantSlug);
+    if (!session) {
       return (
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-muted-foreground">
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <p className="text-muted-foreground text-center">
             <a href={`/portal/socios/${tenantSlug}/login`} className="text-primary hover:underline">
               Iniciar sesión como socio
             </a>
@@ -35,21 +29,17 @@ export default async function PortalSociosDashboardLayout({ children, params }: 
       );
     }
 
-    const [branding, { data: notifications }] = await Promise.all([
-      getTenantBranding(tenantSlug, "slug"),
-      getMemberNotificationsForPortal(tenantSlug),
-    ]);
-    const unreadCount = notifications?.filter((n) => !n.read).length ?? 0;
+    const branding = await getTenantBranding(tenantSlug, "slug");
 
     return (
-      <PortalShell
-        tenant={tenant}
+      <PortalAppShell
+        tenant={session.tenant}
         logoUrl={branding.logoUrl}
         appName={branding.appName}
-        unreadNotificationsCount={unreadCount}
+        memberFirstName={session.member.firstName || "Socio"}
       >
         {children}
-      </PortalShell>
+      </PortalAppShell>
     );
   } catch (err) {
     logError("PortalSociosDashboardLayout", err);

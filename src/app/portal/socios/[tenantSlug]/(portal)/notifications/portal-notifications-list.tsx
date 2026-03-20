@@ -20,13 +20,13 @@ export function PortalNotificationsList({ tenantSlug, notifications }: Props) {
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-2">
       {notifications.map((n) => (
         <li
           key={n.id}
-          className={`flex justify-between items-start gap-4 border rounded-lg p-4 ${
+          className={`flex justify-between items-start gap-4 rounded-xl border p-4 ${
             n.read
-              ? "bg-muted/30 border-border"
+              ? "bg-card/50 border-border/40"
               : "border-l-4 border-l-primary bg-primary/5 border border-primary/20"
           }`}
         >
