@@ -79,18 +79,18 @@ export default async function PortalProfilePage({ params }: Props) {
             value={<span className="font-mono font-medium">{member.memberNumber}</span>}
           />
           <Field
-            label="Membresía / Estado"
+            label="Membresía - Estado"
             value={
               <span className="flex flex-wrap items-center gap-2">
-                <Badge variant={getStatusVariant(member.status)} className="text-xs">
-                  {statusLabel}
-                </Badge>
-                <span className="text-muted-foreground">·</span>
                 <Badge
                   variant="outline"
                   className={getMembershipBadgeClassName(membershipLabel)}
                 >
                   {membershipLabel}
+                </Badge>
+                <span className="text-muted-foreground">-</span>
+                <Badge variant={getStatusVariant(member.status)} className="text-xs">
+                  {statusLabel}
                 </Badge>
               </span>
             }
